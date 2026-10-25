@@ -1,0 +1,49 @@
+{
+  "name": "app",
+  "private": true,
+  "version": "0.3.2",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "test": "vitest run",
+    "preview": "vite preview",
+    "gen:portraits": "node tools/generate-portraits.mjs",
+    "verify:portraits": "node tools/generate-portraits.mjs --verify",
+    "convert:portraits-3d": "node tools/convert-portraits-3d.mjs",
+    "verify:portraits-3d": "node tools/convert-portraits-3d.mjs --verify",
+    "r2:setup": "node tools/r2-setup.mjs",
+    "r2:sync": "node tools/r2-sync.mjs"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
+    "@react-three/rapier": "^2.2.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "cannon-es": "^0.20.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.46.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3",
+    "three": "^0.186.1",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@gltf-transform/cli": "^4.5.1",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0",
+    "sharp": "^0.35.5",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}

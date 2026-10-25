@@ -1,0 +1,137 @@
+            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm" role="table">
+                  <tbody className="divide-y divide-slate-800">
+                    {sortedRoster.map(char => {
+                      const attr = calculateAttractiveness(char);
+                      const isCEO = char.role.includes('Chief Executive');
+                      const restPlacement = gameState.restZone.placements.find(item => item.characterId === char.id);
+                      const hospitalStay = (gameState.hospital.patients || [])
+                        .find(patient => patient.characterId === char.id);
+                      const treatmentStay = hospitalStay && isTreatmentStay(hospitalStay) ? hospitalStay : null;
+                      const observationStay = hospitalStay && isObservationStay(hospitalStay) ? hospitalStay : null;
+                      const careSummary = char.isSlave && char.gender === 'women'
+                        ? getFemaleSlaveCareSummary(char)
+                        : null;
+                      const listedAtAuction = gameState.auctionHouse.pendingLots.some(lot => 'characterId' in lot && lot.characterId === char.id);
+                      return (
+                        <tr key={char.id} className="hover:bg-slate-950/50 transition">
+                          <td className="px-4 py-4 w-36 align-top">
+                            <div
+                              className="relative group cursor-pointer"
+                              onClick={() => setFullscreenImage(char.image)}
+                              title="Нажмите, чтобы открыть портрет"
+                            >
+                              <img src={char.image} alt={char.name} className="w-28 h-28 rounded-xl object-cover border border-slate-700 shrink-0 group-hover:border-pink-500 transition" />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition">
+                                <Maximize2 className="w-5 h-5 text-white" />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold text-white text-base">{char.name}</h3>
+                              {isCEO && <span className="text-[10px] px-2 py-0.5 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full font-mono font-bold">ГЕН. ДИР.</span>}
+                              {char.isSlave && <span className="text-[10px] px-2 py-0.5 bg-red-500/20 text-red-400 border-red-500/30 rounded-full font-mono font-bold">ПЛЕННИК</span>}
+                              {char.isSlave && (!char.assignedVenue || char.assignedVenue === 'unassigned') && (
+                                <span className="text-[10px] px-2 py-0.5 bg-slate-500/20 text-slate-300 border border-slate-500/30 rounded-full font-mono font-bold">БЕЗ РАБОТЫ</span>
+                              )}
+                              {isOnCaptureOp(char) && <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full font-mono font-bold">В ПОЛЕ</span>}
+                              {restPlacement && <span className="text-[10px] px-2 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-full font-mono font-bold">ОТДЫХ · {restPlacement.weeksRemaining} НЕД.</span>}
+                              {treatmentStay && (
+                                <span className="text-[10px] px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-full font-mono font-bold">
+                                  БОЛЬНИЦА · {Math.max(0, treatmentStay.weeksRemaining - 1)} НЕД.
+                                </span>
+                              )}
+                              {observationStay && (
+                                <span className="text-[10px] px-2 py-0.5 bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded-full font-mono font-bold">
+                                  НАБЛЮДЕНИЕ · {Math.max(0, observationStay.weeksRemaining - 1)} НЕД.
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1">{roleLabel(char.role)} · <span className="text-amber-400 font-mono">Привлекательность: {attr}/100</span></p>
+                            <p className="text-[11px] text-slate-300 font-mono mt-1">Пол: <span className="text-slate-100">{GENDER_LABELS[char.gender]}</span> · Страна: <span className="text-slate-100">{char.country || 'Неизвестно'}</span> · Покупка: <span className="text-slate-100">неделя {char.acquiredWeek ?? '—'}</span> · Оценка рынком: <span className="text-emerald-300">${marketValueOf(char).toLocaleString()}</span></p>
+                            <div className="text-xs text-slate-500 font-mono mt-1">
+                              Здоровье: <span className="text-emerald-400">{isCEO ? `${char.exactHealth}% (${HEALTH_LABELS[char.healthLevel]})` : HEALTH_LABELS[char.healthLevel]}</span> |
+                              Усталость: <span className="text-amber-400">{isCEO ? `${char.exactExhaustion}% (${EXHAUSTION_LABELS[char.exhaustionLevel]})` : EXHAUSTION_LABELS[char.exhaustionLevel]}</span> |
+                              Покорность: <span className="text-purple-400">{char.submission || 50}%</span>
+                            </div>
+                            {careSummary && (
+                              <section className={`mt-2 rounded-lg border px-3 py-2 text-xs ${careSummary.tone}`} aria-label="Содержание рабынь">
+                                <div className="font-semibold">Содержание рабынь · {careSummary.status}</div>
+                                <ul className="mt-1 list-disc pl-4 text-slate-200">
+                                  {careSummary.needs.map(need => <li key={need}>{need}</li>)}
+                                </ul>
+                              </section>
+                            )}
+                            {char.isSlave && char.gender === 'women' && char.pregnancy && (
+                              <section className={`mt-2 rounded-lg border px-3 py-2 text-xs ${char.pregnancy.status === 'hospitalized' ? 'border-amber-500/30 bg-amber-500/10 text-amber-100' : 'border-pink-500/25 bg-pink-500/5 text-pink-100'}`} aria-label="Статус беременности">
+                                <div className="flex items-center gap-2 font-semibold">
+                                  <HeartPulse aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                  {char.pregnancy.status === 'hospitalized'
+                                    ? `Госпитализация · палата «${getWardDefinition(char.pregnancy.wardId ?? '')?.name ?? 'палата'}», роды после этой недели`
+                                    : `Беременность · ${Math.round(char.pregnancy.daysPregnant / 7)}/${GESTATION_DAYS / 7} недель`}
+                                </div>
+                                {char.pregnancy.status === 'pregnant' && (
+                                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-950" role="progressbar" aria-label={`Прогресс беременности: ${char.name}`} aria-valuemin={0} aria-valuemax={GESTATION_DAYS} aria-valuenow={char.pregnancy.daysPregnant}>
+                                    <div className="h-full rounded-full bg-pink-400 transition-[width]" style={{ width: `${Math.min(100, char.pregnancy.daysPregnant / GESTATION_DAYS * 100)}%` }} />
+                                  </div>
+                                )}
+                              </section>
+                            )}
+                            {char.pleasureStats && (
+                              <div className="text-[11px] font-mono text-pink-400 mt-1 bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                                Статистика дома удовольствия · Вагинальные: <strong>{char.pleasureStats.vaginalCount}</strong> | Анальные: <strong>{char.pleasureStats.analCount}</strong> | Заработано: <strong>${char.pleasureStats.totalEarnings.toLocaleString()}</strong>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            <div className="space-y-4 min-w-60">
+                              <div>
+                                <label className="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Место работы</label>
+                                <select
+                                  value={char.assignedVenue || 'unassigned'}
+                                  onChange={e => assignVenue(char.id, e.target.value as any)}
+                                  className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs font-semibold focus:border-pink-500 outline-none w-full"
+                                >
+                                  {char.assignedVenue === 'trade' && <option value="trade">{VENUE_LABELS.trade}</option>}
+                                  <option value="beauty_salon">{VENUE_LABELS.beauty_salon}</option>
+                                  <option value="strip_club">{VENUE_LABELS.strip_club}</option>
+                                  <option value="pleasure_house">{VENUE_LABELS.pleasure_house}</option>
+                                  <option value="auction_house">{VENUE_LABELS.auction_house}</option>
+                                  <option value="security">{VENUE_LABELS.security}</option>
+                                  <option value="unassigned">{VENUE_LABELS.unassigned}</option>
+                                </select>
+                              </div>
+                              {char.isSlave && (
+                                <div>
+                                  <label className="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Умиротворение</label>
+                                  <button
+                                    onClick={() => breakSlave(char.id)}
+                                    className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer w-full"
+                                  >
+                                    Сломить пленника
+                                  </button>
+                                </div>
+                              )}
+                              {char.isSlave && (
+                                <div>
+                                  <label className="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Продать раба</label>
+                                  <button
+                                    onClick={() => sellSlaveAtAuction(char)}
+                                    disabled={listedAtAuction}
+                                    className="bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {listedAtAuction ? 'Выставлен на аукцион' : 'Продать раба'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>

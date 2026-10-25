@@ -1,0 +1,195 @@
+﻿COME FUNZIONA IL SISTEMA DEI RITRATTI
+=====================================
+
+Ogni personaggio del gioco usa un'immagine presa da questo albero di cartelle.
+Nient'altro ne determina l'aspetto: il gioco non può sapere cosa contiene
+un'immagine. La posizione nell'albero è quindi l'unico legame tra l'immagine e
+il personaggio.
+
+Se vuoi soltanto aggiungere immagini, leggi IT_AGGIUNGERE_IMMAGINI.txt. Questo
+file spiega come vengono usate dal gioco.
+
+English version: 00_EN_HOW_IT_WORKS.txt
+Polska wersja: PL_JAK_TO_DZIALA.txt
+Deutsche Version: DE_WIE_ES_FUNKTIONIERT.txt
+Versión española: ES_COMO_FUNCIONA.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Version française : FR_COMMENT_CA_MARCHE.txt
+Versão em português: PT_COMO_FUNCIONA.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+Türkçe sürüm: TR_NASIL_CALISIR.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+
+
+1. DOVE SI TROVA QUESTA CARTELLA
+--------------------------------
+
+In una versione pubblicata, questa cartella si trova accanto al file .exe del
+gioco, proprio come la cartella "saves". È una scelta intenzionale: è l'unico
+posto in cui puoi aggiungere immagini personali a un gioco installato senza
+modificarne i file inclusi nel pacchetto.
+
+Il contenuto di questa cartella non viene incorporato nel gioco, quindi puoi
+sempre modificarla liberamente.
+
+
+2. L'ALBERO DELLE CARTELLE
+--------------------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        other/
+
+Le prime quattordici cartelle rappresentano le regioni del mondo da cui può
+provenire un personaggio. Le sette successive rappresentano le origini dei
+popoli privi di un proprio Stato, dispersi in molte regioni; la sola regione
+dice quindi poco sul loro aspetto. L'ultima cartella è spiegata nella sezione 6.
+
+Il numero all'inizio del nome serve soltanto a mantenere ordinato l'elenco. La
+parte successiva deve corrispondere a una regione o un'origine riconosciuta dal
+gioco. Qualsiasi altra cartella viene ignorata completamente: non compare
+nell'elenco e non viene mai usata.
+
+Ogni cartella di gruppo contiene le stesse tre sottocartelle: women, men e
+trans.
+
+
+3. COME UN PERSONAGGIO RICEVE LA PROPRIA IMMAGINE
+-------------------------------------------------
+
+Quando viene creato un personaggio, il gioco controlla nell'ordine le posizioni
+seguenti e si ferma alla prima che contiene un'immagine adatta:
+
+    1. La cartella che porta il nome della sua origine, se esiste.
+       A questo servono le cartelle dei popoli privi di un proprio Stato. Una
+       donna rom nata in Germania riceve l'immagine da 15_roma, non dalla
+       regione europea.
+
+    2. La cartella della regione da cui proviene.
+       A determinarla è il paese d'origine, non il mercato in cui è comparso il
+       personaggio. Una donna nigeriana acquistata in Europa riceve comunque
+       l'immagine da 07_west_africa.
+
+    3. Una qualsiasi cartella di gruppo riconosciuta, purché il genere coincida.
+       È la soluzione di riserva per una regione che non hai ancora riempito.
+
+    4. Nessuna immagine: il personaggio appare come un rettangolo grigio.
+
+A ogni passaggio, un personaggio trans controlla prima la cartella trans/. Se è
+vuota, controlla la cartella del proprio sesso registrato prima di passare alla
+fase successiva.
+
+
+4. PERCHÉ NON CONTINUA A TORNARE LA STESSA FACCIA
+-------------------------------------------------
+
+Le immagini non vengono selezionate alla cieca. Il gioco conta quanti personaggi
+nell'elenco attuale usano ogni immagine della cartella, le ordina in base a quel
+numero e favorisce nel sorteggio quelle meno usate. Il 40% delle immagini meno
+usate in una cartella riceve il 65% della probabilità di selezione; le altre si
+dividono la probabilità restante.
+
+Ne derivano due conseguenze:
+
+  - Con più immagini che personaggi, vedrai raramente una ripetizione.
+  - Con meno immagini che personaggi, le ripetizioni sono inevitabili ma restano
+    distribuite uniformemente, invece di mostrare un volto venti volte e un
+    altro mai.
+
+Il conteggio degli utilizzi non viene memorizzato separatamente. Viene calcolato
+dai personaggi che possiedi in quel momento, quindi vendere o perdere un
+personaggio libera automaticamente la sua immagine. Le immagini nuove aggiunte
+a una cartella molto usata hanno una probabilità molto più alta di essere scelte,
+ma non vengono assegnate a tutti i nuovi personaggi.
+
+
+5. LA SCHEDA, IL RITAGLIO E LA VISTA COMPLETA
+---------------------------------------------
+
+La cornice del ritratto sulla scheda del personaggio è alta e stretta e cresce
+insieme alla finestra. L'immagine viene ridimensionata finché non copre la
+cornice e la parte in eccesso viene ritagliata.
+
+Di solito la scheda mostra quindi una sezione ritagliata anziché l'immagine
+intera. Esistono due modi per gestirla:
+
+  - Il pulsante di ritaglio sul ritratto consente di scegliere, per ogni
+    personaggio, la parte dell'immagine mostrata sulla scheda.
+  - Facendo clic sul ritratto si apre l'immagine non ritagliata nelle dimensioni
+    originali oppure, se necessario, ridotta per adattarsi allo schermo.
+
+Il gioco non ingrandisce l'immagine sorgente prima di mostrarla, quindi un file
+piccolo appare poco nitido quando la cornice deve allungarlo.
+
+
+6. LA CARTELLA "other"
+----------------------
+
+Usa questa cartella per le immagini da assegnare esclusivamente a mano. Non
+partecipa mai alla selezione automatica, quindi un personaggio generato non
+riceverà una delle sue immagini. Il selettore la elenca come qualsiasi altra
+cartella e permette di assegnarne personalmente un'immagine.
+
+Usala quando hai creato un'immagine per un personaggio specifico e non vuoi che
+venga assegnata a nessun altro.
+
+
+7. SCEGLIERE UN'IMMAGINE A MANO
+-------------------------------
+
+Passando il puntatore sopra un ritratto sulla scheda del personaggio compare una
+piccola barra con due pulsanti: uno modifica l'inquadratura dell'immagine
+attuale, l'altro apre la raccolta delle immagini.
+
+La raccolta si apre nella cartella a cui appartiene il personaggio, con il
+genere già selezionato. Le cartelle che non contengono immagini per quel genere
+appaiono attenuate. Facendo clic su una miniatura la si seleziona; la lente
+d'ingrandimento nell'angolo mostra l'immagine completa e il pulsante di conferma
+la applica. Non cambia nulla finché non confermi.
+
+Cambiando l'immagine di un personaggio viene eliminato qualsiasi ritaglio
+impostato per la precedente, perché il ritaglio appartiene all'immagine per cui
+è stato creato.
+
+
+8. QUANDO UN'IMMAGINE SCOMPARE
+------------------------------
+
+L'immagine di un personaggio viene memorizzata come percorso di un file. Se
+elimini quel file, lo rinomini o lo sposti in un'altra cartella, il percorso
+salvato non indica più nulla.
+
+Quando viene caricato un salvataggio, il gioco controlla il problema e sceglie
+un'immagine sostitutiva per ogni personaggio interessato, usando le regole
+normali. Questo evita un segnaposto grigio, mentre la normale ponderazione degli
+utilizzi continua a limitare i duplicati nell'elenco dei personaggi. Qualsiasi
+inquadratura impostata per l'immagine mancante viene rimossa perché apparteneva
+a un'immagine che non esiste più.
+
+I personaggi che non hanno mai avuto un'immagine vengono lasciati invariati. In
+quel caso non si è perso nulla e assegnare loro un volto durante il caricamento
+sarebbe una modifica non richiesta.
+
+Se manca l'intera cartella portraits, nessuna immagine viene sostituita. I
+percorsi memorizzati vengono conservati. Ripristinare la cartella recupera le
+immagini originali invece di danneggiare permanentemente il salvataggio.
+
+
+9. QUANDO VENGONO RILEVATE LE MODIFICHE
+---------------------------------------
+
+L'albero delle cartelle viene letto una sola volta all'avvio del gioco. Le
+immagini aggiunte mentre il gioco è in esecuzione compaiono dopo il riavvio.

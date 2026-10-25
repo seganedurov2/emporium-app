@@ -1,0 +1,182 @@
+﻿AÑADIR TUS PROPIAS IMÁGENES
+===========================
+
+En resumen: coloca los archivos de imagen en la carpeta adecuada de región y
+género, reinicia el juego y listo. Todo lo que sigue explica cómo conseguir que
+se vean bien.
+
+Para saber cómo decide el juego qué imagen recibe un personaje, consulta
+ES_COMO_FUNCIONA.txt.
+
+English version: 00_EN_ADDING_PICTURES.txt
+Polska wersja: PL_DODAWANIE_ZDJEC.txt
+Deutsche Version: DE_BILDER_HINZUFUEGEN.txt
+Русская версия: RU_DOBAVLENIE_IZOBRAZHENIY.txt
+简体中文版：ZH_CN_TIANJIA_ZHAOPIAN.txt
+日本語版：JA_SHASHIN_NO_TSUIKA.txt
+Version française : FR_AJOUTER_DES_PHOTOS.txt
+Versão em português: PT_ADICIONAR_FOTOS.txt
+Українська версія: UK_DODAVANNIA_ZOBRAZHEN.txt
+النسخة العربية: AR_IDAFAT_ALSUWAR.txt
+한국어 버전: KO_SAJIN_CHUGA.txt
+Türkçe sürüm: TR_RESIM_EKLEME.txt
+ฉบับภาษาไทย: TH_PHOEM_RUPPHAP.txt
+Versione italiana: IT_AGGIUNGERE_IMMAGINI.txt
+
+
+1. DÓNDE GUARDARLAS
+-------------------
+
+Elige la carpeta de la región de la que debe proceder el personaje y, después,
+la carpeta de su género:
+
+    portraits/03_western_europe_nordics/women/
+
+No crees carpetas propias. El juego solo reconoce carpetas cuyo nombre coincide
+con una región o un origen conocido. Todas las demás se ignoran por completo,
+por lo que las imágenes guardadas dentro nunca aparecerán.
+
+La carpeta "other" está destinada a imágenes que solo deben asignarse
+manualmente. Nada de su contenido se elige al azar, así que un personaje
+generado nunca recibe ninguna de estas imágenes. Debes asignar cada una por tu
+cuenta en el selector; de lo contrario, no se utilizará.
+
+
+2. FORMATOS
+-----------
+
+Admitidos:      .webp   .png   .jpg   .jpeg
+Ignorados:      todos los demás: .bmp, .gif, .tiff, etc.
+
+Un archivo ignorado es invisible para el juego: no aparece en la lista y nunca
+se utiliza. Un archivo con una extensión admitida pero con contenido dañado
+aparece en el selector como un recuadro gris con su nombre de archivo.
+
+
+3. WEBP: LOSSY, CALIDAD 90
+--------------------------
+
+Es el formato recomendado para la biblioteca, y merece la pena conocer el
+motivo.
+
+Una imagen WebP con calidad 90 resulta visualmente indistinguible del original
+durante el uso normal dentro del juego, pero ocupa una fracción de su tamaño
+inicial. La conversión redujo el tamaño total de las imágenes incluidas con el
+juego de 22,5 MB a 7,2 MB, aproximadamente un tercio, sin diferencias visibles
+en ninguno de los tamaños utilizados por el juego.
+
+Este ahorro importa en una biblioteca completa, no en un solo archivo. Con las
+dimensiones recomendadas más adelante, una imagen WebP q90 pesa de media menos
+de 90 KB. Por tanto, mil imágenes ocupan unos 85 MB; las mismas mil en PNG
+ocuparían aproximadamente un gigabyte.
+
+No vuelvas a codificar una imagen que ya esté en WebP. Con cada nueva
+codificación en un formato lossy se pierde algo de calidad, y una segunda pasada
+no aporta ninguna ventaja.
+
+Una calidad superior a 90 apenas mejora la imagen, pero aumenta rápidamente el
+tamaño del archivo. Por debajo de aproximadamente 80 aparecen artefactos de
+compresión en la piel y el pelo, donde resultan especialmente molestos en un
+retrato.
+
+
+4. TAMAÑO
+---------
+
+Recomendado:    unos 768 x 1152 o una resolución vertical similar
+Mínimo útil:    alrededor de 1000 píxeles de alto
+Máximo:         sin límite estricto; los archivos grandes consumen más memoria
+
+El juego no amplía la imagen de origen antes de mostrarla. Si un archivo es más
+pequeño que el marco, la interfaz debe estirarlo para llenar el espacio, lo que
+hace que se vea borroso. Por ejemplo, una imagen de 100 x 150 se verá muy
+borrosa en una tarjeta de personaje.
+
+Los archivos más grandes funcionan, pero a partir de cierto tamaño los detalles
+adicionales dejan de ser visibles. La vista a pantalla completa es el modo de
+visualización más grande; en una pantalla de 1080p, el espacio útil tiene algo
+menos de 1000 píxeles de alto. Las imágenes más grandes se reducen, pero siguen
+necesitando más tiempo y memoria para decodificarse.
+
+
+5. PROPORCIONES
+---------------
+
+Utiliza orientación vertical. Una imagen más alta y estrecha funciona mejor que
+una cuadrada.
+
+El marco de la imagen en la tarjeta de un personaje es alto y estrecho, y se
+vuelve más alto al ampliar la ventana. La imagen se escala hasta cubrirlo;
+cualquier parte que sobresalga queda recortada. El encuadre exacto depende tanto
+de las proporciones de la imagen como de la altura actual de la tarjeta. Con el
+tamaño mínimo de la tarjeta, el resultado es aproximadamente el siguiente:
+
+    600 x 2000   muy alta       recortada por arriba y por abajo
+    768 x 1152   recomendada    alrededor del 10 % del ancho recortado
+    800 x 800    cuadrada       alrededor del 40 % del ancho recortado
+    1200 x 600   horizontal     alrededor del 70 % del ancho recortado
+
+Cuanto más alta sea la tarjeta, más imagen se recorta por los lados. Con
+aproximadamente el doble de la altura mínima, los tres últimos ejemplos pierden
+alrededor del 55 %, 70 % y 85 % de su ancho, respectivamente.
+
+Todas estas variantes funcionan. También se admite una imagen horizontal, pero
+la tarjeta solo muestra una sección vertical estrecha. Al hacer clic en la
+imagen se abre la vista completa, y el botón de encuadre permite elegir qué
+parte aparece en la tarjeta.
+
+Tenlo en cuenta al componer la imagen: coloca los elementos importantes cerca
+del centro y no dejes nada esencial en los bordes izquierdo o derecho.
+
+
+6. NOMBRES DE ARCHIVO
+---------------------
+
+Las imágenes incluidas con el juego tienen nombres como estos:
+
+    portrait01w_001.webp     región 01, mujeres, primera imagen
+    portrait19t_002.webp     región 19, trans, segunda imagen
+
+La numeración vuelve a empezar dentro de cada carpeta. Los códigos de región y
+género del nombre evitan colisiones si una imagen se mueve a otro lugar.
+
+El juego no extrae ninguna información del nombre del archivo. Puedes poner a
+tus archivos el nombre que quieras; este esquema solo sirve para mantener las
+carpetas ordenadas.
+
+Elige los nombres una vez y no los cambies después. El juego guarda la ruta
+completa de cada imagen, por lo que cambiar el nombre de un archivo que ya usan
+los personajes tiene dos consecuencias:
+
+  - Todos los personajes que usan esa imagen la pierden. La próxima vez que se
+    cargue la partida recibirán otra imagen según las reglas habituales, por lo
+    que no se quedarán grises. Sin embargo, la imagen elegida anteriormente y
+    su encuadre se perderán.
+
+  - El archivo renombrado se considera una imagen que el juego nunca ha visto.
+    Su contador de uso comienza en cero, por lo que pasa a ser una de las menos
+    utilizadas de la carpeta y tiene una probabilidad inusualmente alta de
+    asignarse a los siguientes personajes creados.
+
+Eliminar una imagen tiene el mismo efecto, al igual que moverla a otra carpeta.
+El juego no muestra ningún error; el personaje recibe un sustituto la próxima
+vez que se carga la partida.
+
+Hay un caso que se trata de forma deliberadamente distinta: si falta toda la
+carpeta portraits porque se ha movido o no se ha copiado junto al juego, nadie
+recibe un sustituto, ya que el juego no dispone de ninguna imagen que asignar.
+Los personajes muestran rectángulos grises y recuperan sus imágenes en cuanto
+la carpeta vuelve a su lugar.
+
+
+7. DESPUÉS DE AÑADIRLAS
+-----------------------
+
+Reinicia el juego. La estructura de carpetas solo se lee una vez al iniciarse,
+por lo que las imágenes añadidas mientras se ejecuta no aparecen hasta el
+siguiente inicio.
+
+Las imágenes nuevas tienen muchas más probabilidades de asignarse a los
+siguientes personajes creados, pero no dominan por completo la selección. De
+este modo, un lote nuevo se incorpora poco a poco a la plantilla en lugar de
+aparecer entero de una vez.

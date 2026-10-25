@@ -1,0 +1,111 @@
+/**
+ * Upgrade Engine for Pawn Pleasure
+ * Manages the purchase and application of permanent syndicate improvements.
+ */
+
+import { CampaignState } from './gameEngine';
+
+export type UpgradeCategory = 'security' | 'conditioning' | 'logistics';
+
+export interface Upgrade {
+  id: string;
+  title: string;
+  description: string;
+  category: UpgradeCategory;
+  cost: number;
+  effectDescription: string;
+  // Determines if the upgrade is available based on current state
+  requirement?: (state: CampaignState) => boolean;
+}
+
+/**
+ * Database of available syndicate upgrades.
+ */
+export const UPGRADE_DATABASE: Upgrade[] = [
+  // --- SECURITY UPGRADES ---
+  {
+    id: 'security_sensors',
+    title: 'Усиленные датчики движения',
+    description: 'Установка современных сенсоров в коридорах и камерах.',
+    category: 'security',
+    cost: 15000,
+    effectDescription: 'Снижает общий шанс побега на 15%.',
+  },
+  {
+    id: 'security_elite_guards',
+    title: 'Элитный отряд охраны',
+    description: 'Найм бывших спецназовцев для патрулирования объекта.',
+    category: 'security',
+    cost: 40000,
+    effectDescription: 'Полностью блокирует попытки побега персонажей с покорностью > 50.',
+    requirement: (state) => state.funds >= 10000,
+  },
+  // --- CONDITIONING UPGRADES ---
+  {
+    id: 'cond_sensory_dep',
+    title: 'Комнаты сенсорной депривации',
+    description: 'Специальные камеры для быстрого подавления воли.',
+    category: 'conditioning',
+    cost: 25000,
+    effectDescription: 'Увеличивает скорость роста покорности в 1.5 раза.',
+  },
+  {
+    id: 'cond_loyalty_course',
+    title: 'Курсы лояльности',
+    description: 'Психологическая обработка для формирования привязанности к синдикату.',
+    category: 'conditioning',
+    cost: 20000,
+    effectDescription: 'Повышает начальную лояльность захваченных персонажей на +10%.',
+  },
+  // --- LOGISTICS UPGRADES ---
+  {
+    id: 'log_port_connections',
+    title: 'Связи в портах',
+    description: 'Подкуп администрации портов и таможенных терминалов.',
+    category: 'logistics',
+    cost: 30000,
+    effectDescription: 'Снижает риск конфискации на Черном рынке с 15% до 5%.',
+  },
+  {
+    id: 'log_gold_certificate',
+    title: 'Золотой сертификат качества',
+    description: 'Признание вашего товара эталонным среди элитных покупателей.',
+    category: 'logistics',
+    cost: 60000,
+    effectDescription: 'Персонажи Medium-тира могут продаваться по ценам High-тира в премиум-регионах.',
+  },
+];
+
+/**
+ * Purchases an upgrade and updates the campaign state.
+ */
+export function purchaseUpgrade(state: CampaignState, upgradeId: string): { newState: CampaignState; success: boolean; message: string } {
+  const upgrade = UPGRADE_DATABASE.find(u => u.id === upgradeId);
+  if (!upgrade) return { newState: state, success: false, message: "Upgrade not found." };
+
+  const purchased = state.purchasedUpgrades || [];
+  if (purchased.includes(upgradeId)) return { newState: state, success: false, message: "Upgrade already purchased." };
+
+  if (state.funds < upgrade.cost) return { newState: state, success: false, message: "Insufficient funds." };
+
+  if (upgrade.requirement && !upgrade.requirement(state)) {
+    return { newState: state, success: false, message: "Requirements for this upgrade are not met." };
+  }
+
+  return {
+    newState: {
+      ...state,
+      funds: state.funds - upgrade.cost,
+      purchasedUpgrades: [...purchased, upgradeId],
+    },
+    success: true,
+    message: `Upgrade "${upgrade.title}" purchased successfully!`,
+  };
+}
+
+/**
+ * Helper to check if a specific upgrade is active.
+ */
+export function hasUpgrade(state: CampaignState, upgradeId: string): boolean {
+  return (state.purchasedUpgrades || []).includes(upgradeId);
+}

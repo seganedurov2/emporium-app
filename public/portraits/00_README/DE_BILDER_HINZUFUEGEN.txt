@@ -1,0 +1,183 @@
+﻿EIGENE BILDER HINZUFÜGEN
+========================
+
+Kurz gesagt: Lege die Bilddateien im passenden Regions- und Geschlechtsordner
+ab, starte das Spiel neu — fertig. Alles Weitere erklärt, wie du dafür sorgst,
+dass sie gut aussehen.
+
+Wie das Spiel entscheidet, welches Bild eine Figur erhält, wird in
+DE_WIE_ES_FUNKTIONIERT.txt erklärt.
+
+English version: 00_EN_ADDING_PICTURES.txt
+Polska wersja: PL_DODAWANIE_ZDJEC.txt
+Versión española: ES_ANADIR_IMAGENES.txt
+Русская версия: RU_DOBAVLENIE_IZOBRAZHENIY.txt
+简体中文版：ZH_CN_TIANJIA_ZHAOPIAN.txt
+日本語版：JA_SHASHIN_NO_TSUIKA.txt
+Version française : FR_AJOUTER_DES_PHOTOS.txt
+Versão em português: PT_ADICIONAR_FOTOS.txt
+Українська версія: UK_DODAVANNIA_ZOBRAZHEN.txt
+النسخة العربية: AR_IDAFAT_ALSUWAR.txt
+한국어 버전: KO_SAJIN_CHUGA.txt
+Türkçe sürüm: TR_RESIM_EKLEME.txt
+ฉบับภาษาไทย: TH_PHOEM_RUPPHAP.txt
+Versione italiana: IT_AGGIUNGERE_IMMAGINI.txt
+
+
+1. WO SIE ABGELEGT WERDEN
+-------------------------
+
+Wähle zuerst den Ordner der Region, aus der die Figur stammen soll, und danach
+den Ordner ihres Geschlechts:
+
+    portraits/03_western_europe_nordics/women/
+
+Erstelle keine eigenen Ordner. Das Spiel erkennt nur Ordner, deren Namen einer
+bekannten Region oder Herkunft entsprechen. Alle anderen werden vollständig
+ignoriert, sodass die darin abgelegten Bilder niemals erscheinen.
+
+Der Ordner "other" ist für Bilder vorgesehen, die ausschließlich von Hand
+zugewiesen werden sollen. Nichts daraus wird zufällig ausgewählt, daher erhält
+eine erzeugte Figur niemals eines dieser Bilder. Du musst jedes davon selbst in
+der Bildauswahl zuweisen; andernfalls wird es nicht verwendet.
+
+
+2. FORMATE
+----------
+
+Unterstützt:    .webp   .png   .jpg   .jpeg
+Ignoriert:      alles andere — .bmp, .gif, .tiff und so weiter
+
+Eine ignorierte Datei ist für das Spiel unsichtbar: Sie wird weder aufgelistet
+noch verwendet. Eine Datei mit unterstützter Endung, aber beschädigtem Inhalt
+erscheint in der Bildauswahl als graue Kachel mit ihrem Dateinamen.
+
+
+3. WEBP: LOSSY, QUALITÄT 90
+---------------------------
+
+Dies ist das empfohlene Format für die Bildbibliothek. Es lohnt sich, den Grund
+dafür zu kennen.
+
+Ein WebP-Bild mit Qualität 90 ist bei normaler Darstellung im Spiel visuell
+nicht vom Original zu unterscheiden und benötigt nur einen Bruchteil von dessen
+ursprünglicher Dateigröße. Durch die Konvertierung schrumpften die mit dem Spiel
+gelieferten Bilder von insgesamt 22,5 MB auf 7,2 MB — also auf ungefähr ein
+Drittel — ohne sichtbaren Unterschied bei einer der im Spiel verwendeten
+Anzeigegrößen.
+
+Diese Ersparnis zählt vor allem in der gesamten Bibliothek, nicht bei einer
+einzelnen Datei. In den unten empfohlenen Abmessungen ist ein WebP-q90-Bild im
+Durchschnitt kleiner als 90 KB. Tausend solcher Bilder belegen also etwa 85 MB;
+dieselben tausend Bilder als PNG würden ungefähr ein Gigabyte belegen.
+
+Codiere ein Bild, das bereits als WebP vorliegt, nicht erneut. Bei jeder
+erneuten Codierung in einem Lossy-Format verliert das Bild etwas Qualität, ohne
+dass ein zweiter Durchlauf einen Vorteil bringt.
+
+Eine Qualität über 90 verbessert das Bild kaum sichtbar, vergrößert die Datei
+aber schnell. Unter etwa 80 werden Kompressionsartefakte auf Haut und Haaren
+sichtbar, wo sie bei einem Porträt besonders stören.
+
+
+4. GRÖSSE
+---------
+
+Empfohlen:          etwa 768 x 1152 oder eine ähnliche Hochformat-Auflösung
+Sinnvolles Minimum: etwa 1000 Pixel Höhe
+Maximum:            keine feste Grenze; große Dateien benötigen mehr Speicher
+
+Das Spiel skaliert die Quelldatei vor der Anzeige nicht hoch. Ist eine Datei
+kleiner als der Rahmen, muss die Oberfläche sie strecken, damit sie den
+verfügbaren Platz ausfüllt. Dadurch wirkt sie unscharf. Ein Bild mit 100 x 150
+Pixeln ist auf einer Figurenkarte zum Beispiel stark verschwommen.
+
+Größere Dateien funktionieren, doch ab einer gewissen Größe sind die
+zusätzlichen Details nicht mehr sichtbar. Die Vollbildansicht ist der größte
+Anzeigemodus; auf einem 1080p-Bildschirm ist der nutzbare Bereich knapp 1000
+Pixel hoch. Größere Bilder werden verkleinert, benötigen beim Decodieren aber
+weiterhin zusätzliche Zeit und zusätzlichen Speicher.
+
+
+5. SEITENVERHÄLTNIS
+-------------------
+
+Verwende Hochformat. Ein höheres und schmaleres Bild eignet sich besser als ein
+quadratisches.
+
+Der Bildrahmen auf einer Figurenkarte ist hoch und schmal. Wird das Fenster
+größer, wird auch der Rahmen höher. Das Bild wird so skaliert, dass es den
+Rahmen ausfüllt; überstehende Bereiche werden abgeschnitten. Der genaue
+Ausschnitt hängt sowohl vom Seitenverhältnis des Bildes als auch von der
+aktuellen Höhe der Karte ab. Bei der Mindestgröße der Karte sieht es ungefähr
+so aus:
+
+    600 x 2000   sehr hoch     oben und unten abgeschnitten
+    768 x 1152   empfohlen     etwa 10 % der Breite abgeschnitten
+    800 x 800    quadratisch   etwa 40 % der Breite abgeschnitten
+    1200 x 600   Querformat    etwa 70 % der Breite abgeschnitten
+
+Je höher die Karte wird, desto mehr wird an den Seiten abgeschnitten. Bei etwa
+der doppelten Mindesthöhe verlieren die letzten drei Beispiele ungefähr 55 %,
+70 % beziehungsweise 85 % ihrer Breite.
+
+Jede dieser Varianten funktioniert. Auch ein Bild im Querformat wird
+unterstützt, doch die Karte zeigt nur einen schmalen, senkrechten Ausschnitt.
+Ein Klick auf das Bild öffnet die vollständige Ansicht. Mit der Schaltfläche zum
+Anpassen des Bildausschnitts bestimmst du, welcher Teil auf der Karte erscheint.
+
+Berücksichtige dies bei der Bildgestaltung: Platziere wichtige Elemente nahe
+der Mitte und nichts Entscheidendes direkt am linken oder rechten Rand.
+
+
+6. DATEINAMEN
+-------------
+
+Die mit dem Spiel gelieferten Bilder sind folgendermaßen benannt:
+
+    portrait01w_001.webp     Region 01, Frauen, erstes Bild
+    portrait19t_002.webp     Region 19, trans, zweites Bild
+
+Die Nummerierung beginnt in jedem Ordner von vorn. Die Regions- und
+Geschlechtscodes im Namen verhindern Kollisionen, wenn ein Bild an einen anderen
+Ort verschoben wird.
+
+Das Spiel liest keinerlei Informationen aus dem Dateinamen. Du kannst deine
+Dateien beliebig benennen; dieses Schema dient nur dazu, die Ordner ordentlich
+zu halten.
+
+Lege die Namen einmal fest und ändere sie danach nicht mehr. Das Spiel speichert
+den vollständigen Pfad jedes Bildes. Das Umbenennen einer bereits verwendeten
+Datei hat daher zwei Folgen:
+
+  - Jede Figur, die dieses Bild verwendet, verliert es. Beim nächsten Laden des
+    Spielstands erhält sie nach den üblichen Regeln ein anderes Bild und bleibt
+    daher nicht grau. Das zuvor ausgewählte Bild und der dafür eingestellte
+    Ausschnitt gehen jedoch verloren.
+
+  - Die umbenannte Datei gilt als Bild, das das Spiel noch nie gesehen hat. Ihr
+    Nutzungszähler beginnt bei null. Damit gehört sie zu den am seltensten
+    verwendeten Bildern des Ordners und wird mit ungewöhnlich hoher
+    Wahrscheinlichkeit einer der nächsten erstellten Figuren zugewiesen.
+
+Das Löschen eines Bildes hat denselben Effekt, ebenso das Verschieben in einen
+anderen Ordner. Das Spiel meldet keinen Fehler; die Figur erhält beim nächsten
+Laden des Spielstands einen Ersatz.
+
+Ein Fall wird bewusst anders behandelt: Fehlt der gesamte Ordner portraits,
+weil er verschoben oder nicht neben das Spiel kopiert wurde, erhält niemand
+einen Ersatz, da das Spiel kein Bild zuweisen kann. Die Figuren zeigen graue
+Rechtecke und erhalten ihre Bilder zurück, sobald sich der Ordner wieder am
+richtigen Ort befindet.
+
+
+7. NACH DEM HINZUFÜGEN
+----------------------
+
+Starte das Spiel neu. Die Ordnerstruktur wird nur einmal beim Start eingelesen.
+Bilder, die bei laufendem Spiel hinzugefügt werden, erscheinen daher erst nach
+dem nächsten Start.
+
+Neue Bilder werden bei den nächsten erstellten Figuren deutlich bevorzugt,
+ohne die Auswahl vollständig zu dominieren. Dadurch gelangen sie nach und nach
+in den Bestand, anstatt alle auf einmal aufzutauchen.

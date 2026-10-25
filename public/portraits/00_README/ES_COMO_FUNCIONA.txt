@@ -1,0 +1,192 @@
+﻿CÓMO FUNCIONA EL SISTEMA DE IMÁGENES DE PERSONAJES
+==================================================
+
+Cada personaje del juego utiliza una imagen de este árbol de carpetas. Nada más
+determina su aspecto: el juego no reconoce lo que muestra un archivo de imagen.
+Por tanto, una imagen queda vinculada a un personaje únicamente por su
+ubicación.
+
+Si solo quieres añadir imágenes, consulta ES_ANADIR_IMAGENES.txt. Este archivo
+explica cómo las utiliza el juego.
+
+English version: 00_EN_HOW_IT_WORKS.txt
+Polska wersja: PL_JAK_TO_DZIALA.txt
+Deutsche Version: DE_WIE_ES_FUNKTIONIERT.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Version française : FR_COMMENT_CA_MARCHE.txt
+Versão em português: PT_COMO_FUNCIONA.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+Türkçe sürüm: TR_NASIL_CALISIR.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+Versione italiana: IT_COME_FUNZIONA.txt
+
+
+1. DÓNDE SE ENCUENTRA ESTA CARPETA
+----------------------------------
+
+En la versión publicada del juego, esta carpeta se encuentra junto al archivo
+.exe, igual que la carpeta "saves". Es intencionado: aquí puedes añadir tus
+propias imágenes a un juego instalado sin modificar los archivos incluidos con
+él.
+
+El contenido de esta carpeta no se empaqueta dentro del juego, por lo que
+siempre puedes editarlo libremente.
+
+
+2. ESTRUCTURA DE CARPETAS
+-------------------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        other/
+
+Las primeras catorce carpetas representan las regiones del mundo de las que
+puede proceder un personaje. Las siete siguientes representan grupos apátridas
+dispersos por varias regiones, por lo que la región por sí sola dice poco sobre
+su aspecto. La última carpeta se explica en el apartado 6.
+
+El número situado al principio del nombre de una carpeta solo establece su
+orden. Lo importante es la parte que sigue al número: debe coincidir con una
+región o un origen reconocido por el juego. Cualquier otra carpeta se ignora
+por completo: no aparece en la lista y nunca se utiliza.
+
+Cada una de estas carpetas contiene las mismas tres subcarpetas: women, men
+y trans.
+
+
+3. CÓMO OBTIENE SU IMAGEN UN PERSONAJE
+--------------------------------------
+
+Al crear un personaje, el juego comprueba los siguientes lugares en orden y se
+detiene en el primero que contiene una imagen adecuada:
+
+    1. La carpeta correspondiente a su origen, si existe.
+       Para eso sirven las carpetas de grupos apátridas. Una gitana nacida
+       en Alemania obtiene su imagen de 15_roma, no de la región europea.
+
+    2. La carpeta de la región de la que procede.
+       Lo decide su país de origen, no el mercado en el que apareció. Una
+       nigeriana comprada en Europa sigue obteniendo su imagen de
+       07_west_africa.
+
+    3. Cualquier carpeta reconocida de región u origen, siempre que
+       coincida el género. Es la medida de seguridad para una región que todavía
+       no contiene imágenes adecuadas.
+
+    4. Ninguna imagen: el personaje aparece como un rectángulo gris.
+
+En cada paso, un personaje trans comprueba primero el subdirectorio trans/. Si
+está vacío, comprueba la carpeta de su sexo registrado antes de pasar al
+siguiente paso.
+
+
+4. POR QUÉ NO APARECE SIEMPRE LA MISMA CARA
+-------------------------------------------
+
+El juego no elige imágenes de forma completamente aleatoria. Cuenta cuántos
+personajes de tu plantilla actual utilizan ya cada imagen de la carpeta, las
+ordena según esa cifra y favorece las menos utilizadas. En total, el 40 % de las
+imágenes menos utilizadas recibe el 65 % de la probabilidad de selección; las
+demás se reparten el resto.
+
+De ello se derivan dos cosas:
+
+  - Si hay más imágenes que personajes, las repeticiones serán poco frecuentes.
+  - Si hay menos imágenes que personajes, las repeticiones son inevitables,
+    pero se distribuyen de manera uniforme. Una cara no aparece veinte veces
+    mientras otra no se utiliza nunca.
+
+El contador de uso no se guarda por separado. El juego lo calcula a partir de
+los personajes que posees en ese momento, por lo que vender o perder un
+personaje reduce automáticamente el uso de su imagen. Las imágenes nuevas de
+una carpeta muy utilizada se priorizan claramente, pero no llegan a asignarse
+a todos los personajes nuevos.
+
+
+5. LA TARJETA, EL ENCUADRE Y LA VISTA COMPLETA
+----------------------------------------------
+
+El marco de la imagen en la tarjeta de un personaje es alto y estrecho, y se
+vuelve más alto al ampliar la ventana. La imagen se escala hasta cubrir el
+marco; cualquier parte que sobresalga queda recortada.
+
+Por tanto, la tarjeta suele mostrar una sección recortada de la imagen en lugar
+de la imagen completa. Hay dos formas de solucionarlo:
+
+  - El botón para ajustar el encuadre permite elegir qué parte de la imagen
+    muestra la tarjeta, de forma independiente para cada personaje.
+  - Al hacer clic en la imagen se abre la vista completa y sin recortes en su
+    resolución original. Si no cabe en la pantalla, se reduce para ajustarla.
+
+El juego no amplía la imagen de origen antes de mostrarla. Si el marco es mayor,
+la interfaz debe estirarla, lo que hace que se vea borrosa.
+
+
+6. LA CARPETA "other"
+---------------------
+
+Esta carpeta está destinada a imágenes que solo deben asignarse manualmente. No
+participa en la selección automática, por lo que un personaje generado nunca
+recibe ninguna de sus imágenes. El selector la muestra como cualquier otra
+carpeta y permite asignar sus imágenes manualmente.
+
+Utilízala cuando hayas preparado una imagen para un personaje concreto y no
+quieras que se asigne a nadie más.
+
+
+7. ELEGIR UNA IMAGEN MANUALMENTE
+--------------------------------
+
+Al pasar el cursor sobre la imagen de una tarjeta de personaje aparece una
+pequeña barra con dos botones. Uno ajusta el encuadre actual y el otro abre el
+selector de imágenes.
+
+El selector se abre en la carpeta del personaje, con su género ya seleccionado.
+Las carpetas sin imágenes para ese género aparecen atenuadas. Al hacer clic en
+una miniatura se selecciona; la lupa de la esquina abre la vista completa y el
+botón Aplicar asigna la imagen. Nada cambia hasta que confirmas la selección.
+
+Al cambiar la imagen de un personaje se elimina el encuadre establecido para la
+anterior, ya que dicho encuadre pertenece a la imagen para la que se creó.
+
+
+8. CUANDO FALTA UNA IMAGEN
+--------------------------
+
+La imagen de un personaje se guarda como una ruta de archivo. Si eliminas el
+archivo, cambias su nombre o lo mueves a otra carpeta, la ruta guardada deja de
+apuntar a él.
+
+Al cargar una partida, el juego detecta estos casos y elige un sustituto para
+cada personaje afectado según las reglas habituales. Así aparece una imagen
+nueva en lugar del rectángulo gris, mientras que la ponderación normal por uso
+sigue limitando las repeticiones en la plantilla. También se elimina el
+encuadre de la imagen ausente, ya que se creó para una imagen que ya no existe.
+
+Los personajes a los que nunca se asignó una imagen permanecen sin cambios. No
+han perdido nada, y darles una cara al cargar la partida sería un cambio que
+nadie solicitó.
+
+Si falta toda la carpeta portraits, el juego no sustituye nada. Conserva las
+rutas guardadas, por lo que las imágenes originales vuelven cuando se restaura
+la carpeta, sin modificar la partida de forma permanente.
+
+
+9. CUÁNDO SE DETECTAN LOS CAMBIOS
+---------------------------------
+
+El juego lee la estructura de carpetas una sola vez al iniciarse. Las imágenes
+añadidas mientras se ejecuta no aparecen hasta después de reiniciarlo.

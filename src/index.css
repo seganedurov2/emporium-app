@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* No content may escape the screen edges horizontally —
+   wide tables and cards scroll inside their own containers. */
+html,
+body,
+#root {
+  overflow-x: hidden;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    /* Ensure Cyrillic (Russian raid-event labels) and other scripts render
+       even when the default sans stack lacks those glyphs. */
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue",
+      Arial, "Noto Sans", "Noto Sans CJK", sans-serif;
+  }
+}
+
+/* Telegram Mini App: exact WebApp viewport height and iOS bottom safe area. */
+.tg-app-shell {
+  min-height: var(--tg-viewport-height, 100dvh);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

@@ -1,0 +1,177 @@
+﻿DODAWANIE WŁASNYCH ZDJĘĆ
+========================
+
+W skrócie: wrzuć pliki graficzne do odpowiedniego folderu regionu i płci,
+uruchom grę ponownie — i gotowe. Poniżej znajdziesz wskazówki, dzięki którym
+zdjęcia będą dobrze wyglądać.
+
+Sposób, w jaki gra wybiera zdjęcie dla postaci, opisano w pliku
+PL_JAK_TO_DZIALA.txt.
+
+English version: 00_EN_ADDING_PICTURES.txt
+Deutsche Version: DE_BILDER_HINZUFUEGEN.txt
+Versión española: ES_ANADIR_IMAGENES.txt
+Русская версия: RU_DOBAVLENIE_IZOBRAZHENIY.txt
+简体中文版：ZH_CN_TIANJIA_ZHAOPIAN.txt
+日本語版：JA_SHASHIN_NO_TSUIKA.txt
+Version française : FR_AJOUTER_DES_PHOTOS.txt
+Versão em português: PT_ADICIONAR_FOTOS.txt
+Українська версія: UK_DODAVANNIA_ZOBRAZHEN.txt
+النسخة العربية: AR_IDAFAT_ALSUWAR.txt
+한국어 버전: KO_SAJIN_CHUGA.txt
+Türkçe sürüm: TR_RESIM_EKLEME.txt
+ฉบับภาษาไทย: TH_PHOEM_RUPPHAP.txt
+Versione italiana: IT_AGGIUNGERE_IMMAGINI.txt
+
+
+1. GDZIE JE WRZUCAĆ
+-------------------
+
+Wybierz folder regionu, z którego ma pochodzić postać, a następnie folder jej
+płci:
+
+    portraits/03_western_europe_nordics/women/
+
+Nie twórz własnych folderów. Gra rozpoznaje tylko foldery nazwane zgodnie ze
+znanym jej regionem lub pochodzeniem. Wszystkie inne są całkowicie ignorowane,
+więc umieszczone w nich zdjęcia nigdy się nie pojawią.
+
+Folder "other" służy do przechowywania zdjęć przypisywanych wyłącznie ręcznie.
+Nic z niego nie jest wybierane losowo, dlatego wygenerowana postać nigdy nie
+otrzyma żadnego z tych zdjęć. Każde z nich musisz przypisać samodzielnie
+w przeglądarce; w przeciwnym razie nie zostanie użyte.
+
+
+2. FORMATY
+----------
+
+Obsługiwane:    .webp   .png   .jpg   .jpeg
+Ignorowane:     wszystkie pozostałe — .bmp, .gif, .tiff i tak dalej
+
+Ignorowany plik jest dla gry niewidoczny: nie pojawia się na liście i nigdy nie
+zostaje użyty. Plik z obsługiwanym rozszerzeniem, ale uszkodzoną zawartością,
+pojawia się w przeglądarce jako szary kafelek opisany jego nazwą.
+
+
+3. WEBP: LOSSY, JAKOŚĆ 90
+-------------------------
+
+To zalecany format biblioteki i warto wiedzieć dlaczego.
+
+Przy jakości 90 obraz WebP jest wizualnie nieodróżnialny od oryginału podczas
+zwykłego wyświetlania w grze, a zajmuje ułamek jego pierwotnego rozmiaru.
+Konwersja zdjęć dołączonych do gry zmniejszyła ich łączny rozmiar z 22,5 MB do
+7,2 MB — mniej więcej do jednej trzeciej — bez widocznej różnicy w żadnym
+rozmiarze używanym przez grę.
+
+Takie oszczędności mają znaczenie w całej bibliotece, a nie przy pojedynczym
+pliku. Przy rozmiarach zalecanych niżej portret w WebP q90 waży średnio poniżej
+90 KB, więc tysiąc takich zdjęć zajmuje około 85 MB. Ten sam tysiąc w PNG
+zajmowałby mniej więcej gigabajt.
+
+Nie koduj ponownie zdjęcia, które już jest zapisane jako WebP. Przy każdym
+ponownym zapisie w formacie lossy obraz traci nieco jakości, a drugie
+przejście nie przynosi żadnych korzyści.
+
+Ustawienie jakości powyżej 90 prawie nie poprawia obrazu, ale szybko zwiększa
+rozmiar pliku. Poniżej około 80 na skórze i włosach zaczynają być widoczne
+artefakty kompresji, które szczególnie przeszkadzają w portretach.
+
+
+4. ROZMIAR
+----------
+
+Zalecany:           około 768 x 1152 lub zbliżona rozdzielczość pionowa
+Sensowne minimum:   około 1000 pikseli wysokości
+Maksimum:           brak sztywnego limitu; duże pliki zużywają więcej pamięci
+
+Gra nie skaluje w górę obrazu źródłowego przed jego wyświetleniem. Jeśli plik
+jest mniejszy od ramki, interfejs musi go rozciągnąć, aby wypełnił dostępne
+miejsce, przez co wygląda nieostro. Zdjęcie 100 x 150 będzie na przykład mocno
+rozmyte na karcie postaci.
+
+Większe pliki działają, ale powyżej pewnego rozmiaru dodatkowe szczegóły
+przestają być widoczne. Największym trybem wyświetlania jest pełnoekranowy
+podgląd; na ekranie 1080p obszar na zdjęcie ma niecałe 1000 pikseli wysokości.
+Większe obrazy są pomniejszane, ale ich dekodowanie nadal zajmuje dodatkowy czas
+i pamięć.
+
+
+5. KSZTAŁT
+----------
+
+Używaj orientacji pionowej. Zdjęcie wyższe i węższe sprawdza się lepiej niż
+kwadratowe.
+
+Ramka portretu na karcie postaci jest wysoka i wąska, a w miarę powiększania
+okna staje się wyższa. Zdjęcie jest skalowane tak, aby ją wypełniło, a każdy
+wystający fragment zostaje przycięty. Dokładny kadr zależy zarówno od proporcji
+zdjęcia, jak i od bieżącej wysokości karty. Przy minimalnym rozmiarze karty
+wygląda to mniej więcej tak:
+
+    600 x 2000   bardzo wysokie   przycięte u góry i u dołu
+    768 x 1152   zalecane         około 10% szerokości przycięte
+    800 x 800    kwadratowe       około 40% szerokości przycięte
+    1200 x 600   poziome          około 70% szerokości przycięte
+
+Im wyższa jest karta, tym więcej obrazu zostaje przycięte po bokach. Przy mniej
+więcej dwukrotnej wysokości minimalnej trzy ostatnie przykłady tracą odpowiednio
+około 55%, 70% i 85% szerokości.
+
+Każdy z tych wariantów zadziała. Zdjęcie poziome również jest obsługiwane, ale
+karta pokaże tylko jego wąski, pionowy fragment. Kliknięcie portretu otwiera cały
+obraz, a przycisk kadrowania pozwala wybrać fragment wyświetlany na karcie.
+
+Uwzględnij to podczas komponowania obrazu: najważniejsze elementy umieść blisko
+środka i nie zostawiaj niczego istotnego przy lewej lub prawej krawędzi.
+
+
+6. NAZWY PLIKÓW
+---------------
+
+Zdjęcia dołączone do gry mają następujące nazwy:
+
+    portrait01w_001.webp     region 01, kobiety, pierwsze zdjęcie
+    portrait19t_002.webp     region 19, trans, drugie zdjęcie
+
+Numeracja zaczyna się od nowa w każdym folderze, a kody regionu i płci w nazwie
+zapobiegają kolizjom, jeśli zdjęcie zostanie przeniesione w inne miejsce.
+
+Gra nie odczytuje żadnych informacji z nazwy pliku. Możesz nazywać pliki
+dowolnie — ten schemat służy wyłącznie do utrzymania porządku w folderach.
+
+Ustal nazwy raz, a potem ich nie zmieniaj. Gra przechowuje pełną ścieżkę do
+każdego zdjęcia, więc zmiana nazwy pliku używanego już przez postacie ma dwa
+skutki:
+
+  - Każda postać korzystająca z tego zdjęcia je traci. Przy następnym wczytaniu
+    zapisu otrzyma inne zdjęcie zgodnie ze zwykłymi zasadami, więc nie pozostanie
+    szara. Wybrane wcześniej zdjęcie zniknie jednak razem z ustawionym dla niego
+    kadrem.
+
+  - Plik po zmianie nazwy jest traktowany jak zdjęcie, którego gra jeszcze nie
+    widziała. Jego licznik użycia zaczyna się od zera, więc staje się ono jednym
+    z najrzadziej używanych zdjęć w folderze i ma wyjątkowo dużą szansę trafić do
+    kolejnych tworzonych postaci.
+
+Usunięcie zdjęcia działa tak samo, podobnie jak przeniesienie go do innego
+folderu. Gra nie zgłasza błędu, a postać otrzymuje zdjęcie zastępcze przy
+następnym wczytaniu zapisu.
+
+Jeden przypadek jest celowo obsługiwany inaczej: jeśli zniknie cały folder
+portraits — zostanie przeniesiony lub nie będzie skopiowany obok gry — nikt nie
+otrzyma zdjęcia zastępczego, ponieważ gra nie ma czego przypisać. Postacie
+pokażą szare prostokąty i odzyskają swoje zdjęcia, gdy folder wróci na właściwe
+miejsce.
+
+
+7. PO DODANIU ZDJĘĆ
+-------------------
+
+Uruchom grę ponownie. Struktura folderów jest odczytywana tylko raz podczas
+uruchamiania, więc zdjęcia dodane w trakcie działania gry pojawią się dopiero po
+jej ponownym uruchomieniu.
+
+Nowe zdjęcia mają wyraźnie większą szansę trafić do kolejnych tworzonych
+postaci, ale nie dominują całkowicie. Dzięki temu nowa partia stopniowo trafia do
+składu zamiast pojawiać się w nim od razu w całości.

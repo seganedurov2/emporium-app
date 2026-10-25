@@ -1,0 +1,185 @@
+﻿AJOUTER VOS PROPRES PHOTOS
+==========================
+
+En bref : placez les fichiers image dans le dossier de région et de genre
+approprié, redémarrez le jeu et c'est terminé. La suite explique comment obtenir
+un bon rendu.
+
+Pour savoir comment le jeu décide quelle photo reçoit un personnage, consultez
+FR_COMMENT_CA_MARCHE.txt.
+
+English version: 00_EN_ADDING_PICTURES.txt
+Polska wersja: PL_DODAWANIE_ZDJEC.txt
+Deutsche Version: DE_BILDER_HINZUFUEGEN.txt
+Versión española: ES_ANADIR_IMAGENES.txt
+Русская версия: RU_DOBAVLENIE_IZOBRAZHENIY.txt
+简体中文版：ZH_CN_TIANJIA_ZHAOPIAN.txt
+日本語版：JA_SHASHIN_NO_TSUIKA.txt
+Versão em português: PT_ADICIONAR_FOTOS.txt
+Українська версія: UK_DODAVANNIA_ZOBRAZHEN.txt
+النسخة العربية: AR_IDAFAT_ALSUWAR.txt
+한국어 버전: KO_SAJIN_CHUGA.txt
+Türkçe sürüm: TR_RESIM_EKLEME.txt
+ฉบับภาษาไทย: TH_PHOEM_RUPPHAP.txt
+Versione italiana: IT_AGGIUNGERE_IMMAGINI.txt
+
+
+1. OÙ LES PLACER
+----------------
+
+Choisissez d'abord le dossier de la région dont le personnage doit être
+originaire, puis le dossier de son genre :
+
+    portraits/03_western_europe_nordics/women/
+
+Ne créez pas vos propres dossiers. Le jeu reconnaît uniquement ceux dont le nom
+correspond à une région ou à une origine connue. Tous les autres sont
+entièrement ignorés, de sorte que les photos qu'ils contiennent n'apparaîtront
+jamais.
+
+Le dossier "other" est destiné aux photos qui doivent être attribuées uniquement
+à la main. Rien de ce qu'il contient n'est choisi au hasard : un personnage
+généré ne recevra donc jamais l'une de ces photos. Vous devez attribuer chacune
+d'elles dans le sélecteur, sans quoi elle ne sera pas utilisée.
+
+
+2. FORMATS
+----------
+
+Pris en charge :    .webp   .png   .jpg   .jpeg
+Ignorés :           tous les autres — .bmp, .gif, .tiff, etc.
+
+Un fichier ignoré est invisible pour le jeu : il n'apparaît pas dans la liste
+et n'est jamais utilisé. Un fichier dont l'extension est prise en charge, mais
+dont le contenu est endommagé, apparaît dans le sélecteur sous forme d'une
+vignette grise portant son nom.
+
+
+3. WEBP : LOSSY, QUALITÉ 90
+---------------------------
+
+C'est le format recommandé pour la bibliothèque, et il est utile d'en connaître
+la raison.
+
+Une photo WebP de qualité 90 est visuellement impossible à distinguer de
+l'original lors d'un affichage normal dans le jeu, tout en n'occupant qu'une
+fraction de sa taille initiale. La conversion a réduit la taille totale des
+photos fournies avec le jeu de 22,5 MB à 7,2 MB, soit environ un tiers, sans
+différence visible à aucune des tailles utilisées par le jeu.
+
+Cette économie compte à l'échelle d'une bibliothèque entière, et non d'un seul
+fichier. Aux dimensions recommandées ci-dessous, une photo WebP q90 pèse en
+moyenne moins de 90 KB. Mille photos occupent donc environ 85 MB ; les mêmes
+mille photos en PNG occuperaient approximativement 1 GB.
+
+Ne réencodez pas une photo qui est déjà au format WebP. Chaque nouvel encodage
+dans un format lossy lui fait perdre un peu de qualité, sans qu'un second
+passage n'apporte le moindre avantage.
+
+Une qualité supérieure à 90 n'améliore presque pas l'image, mais augmente
+rapidement la taille du fichier. En dessous d'environ 80, des artefacts de
+compression commencent à apparaître sur la peau et les cheveux, où ils sont
+particulièrement gênants dans un portrait.
+
+
+4. TAILLE
+---------
+
+Recommandé :       environ 768 x 1152 ou une résolution verticale similaire
+Minimum utile :    environ 1000 pixels de haut
+Maximum :          aucune limite stricte ; les gros fichiers utilisent plus de
+                   mémoire
+
+Le jeu n'agrandit pas l'image source avant de l'afficher. Si un fichier est plus
+petit que le cadre, l'interface doit l'étirer pour remplir l'espace, ce qui le
+rend flou. Une photo de 100 x 150 sera par exemple très floue sur une fiche de
+personnage.
+
+Les fichiers plus grands fonctionnent, mais au-delà d'une certaine taille, les
+détails supplémentaires ne sont plus visibles. L'affichage plein écran est le
+plus grand mode de présentation ; sur un écran 1080p, la hauteur disponible est
+légèrement inférieure à 1000 pixels. Les images plus grandes sont réduites, mais
+leur décodage nécessite toujours plus de temps et de mémoire.
+
+
+5. PROPORTIONS
+--------------
+
+Utilisez une orientation verticale. Une photo plus haute et plus étroite donne
+un meilleur résultat qu'une photo carrée.
+
+Le cadre de la photo sur une fiche de personnage est haut et étroit, et devient
+plus haut lorsque la fenêtre est agrandie. La photo est mise à l'échelle pour
+couvrir le cadre ; toute partie qui dépasse est rognée. Le cadrage exact dépend
+à la fois des proportions de la photo et de la hauteur actuelle de la fiche. À
+la taille minimale de la fiche, le résultat est approximativement le suivant :
+
+    600 x 2000   très haute    rognée en haut et en bas
+    768 x 1152   recommandée   environ 10 % de la largeur rognée
+    800 x 800    carrée        environ 40 % de la largeur rognée
+    1200 x 600   horizontale   environ 70 % de la largeur rognée
+
+Plus la fiche est haute, plus l'image est rognée sur les côtés. À environ deux
+fois la hauteur minimale, les trois derniers exemples perdent respectivement
+environ 55 %, 70 % et 85 % de leur largeur.
+
+Toutes ces proportions fonctionnent. Une photo horizontale est également prise
+en charge, mais la fiche n'en affiche qu'une étroite bande verticale. Cliquer
+sur la photo ouvre l'affichage complet. Le bouton de cadrage permet de choisir
+la partie visible sur la fiche.
+
+Tenez-en compte lors de la composition : placez les éléments importants près du
+centre et ne laissez rien d'essentiel sur les bords gauche ou droit.
+
+
+6. NOMS DE FICHIERS
+-------------------
+
+Les photos fournies avec le jeu sont nommées comme suit :
+
+    portrait01w_001.webp     région 01, femmes, première photo
+    portrait19t_002.webp     région 19, trans, deuxième photo
+
+La numérotation recommence dans chaque dossier. Les codes de région et de genre
+figurant dans le nom évitent les collisions si une photo est déplacée ailleurs.
+
+Le jeu ne tire aucune information du nom du fichier. Vous pouvez nommer vos
+fichiers comme vous le souhaitez ; ce schéma sert uniquement à maintenir les
+dossiers en ordre.
+
+Choisissez les noms une fois, puis ne les modifiez plus. Le jeu enregistre le
+chemin complet de chaque photo. Renommer un fichier déjà utilisé par des
+personnages a donc deux conséquences :
+
+  - Tous les personnages qui utilisent cette photo la perdent. Au prochain
+    chargement de la sauvegarde, ils reçoivent une autre photo selon les règles
+    habituelles et ne restent donc pas gris. La photo précédemment choisie et
+    son cadrage sont toutefois perdus.
+
+  - Le fichier renommé est considéré comme une photo que le jeu n'a jamais vue.
+    Son compteur d'utilisation commence à zéro ; elle fait donc partie des
+    photos les moins utilisées du dossier et a une probabilité anormalement
+    élevée d'être attribuée aux prochains personnages créés.
+
+Supprimer une photo produit le même effet, tout comme la déplacer vers un autre
+dossier. Le jeu ne signale aucune erreur ; le personnage reçoit une photo de
+remplacement au prochain chargement de la sauvegarde.
+
+Un cas est volontairement traité différemment : si tout le dossier portraits
+est absent parce qu'il a été déplacé ou n'a pas été copié à côté du jeu,
+personne ne reçoit de photo de remplacement, car le jeu n'a rien à attribuer.
+Les personnages apparaissent sous forme de rectangles gris et récupèrent leurs
+photos dès que le dossier est remis à sa place.
+
+
+7. APRÈS L'AJOUT
+----------------
+
+Redémarrez le jeu. L'arborescence des dossiers n'est lue qu'une seule fois au
+démarrage ; les photos ajoutées pendant l'exécution n'apparaîtront donc qu'au
+prochain lancement.
+
+Les nouvelles photos ont beaucoup plus de chances d'être attribuées aux
+prochains personnages créés, mais ne dominent pas entièrement la sélection. Un
+nouveau lot se répartit ainsi progressivement dans l'effectif au lieu
+d'apparaître en entier d'un seul coup.

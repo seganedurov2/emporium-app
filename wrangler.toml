@@ -1,0 +1,20 @@
+# Cloudflare configuration for Emporium.
+#
+# The game is a static Vite build deployed to Cloudflare
+# Pages. 3D portrait models (public/portraits3d/) are
+# large binary assets: they are uploaded to a Cloudflare
+# R2 bucket and served from R2, keeping the Pages deploy
+# small. Manage the bucket with:
+#
+#   npm run r2:setup   create + verify the R2 bucket
+#   npm run r2:sync    upload public/portraits3d/ to R2
+#
+# Both tools read the bucket name from --bucket, the
+# EMPORIUM_R2_BUCKET env var, or the var below.
+
+name = "emporium"
+compatibility_date = "2026-10-12"
+
+[vars]
+# Default R2 bucket holding the 3D portrait models.
+EMPORIUM_R2_BUCKET = "emporium-portraits3d"

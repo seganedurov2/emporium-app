@@ -1,0 +1,183 @@
+﻿PORTRE SİSTEMİ NASIL ÇALIŞIR
+============================
+
+Oyundaki her karakter bu klasör ağacından bir resim kullanır. Görünüşünü başka
+hiçbir şey belirlemez: oyun bir resmin içeriğini anlayamaz, dolayısıyla resimle
+karakter arasındaki tek bağlantı klasör ağacındaki konumudur.
+
+Yalnızca resim eklemek istiyorsanız TR_RESIM_EKLEME.txt dosyasını okuyun. Bu
+dosya oyunun resimleri nasıl kullandığını açıklar.
+
+English version: 00_EN_HOW_IT_WORKS.txt
+Polska wersja: PL_JAK_TO_DZIALA.txt
+Deutsche Version: DE_WIE_ES_FUNKTIONIERT.txt
+Versión española: ES_COMO_FUNCIONA.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Version française : FR_COMMENT_CA_MARCHE.txt
+Versão em português: PT_COMO_FUNCIONA.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+Versione italiana: IT_COME_FUNZIONA.txt
+
+
+1. BU KLASÖRÜN KONUMU
+---------------------
+
+Yayımlanmış bir sürümde bu klasör, "saves" klasörü gibi oyunun .exe dosyasının
+yanında bulunur. Bu bilinçli bir seçimdir: paketlenmiş dosyaları değiştirmeden
+kurulu bir oyuna kendi resimlerinizi ekleyebileceğiniz tek yer burasıdır.
+
+Buradaki hiçbir şey oyunun içine paketlenmez, bu nedenle klasörü her zaman
+özgürce düzenleyebilirsiniz.
+
+
+2. KLASÖR AĞACI
+---------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        other/
+
+İlk on dört klasör, bir karakterin gelebileceği dünya bölgelerini temsil eder.
+Sonraki yedi klasör kendi devleti olmayan halkların kökenlerini temsil eder. Bu
+halklar birçok bölgeye dağılmış olduğundan yalnızca bölge, görünüşleri hakkında
+çok az bilgi verir. Son klasör 6. bölümde açıklanmıştır.
+
+Klasör adının başındaki sayı yalnızca listeyi sıralı tutar. Sayıdan sonraki
+bölüm oyunun tanıdığı bir bölge veya kökenle eşleşmelidir. Diğer tüm klasörler
+tamamen yok sayılır: listelenmez ve hiçbir zaman kullanılmaz.
+
+Her grup klasöründe aynı üç alt klasör bulunur: women, men ve trans.
+
+
+3. BİR KARAKTER RESMİNİ NASIL ALIR
+----------------------------------
+
+Bir karakter oluşturulduğunda oyun aşağıdaki konumları sırayla kontrol eder ve
+uygun bir resim içeren ilk konumda durur:
+
+    1. Varsa karakterin kökeninin adını taşıyan klasör.
+       Kendi devleti olmayan halkların klasörleri bunun içindir. Almanya'da
+       doğmuş bir Roman kadın resmini Avrupa bölgesinden değil, 15_roma
+       klasöründen alır.
+
+    2. Karakterin geldiği bölgenin klasörü.
+       Bunu karakterin göründüğü pazar değil, köken ülkesi belirler. Avrupa'da
+       satın alınan Nijeryalı bir kadın yine resmini 07_west_africa
+       klasöründen alır.
+
+    3. Cinsiyet eşleştiği sürece oyunun tanıdığı herhangi bir grup klasörü.
+       Henüz doldurmadığınız bir bölge için güvenlik ağı görevi görür.
+
+    4. Hiçbiri — karakter gri bir dikdörtgen olarak gösterilir.
+
+Her adımda trans bir karakter önce trans/ klasörünü kontrol eder. Klasör boşsa
+bir sonraki adıma geçmeden önce kayıtlı cinsiyetine ait klasörü kontrol eder.
+
+
+4. AYNI YÜZÜN SÜREKLİ GERİ GELMEMESİNİN NEDENİ
+----------------------------------------------
+
+Resimler gözü kapalı seçilmez. Oyun, mevcut karakter listenizde her resmi kaç
+karakterin kullandığını sayar, kullanım sayısına göre sıralar ve seçimi en az
+kullanılanlara doğru ağırlıklandırır. Bir klasördeki en az kullanılan %40'lık
+bölüm seçilme olasılığının %65'ini alır; geri kalanı kalan olasılığı paylaşır.
+
+Bunun iki sonucu vardır:
+
+  - Karakterlerden daha fazla resim varsa tekrar görmeniz pek olası değildir.
+  - Karakterlerden daha az resim varsa tekrarlar kaçınılmazdır, ancak eşit
+    dağılır. Bir yüz yirmi kez görünürken bir başkası hiç görünmeden kalmaz.
+
+Kullanım sayısı ayrı olarak saklanmaz. O anda sahip olduğunuz karakterlerden
+hesaplanır. Bu nedenle bir karakteri satmak veya kaybetmek, resmini otomatik
+olarak boşa çıkarır. Yoğun kullanılan bir klasöre eklenen yeni resimler güçlü
+bir öncelik kazanır, ancak her yeni karaktere arka arkaya atanmaz.
+
+
+5. KART, KIRPMA VE TAM GÖRÜNÜM
+------------------------------
+
+Karakter kartındaki portre çerçevesi uzun ve dardır, ayrıca pencereyle birlikte
+uzar. Resim çerçeveyi kaplayana kadar ölçeklenir ve taşan bölümler kırpılır.
+
+Bu nedenle kart genellikle resmin tamamı yerine kırpılmış bir bölümünü gösterir.
+Bunu ayarlamanın iki yolu vardır:
+
+  - Portredeki kırpma düğmesi, kartta gösterilecek bölümü her karakter için ayrı
+    ayrı seçmenizi sağlar.
+  - Portreye tıklamak kırpılmamış resmi özgün boyutunda açar veya gerekirse
+    ekrana sığacak şekilde küçültür.
+
+Oyun kaynak resmi göstermeden önce büyütmez; bu nedenle küçük bir dosya portre
+çerçevesini dolduracak şekilde gerildiğinde bulanık görünür.
+
+
+6. "other" KLASÖRÜ
+------------------
+
+Bu klasörü yalnızca elle atanması gereken resimler için kullanın. Otomatik
+seçime hiçbir zaman katılmaz, dolayısıyla oluşturulan bir karakter buradaki
+resimlerden birini alamaz. Seçim penceresi bu klasörü diğerleri gibi gösterir
+ve içindeki bir resmi kendiniz atamanıza olanak verir.
+
+Belirli bir karakter için resim hazırladıysanız ve başka birine atanmasını
+istemiyorsanız bu klasörü kullanın.
+
+
+7. ELLE RESİM SEÇME
+-------------------
+
+Karakter kartındaki portrenin üzerine geldiğinizde iki düğmeli küçük bir çubuk
+görünür: düğmelerden biri geçerli resmi yeniden çerçevelerken diğeri resim
+kitaplığını açar.
+
+Kitaplık karakterin ait olduğu klasörde açılır ve cinsiyeti önceden seçilmiştir.
+Bu cinsiyet için resim içermeyen klasörler soluk gösterilir. Küçük bir resme
+tıklamak onu seçer, köşesindeki büyüteç tam resmi gösterir ve onay düğmesi
+seçimi uygular. Onaylayana kadar hiçbir şey değişmez.
+
+Karakterin resmini değiştirmek eski resim için ayarladığınız kırpmayı kaldırır;
+çünkü kırpma, oluşturulduğu resme aittir.
+
+
+8. BİR RESİM KAYBOLDUĞUNDA
+--------------------------
+
+Karakterin resmi bir dosya yolu olarak saklanır. Dosyayı siler, yeniden
+adlandırır veya başka bir klasöre taşırsanız kayıtlı yol artık hiçbir şeyi
+göstermez.
+
+Bir kayıt yüklendiğinde oyun bunu kontrol eder ve etkilenen her karakter için
+normal kurallarla yeni bir resim seçer. Bu, gri bir yer tutucuyu önlerken normal
+kullanım ağırlığı da karakter listesindeki tekrarları sınırlamayı sürdürür.
+Kayıp resim için ayarlanmış çerçeveleme, artık var olmayan bir resim için
+yapıldığından kaldırılır.
+
+Daha önce hiç resmi olmayan karakterler olduğu gibi bırakılır. Bu durumda hiçbir
+şey kaybolmamıştır. Yükleme sırasında onlara bir yüz vermek ise kimsenin
+istemediği bir değişiklik olurdu.
+
+portraits klasörünün tamamı yoksa hiçbir resim değiştirilmez. Kayıtlı yollar
+korunur. Klasörü geri koymak kayıt dosyasında kalıcı hasara yol açmak yerine
+özgün resimleri geri getirir.
+
+
+9. DEĞİŞİKLİKLERİN ALGILANMA ZAMANI
+-----------------------------------
+
+Klasör ağacı oyun başladığında bir kez okunur. Oyun çalışırken eklenen resimler
+yeniden başlatıldıktan sonra görünür.

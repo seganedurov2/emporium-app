@@ -1,0 +1,13 @@
+  const sellSlaveAtAuction = (char: Character) => {
+    if (gameState.auctionHouse.pendingLots.some(lot => 'characterId' in lot && lot.characterId === char.id)) return;
+    const lot = createCharacterLot(char, auctionHouseStaff.appraiser);
+    setGameState(prev => ({
+      ...prev,
+      auctionHouse: {
+        ...prev.auctionHouse,
+        pendingLots: [lot, ...prev.auctionHouse.pendingLots]
+      },
+      log: [`Раб «${char.name}» выставлен на аукцион.`, ...prev.log].slice(0, 50)
+    }));
+    showNotify(`Раб «${char.name}» выставлен на аукцион.`);
+  };

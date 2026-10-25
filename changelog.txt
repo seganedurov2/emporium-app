@@ -1,0 +1,195 @@
+CHANGELOG.txt
+================================================================================
+PROJECT: Pawn Pleasure
+LAST UPDATED: 2026-10-25
+================================================================================
+
+[VERSION 0.4.0 - CURRENT RELEASE]
+
+--- 🔧 CHANGES SINCE 0.3.2 ---
+* Global Market:
+    - Fixed critical bug where the marketplace would remain empty if the initial 
+      pool was empty. Generation logic now correctly selects regions regardless 
+      of current pool state.
+    - Refactored triggerWeeklyMarketRefresh for better stability across 
+      Android APK and Telegram WebView.
+* UI/UX:
+    - Optimized candidate filtering and sorting in GlobalMarketTab for 
+      faster response times.
+    - Improved visual feedback for "Value Mismatch" between appraiser and market.
+
+[PLANNED FOR 0.5.0]
+- Dynamic Market Pricing: prices will fluctuate based on supply and demand.
+- Regional Reputation: introduction of regional standing affecting trade costs.
+- Synergy System: bonuses for combining specific skill-sets in one venue.
+- Random Weekly Events: raids, health crises, and political shifts.
+
+[VERSION 0.3.2 - PREVIOUS RELEASE]
+* Hiring tab: Redesign to 3-column grid, advanced filters for specialty/skill/pay.
+* EmployeeCandidate: Added support for 3D portraits.
+
+[VERSION 0.3.0 "EDUCATION" - MAJOR UPDATE]
+
+--- 🏫 NEW FACILITIES & SYSTEMS ---
+* School:
+    - New facility with 4 development levels.
+    - Courses: Basic (Assimilation/Skills), Vocational (Specialized), 
+      Predisposition, and Commercial.
+    - "Trained at Emporium" status: Permanent bonuses to Exhaustion, 
+      earnings, and market value.
+    - Teacher management: Skill-based training, experience gain, and 
+      exhaustion handling.
+* Correction Center:
+    - New facility for fear-based training.
+    - Courses: Adaptation, Standard, Enhanced, and Intensive Correction.
+    - Instructor system: Discipline/Charisma based effectiveness.
+    - Integrated medical support for injuries sustained during correction.
+* Hospital:
+    - New facility with Medic and Surgeon positions.
+    - Complete Wound System: 4 levels of severity (Scratch to Critical).
+    - Surgical procedures: High-risk operations to treat severe wounds.
+    - Recovery beds and emergency life-saving (First Aid) mechanics.
+    - External patient revenue and plastic surgery services.
+* Plastic Surgery:
+    - 39 unique procedures (Facial, Body, Genital, Scar revision).
+    - Multi-stage operations and recovery periods.
+    - Impact on "Body Naturalness" and Attractiveness.
+
+--- 🛠 CORE SYSTEMS ---
+* Wounds & Scars:
+    - Individual tracking of wound location and severity.
+    - Incapacitation mechanics: characters cannot work at 25+ injury points.
+    - Permanent scars affecting market value and health.
+* Interface & Events:
+    - New event "An Hour After Closing" and "Overstepping Authority".
+    - Animated main menu logo and atmosphere effects.
+    - Improved Assistant notifications with direct app linking.
+
+--- ⚖️ BALANCE & FIXES ---
+* Slower skill development via work (~40% reduction); School is now primary path.
+* Fixed text rendering for CJK languages on Linux.
+* Fixed Attractiveness calculation to include Exhaustion and Wound penalties.
+
+[VERSION 0.2.1 - PREVIOUS RELEASE]
+* Core Architecture: React 19, Vite, Capacitor (Android), Zustand, Tailwind CSS v4.
+* Economy: 21 geographic regions, dynamic pricing, tiered quality.
+* Asset Pipeline: AI-driven portrait system (DALL-E 3, Flux, SDXL).
+================================================================================
+* Hiring tab (переработка):
+    - Адаптирован под стиль Global Market: трёхколоночный грид (список кандидатов, карточка кандидата, портрет)
+    - Фильтры и сортировка кандидатов по специальности, полу, навыку, зарплате, моральному духу
+    - Карточка подробной информации о кандидате с метриками и подходящими вакансиями
+    - Поддержка 3D-портретов для кандидатов при наличии
+* EmployeeCandidate data model:
+    - Добавлены опциональные поля image и model3d
+* Employees engine:
+    - Генерация портретов для кандидатов при создании
+
+[VERSION 0.3.1 - PREVIOUS RELEASE]
+
+--- 🔧 CHANGES SINCE 0.3.0 ---
+* School & Kindergarten tab:
+    - Refinements to children grouping and per-child cards.
+* Dependents registry:
+    - Human-readable dependent age formatting (days / weeks / years+months).
+* Prisoner narrative engine:
+    - Family paragraph and biography generation polish.
+* Global Market & Auction House:
+    - Market improvements engine and auction house flow refinements.
+* Save state and expansion/employee engines: stability fixes.
+* 3D portrait pipeline (dev tooling):
+    - Procedural 3D backend tools/generate-portraits-3d.mjs:
+      seeded, region-aware raw .glb busts for the conversion
+      pipeline (no Blender required; CI-friendly).
+    - Blender backend tools/blender/generate_portraits.py:
+      same parametric bust inside Blender for authored art.
+    - Pilot batch converted for 03_western_europe_nordics
+      (3 models per gender) via --src; PORTRAIT_3D_COUNTS
+      verified with npm run verify:portraits-3d.
+    - R2 hosting: wrangler.toml, tools/r2-setup.mjs
+      (create/verify bucket), tools/r2-sync.mjs (upload
+      public/portraits3d/ with --delete/--dry-run),
+      npm scripts r2:setup / r2:sync.
+    - CDP harness: tools/cdp-lib.mjs (Chrome discovery:
+      $CHROME_PATH > Playwright Chromium > system installs;
+      headless launch; CdpClient), cdp-check.mjs refactored
+      onto it, new tools/cdp-webgl-off.mjs verifying the
+      2D portrait fallback when WebGL is disabled.
+    - Telegram Mini App diagnostics: probeGraphicsInfo()
+      (WebGL2/WebGL + unmasked renderer/vendor) added to
+      the sendLogsToBot() payload.
+    - 3D coverage expanded to every game region (15 more
+      folders x 3 genders x 3 models = 135 new GLBs,
+      144 total, ~0.9 MB): characters in all regions
+      now receive a model3d URL when emporium_3d is on;
+      99_CEO keeps its index+suffix scheme (no models
+      yet); portrait3d.test.ts updated for full coverage.
+
+[VERSION 0.3.0 - PREVIOUS RELEASE]
+
+--- 🏫 NEW FEATURES ---
+* School & Kindergarten tab:
+    - New navigation tab «Школа и детский сад» (GraduationCap icon).
+    - Children of personnel split into kindergarten (0–6 years) and
+      school (6–16 years) groups with counts and per-child cards
+      (gender, age, parent name).
+    - Reminder that children become company property at 16.
+* Prisoner biography — family:
+    - Deterministic family member generator (mother / child / relative)
+      seeded per character id; existing biography paragraphs unchanged.
+    - Real children born in captivity (dependents registry) take priority
+      over the random roll and are marked as growing up in the camp.
+    - Family paragraph added to the market-entry story; chat AI answers
+      family questions (мать, ребёнок, родственник, семья).
+    - New chat suggestion: «У тебя есть семья?».
+
+[VERSION 0.2.1 - PREVIOUS RELEASE]
+
+--- 🛠 CORE ARCHITECTURE ---
+* Implementation of a cross-platform web-app using React 19 and Vite.
+* Integrated Capacitor for Android deployment (native android/ folder).
+* State management powered by Zustand.
+* UI styling implemented with Tailwind CSS v4.
+
+--- 📈 ECONOMY & GAME ENGINE ---
+* Global Market System:
+    - Implementation of 21 distinct geographic regions.
+    - Dynamic pricing based on regional demand (0.15 to 0.95 multipliers).
+    - Tiered quality system: Low, Medium, and High/Elite.
+    - Arbitrage mechanics: Route optimization from low-cost sources (e.g., Central Africa) to premium markets (e.g., North Africa).
+* Character Generation Engine:
+    - complex quality score formula: (Submission * 0.6 + Skill * 0.4).
+    - Dynamic trait generation (Health, Exhaustion, Loyalty).
+    - High-tier ("Elite") character specifications for luxury venues.
+
+--- 🎨 ASSET PIPELINE ---
+* Automated Portrait System:
+    - Developed `tools/generate-portraits.mjs` for AI-driven character visuals.
+    - Integration with multiple providers: OpenAI (DALL-E 3), Pollinations (Flux/SDXL), Ollama, and SD WebUI.
+    - Support for adult-themed aesthetics ("bdsm" style) and precise framing (Head, Chest, Three-quarter, Full-body).
+    - Automatic manifest synchronization via `src/portraitAssets.ts`.
+    - Image processing pipeline using `sharp` for WebP optimization.
+
+--- 📦 PROJECT STRUCTURE ---
+* /src          - Core game logic, engine, and UI components.
+* /public       - Static assets and regional portrait libraries.
+* /tools        - Automation scripts for content generation.
+* /android      - Native Android wrapper configuration.
+* MARKET_DATA.md - Comprehensive export of economic balances and formulas.
+
+--- 🚀 RECENT ACTIVITY ---
+* Global Market Improvements (v0.2.2):
+    - Five upgrade tracks for the Global Market: buyer network, market
+      research, logistics (administrator-authored) plus risk management
+      and trade financing (financier-authored).
+    - New NPC: market financier (Грета Кёлер) proposing weekly
+      investments alongside the auction house administrator.
+    - New hireable specialty: Финансист рынка (financier).
+    - Track effects: buyer contract prices/quantities, supply
+      discounts, captive lot costs, scandal risk and contract payouts.
+* Automated generation of full-body character portraits for all 21 regions and 3 genders using the Pollinations provider.
+* Optimization of the asset pipeline to support bulk generation via PowerShell scripting.
+================================================================================
+
+
+

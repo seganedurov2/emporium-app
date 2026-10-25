@@ -1,0 +1,196 @@
+﻿SO FUNKTIONIERT DAS SYSTEM FÜR CHARAKTERBILDER
+==============================================
+
+Jede Figur im Spiel verwendet ein Bild aus diesem Ordnerbaum. Nichts anderes
+bestimmt ihr Aussehen: Das Spiel erkennt nicht, was eine Bilddatei zeigt.
+Deshalb wird ein Bild ausschließlich über seinen Speicherort mit einer Figur
+verknüpft.
+
+Wenn du nur Bilder hinzufügen möchtest, lies stattdessen
+DE_BILDER_HINZUFUEGEN.txt. Diese Datei beschreibt, wie das Spiel die Bilder
+verwendet.
+
+English version: 00_EN_HOW_IT_WORKS.txt
+Polska wersja: PL_JAK_TO_DZIALA.txt
+Versión española: ES_COMO_FUNCIONA.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Version française : FR_COMMENT_CA_MARCHE.txt
+Versão em português: PT_COMO_FUNCIONA.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+Türkçe sürüm: TR_NASIL_CALISIR.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+Versione italiana: IT_COME_FUNZIONA.txt
+
+
+1. WO SICH DIESER ORDNER BEFINDET
+---------------------------------
+
+In der fertigen Version des Spiels befindet sich dieser Ordner neben der
+.exe-Datei, genau wie der Ordner "saves". Das ist beabsichtigt: Hier kannst du
+einer installierten Version eigene Bilder hinzufügen, ohne die mitgelieferten
+Spieldateien zu verändern.
+
+Der Inhalt dieses Ordners wird nicht in das Spiel gepackt. Du kannst ihn daher
+jederzeit frei bearbeiten.
+
+
+2. ORDNERSTRUKTUR
+-----------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        other/
+
+Die ersten vierzehn Ordner entsprechen den Weltregionen, aus denen eine Figur
+stammen kann. Die nächsten sieben stehen für staatenlose Gruppen, die über
+mehrere Regionen verteilt leben. Ihre Region allein sagt deshalb wenig über ihr
+Aussehen aus. Der letzte Ordner wird in Abschnitt 6 erklärt.
+
+Die Zahl am Anfang eines Ordnernamens bestimmt lediglich die Reihenfolge.
+Entscheidend ist der Teil hinter der Zahl: Er muss einer Region oder Herkunft
+entsprechen, die das Spiel kennt. Jeder anders benannte Ordner wird vollständig
+ignoriert, nicht aufgelistet und niemals verwendet.
+
+Jeder dieser Ordner enthält dieselben drei Unterordner: women, men und trans.
+
+
+3. WOHER EINE FIGUR IHR BILD BEKOMMT
+------------------------------------
+
+Beim Erstellen einer Figur prüft das Spiel die folgenden Orte der Reihe nach.
+Es verwendet das erste passende Bild, das es dabei findet:
+
+    1. Den Ordner ihrer Herkunft, falls es einen solchen gibt.
+       Dafür sind die Ordner staatenloser Gruppen vorgesehen. Eine in
+       Deutschland geborene Zigeunerin erhält ihr Bild aus 15_roma und nicht
+       aus der europäischen Region.
+
+    2. Den Ordner der Region, aus der sie stammt.
+       Entscheidend ist ihr Herkunftsland, nicht der Markt, auf dem sie
+       erschienen ist. Eine in Europa gekaufte Nigerianerin erhält ihr Bild
+       weiterhin aus 07_west_africa.
+
+    3. Einen beliebigen erkannten Regions- oder Herkunftsordner, sofern das
+       Geschlecht übereinstimmt. Dies ist die Absicherung für eine Region,
+       die noch keine passenden Bilder enthält.
+
+    4. Kein Bild — die Figur wird als graues Rechteck angezeigt.
+
+Eine Trans-Figur prüft bei jedem Schritt zuerst den Unterordner trans/. Ist er
+leer, prüft sie den Ordner ihres registrierten Geschlechts, bevor sie mit dem
+nächsten Schritt fortfährt.
+
+
+4. WARUM NICHT STÄNDIG DASSELBE GESICHT ERSCHEINT
+-------------------------------------------------
+
+Das Spiel wählt Bilder nicht völlig zufällig aus. Es zählt, wie viele Figuren
+im aktuellen Bestand jedes Bild des Ordners bereits verwenden, sortiert die
+Bilder nach dieser Zahl und bevorzugt die am seltensten verwendeten. Insgesamt
+entfallen 65 % der Auswahlwahrscheinlichkeit auf die am seltensten verwendeten
+40 % des Ordners; die übrigen Bilder teilen sich den Rest.
+
+Daraus ergeben sich zwei Dinge:
+
+  - Gibt es mehr Bilder als Figuren, treten Wiederholungen nur selten auf.
+  - Gibt es weniger Bilder als Figuren, sind Wiederholungen unvermeidlich,
+    verteilen sich aber gleichmäßig. Ein Gesicht erscheint nicht zwanzigmal,
+    während ein anderes überhaupt nicht verwendet wird.
+
+Der Nutzungszähler wird nicht separat gespeichert. Das Spiel berechnet ihn aus
+den Figuren, die du aktuell besitzt. Wird eine Figur verkauft oder geht
+verloren, sinkt die Nutzung ihres Bildes automatisch. Neue Bilder in einem
+häufig verwendeten Ordner werden deutlich bevorzugt, ohne bei jeder neuen
+Figur ausgewählt zu werden.
+
+
+5. KARTE, BILDAUSSCHNITT UND VOLLBILDANSICHT
+--------------------------------------------
+
+Der Bildrahmen auf einer Figurenkarte ist hoch und schmal. Wird das Fenster
+größer, wird auch der Rahmen höher. Das Bild wird so skaliert, dass es den
+Rahmen ausfüllt; überstehende Bereiche werden abgeschnitten.
+
+Die Karte zeigt daher meistens nur einen Ausschnitt statt des gesamten Bildes.
+Dafür gibt es zwei Möglichkeiten:
+
+  - Mit der Schaltfläche zum Anpassen des Bildausschnitts bestimmst du für jede
+    Figur einzeln, welcher Teil des Bildes auf der Karte zu sehen ist.
+  - Ein Klick auf das Bild öffnet die vollständige, unbeschnittene Ansicht in
+    Originalauflösung. Ist sie zu groß, wird sie an den Bildschirm angepasst.
+
+Das Spiel skaliert die Quelldatei vor der Anzeige nicht hoch. Ist der Rahmen
+größer als das Bild, muss die Oberfläche es strecken, wodurch es unscharf wirkt.
+
+
+6. DER ORDNER "other"
+---------------------
+
+Dieser Ordner ist für Bilder vorgesehen, die ausschließlich von Hand
+zugewiesen werden sollen. Er nimmt nicht an der automatischen Auswahl teil.
+Eine erzeugte Figur erhält daher niemals eines seiner Bilder. Die Bildauswahl
+zeigt ihn wie jeden anderen Ordner an und erlaubt dir, seine Bilder selbst
+zuzuweisen.
+
+Verwende ihn für ein Bild, das du eigens für eine bestimmte Figur erstellt hast
+und das keiner anderen Figur zugewiesen werden soll.
+
+
+7. EIN BILD VON HAND AUSWÄHLEN
+------------------------------
+
+Wenn du den Mauszeiger über das Bild auf einer Figurenkarte bewegst, erscheint
+eine kleine Leiste mit zwei Schaltflächen. Eine passt den aktuellen
+Bildausschnitt an, die andere öffnet die Bildauswahl.
+
+Die Bildauswahl öffnet sich im Ordner der Figur; ihr Geschlecht ist bereits
+ausgewählt. Ordner ohne Bilder für dieses Geschlecht werden abgeblendet. Ein
+Klick auf ein Miniaturbild markiert es, die Lupe in seiner Ecke öffnet die
+vollständige Ansicht und die Schaltfläche zum Übernehmen weist es der Figur zu.
+Bis zur Bestätigung ändert sich nichts.
+
+Beim Wechsel des Bildes wird der für das vorherige Bild eingestellte Ausschnitt
+verworfen, da er nur für dieses Bild gilt.
+
+
+8. WENN EIN BILD FEHLT
+----------------------
+
+Das Bild einer Figur wird als Dateipfad gespeichert. Wird die Datei gelöscht,
+umbenannt oder in einen anderen Ordner verschoben, verweist der gespeicherte
+Pfad nicht mehr auf sie.
+
+Beim Laden eines Spielstands erkennt das Spiel solche Fälle und wählt für jede
+betroffene Figur nach den üblichen Regeln einen Ersatz. Dadurch erscheint statt
+des grauen Platzhalters ein neues Bild, während die normale Gewichtung nach
+Nutzung weiterhin Wiederholungen im Bestand begrenzt. Der für das fehlende Bild
+gespeicherte Ausschnitt wird entfernt, da er für ein nicht mehr vorhandenes
+Bild erstellt wurde.
+
+Figuren, denen nie ein Bild zugewiesen war, bleiben unverändert. Sie haben
+nichts verloren, und ihnen beim Laden ein Gesicht zuzuweisen wäre eine nicht
+angeforderte Änderung.
+
+Fehlt der gesamte Ordner portraits, ersetzt das Spiel nichts. Die gespeicherten
+Pfade bleiben erhalten. Sobald der Ordner wieder an seinem Platz liegt, kehren
+die ursprünglichen Bilder zurück, ohne den Spielstand dauerhaft zu verändern.
+
+
+9. WANN ÄNDERUNGEN ERKANNT WERDEN
+---------------------------------
+
+Das Spiel liest die Ordnerstruktur nur einmal beim Start ein. Bilder, die bei
+laufendem Spiel hinzugefügt werden, erscheinen erst nach einem Neustart.

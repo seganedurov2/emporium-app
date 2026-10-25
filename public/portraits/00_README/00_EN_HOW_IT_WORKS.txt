@@ -1,0 +1,212 @@
+HOW THE PORTRAIT SYSTEM WORKS
+=============================
+
+Every character in the game uses a picture from this folder tree. Nothing else
+determines what she looks like: the game cannot tell what an image contains, so
+its location in the folder tree is the only link between the picture and the
+character.
+
+If you only want to add pictures, read 00_EN_ADDING_PICTURES.txt instead. This
+file explains how the game uses them.
+
+Polska wersja: PL_JAK_TO_DZIALA.txt
+Deutsche Version: DE_WIE_ES_FUNKTIONIERT.txt
+Versión española: ES_COMO_FUNCIONA.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Version française : FR_COMMENT_CA_MARCHE.txt
+Versão em português: PT_COMO_FUNCIONA.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+Türkçe sürüm: TR_NASIL_CALISIR.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+Versione italiana: IT_COME_FUNZIONA.txt
+
+
+1. WHERE THIS FOLDER LIVES
+--------------------------
+
+In a released build, this folder sits next to the game executable, just like the
+"saves" folder. That is deliberate: it is the one place where you can add your
+own pictures to an installed game without modifying its packaged files.
+
+Nothing here is packed into the game, so you are always free to edit this folder.
+
+
+2. THE FOLDER TREE
+------------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        99_CEO/
+            women/
+            men/
+            trans/
+        other/
+
+The first fourteen folders represent the world regions a character can come
+from. The next seven represent stateless origins: peoples dispersed across many
+regions, whose region alone therefore says little about how they look. 99_CEO
+and other are explained in sections 6 and 6b.
+
+The number at the beginning of a folder name only keeps the list in order. The
+part after it must match a region or origin recognised by the game, or one of
+the two special folders. Any other folder is ignored completely: it is not
+listed and is never used.
+
+Every group folder contains the same three subfolders: women, men, and trans.
+
+
+3. HOW A CHARACTER GETS HER PICTURE
+-----------------------------------
+
+When a character is created, the game checks the following locations in order
+and stops at the first one that contains a suitable picture:
+
+    1. The folder named after her origin, if there is one.
+       This is what the stateless folders are for. A Roma woman born in Germany
+       takes her picture from 15_roma, not from the European region.
+
+    2. The folder of the region she comes from.
+       Her country of origin decides this, not the market she showed up in. A
+       Nigerian woman bought in Europe still draws from 07_west_africa.
+
+    3. Any recognised group folder, as long as the gender matches.
+       This is the safety net for a region you have not filled in yet.
+
+    4. Nothing - she is shown as a grey rectangle.
+
+At each step, a trans character checks trans/ first. If it is empty, she checks
+the folder for her registered sex before moving to the next step.
+
+
+4. WHY THE SAME FACE DOES NOT KEEP COMING BACK
+----------------------------------------------
+
+Pictures are not selected blindly. The game counts how many characters in your
+current roster already use each picture in the folder, sorts them by that count
+and biases the draw towards the least-used ones. The least-used 40% of a folder
+receives 65% of the selection probability; the rest shares what remains.
+
+Two things follow from that:
+
+  - With more pictures than characters you will rarely see a repeat.
+  - With fewer pictures than characters repeats are unavoidable, but they stay
+    spread evenly instead of one face appearing twenty times while another
+    never shows up.
+
+The usage count is not stored separately. It is calculated from the characters
+you currently own, so selling or losing a character automatically frees her
+picture. New pictures added to a heavily used folder are much more likely to be
+selected, but they are not assigned to every new character.
+
+
+5. THE CARD, THE CROP AND THE FULL VIEW
+---------------------------------------
+
+The portrait frame on a character card is tall and narrow, and it grows taller
+with the window. A picture is scaled until it covers the frame, and any overflow
+is cropped.
+
+That means the card usually shows a cropped section of a picture rather than the
+whole image. There are two ways to handle this:
+
+  - The crop button on the portrait lets you choose which part of the picture
+    the card shows, per character.
+  - Clicking the portrait opens the uncropped picture at its native size, or
+    scales it down if necessary to fit the screen.
+
+The game does not upscale the source image before displaying it, so a small file
+looks soft when the portrait frame has to stretch it.
+
+
+6. THE "other" FOLDER
+---------------------
+
+Use this folder for pictures that should only be assigned by hand. It never takes
+part in automatic selection, so a generated character will never receive one of
+its pictures. The picker lists it like any other folder, allowing you to assign
+a picture from it yourself.
+
+Use it when you have made a picture for one particular character and do not want
+it assigned to anyone else.
+
+
+6b. THE 99_CEO FOLDER
+---------------------
+
+99_CEO is a second manual-only folder. Generation never draws from it. The
+ordinary picture picker lists it immediately before Other, and you can assign
+its pictures by hand.
+
+It uses the same three gender subfolders as every other group:
+
+    portraits/99_CEO/women/
+    portraits/99_CEO/men/
+    portraits/99_CEO/trans/
+
+The file name carries the variant and the order inside that variant. Production
+files are lossy WebP:
+
+    fy  young woman     1fy.webp ... 9fy.webp
+    fo  older woman     1fo.webp ... 9fo.webp
+    my  young man       1my.webp ... 9my.webp
+    mo  older man       1mo.webp ... 9mo.webp
+    ftm trans man       1ftm.webp ... 9ftm.webp
+    mtf trans woman     1mtf.webp ... 9mtf.webp
+
+The number 1-9 is the variant order. Do not pad it with a leading zero.
+
+
+7. CHOOSING A PICTURE BY HAND
+-----------------------------
+
+Hovering over a portrait on a character card reveals a small bar with two
+buttons: one reframes the current picture, while the other opens the picture
+library.
+
+The library opens to the folder that character belongs to, with her gender
+already selected. Folders holding nothing for that gender are dimmed. Clicking a
+thumbnail selects it, the magnifying glass in its corner shows the full image,
+and the accept button applies it. Nothing changes until you accept.
+
+Changing a character's picture drops any crop you had set for the old one, since
+a crop belongs to the picture it was made for.
+
+
+8. WHEN A PICTURE GOES MISSING
+------------------------------
+
+A character's picture is stored as a file path. Delete that file, rename it or
+move it to another folder, and the stored path no longer points to anything.
+
+When a save is loaded, the game checks for this and selects a replacement for
+each affected character using the normal rules. This prevents a grey placeholder,
+while the usual usage weighting still limits duplicates across the roster. Any
+framing set for the missing picture is removed because it was made for an image
+that no longer exists.
+
+Characters who never had a picture are left alone. Nothing was lost there, and
+handing them a face on load would be a change nobody asked for.
+
+If the entire portrait folder is missing, nothing is replaced. The stored paths
+are preserved, so putting the folder back restores the original pictures instead
+of causing permanent damage to the save.
+
+
+9. WHEN CHANGES ARE PICKED UP
+-----------------------------
+
+The folder tree is read once when the game starts. Pictures added while the game
+is running show up after a restart.

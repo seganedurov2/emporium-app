@@ -1,0 +1,187 @@
+﻿JAK DZIAŁA SYSTEM ZDJĘĆ POSTACI
+===============================
+
+Każda postać w grze korzysta ze zdjęcia znajdującego się w tym drzewie
+folderów. Nic innego nie decyduje o jej wyglądzie: gra nie rozpoznaje zawartości
+pliku graficznego, dlatego zdjęcie zostaje powiązane z postacią wyłącznie na
+podstawie miejsca, w którym się znajduje.
+
+Jeśli chcesz tylko dodać zdjęcia, przeczytaj PL_DODAWANIE_ZDJEC.txt. Ten plik
+opisuje sposób, w jaki gra z nich korzysta.
+
+English version: 00_EN_HOW_IT_WORKS.txt
+Deutsche Version: DE_WIE_ES_FUNKTIONIERT.txt
+Versión española: ES_COMO_FUNCIONA.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Version française : FR_COMMENT_CA_MARCHE.txt
+Versão em português: PT_COMO_FUNCIONA.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+Türkçe sürüm: TR_NASIL_CALISIR.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+Versione italiana: IT_COME_FUNZIONA.txt
+
+
+1. GDZIE ZNAJDUJE SIĘ TEN FOLDER
+--------------------------------
+
+W gotowej wersji gry ten folder znajduje się obok pliku .exe, tak samo
+jak folder "saves". To celowe: możesz tam dodać własne zdjęcia do zainstalowanej
+gry bez modyfikowania plików spakowanych razem z nią.
+
+Zawartość tego folderu nie jest pakowana do gry, więc zawsze możesz ją dowolnie
+edytować.
+
+
+2. STRUKTURA FOLDERÓW
+---------------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        other/
+
+Pierwszych czternaście folderów odpowiada regionom świata, z których może
+pochodzić postać. Kolejnych siedem odpowiada grupom bezpaństwowym,
+rozproszonym po wielu regionach, przez co sam region niewiele mówi o ich
+wyglądzie. Ostatni folder opisano w punkcie 6.
+
+Numer na początku nazwy folderu służy tylko do zachowania kolejności. Znaczenie
+ma część nazwy po numerze: musi odpowiadać regionowi lub pochodzeniu
+rozpoznawanemu przez grę. Każdy inny folder jest całkowicie ignorowany — nie
+pojawia się na liście i nigdy nie zostanie użyty.
+
+Każdy z tych folderów zawiera te same trzy podfoldery: women, men i trans.
+
+
+3. SKĄD POSTAĆ BIERZE SWOJE ZDJĘCIE
+-----------------------------------
+
+Podczas tworzenia postaci gra sprawdza kolejno poniższe miejsca i zatrzymuje się
+na pierwszym, które zawiera odpowiednie zdjęcie:
+
+    1. Folder odpowiadający jej pochodzeniu, jeśli taki istnieje.
+       Do tego służą foldery grup bezpaństwowych. Cyganka urodzona
+       w Niemczech bierze zdjęcie z 15_roma, a nie z regionu europejskiego.
+
+    2. Folder regionu, z którego pochodzi.
+       Decyduje kraj pochodzenia, a nie rynek, na którym się pojawiła.
+       Nigeryjka kupiona w Europie nadal losuje z 07_west_africa.
+
+    3. Dowolny rozpoznawany folder regionu lub pochodzenia, o ile zgadza się
+       płeć. To zabezpieczenie na wypadek, gdy właściwy region jest jeszcze
+       pusty.
+
+    4. Żadne — postać jest wyświetlana jako szary prostokąt.
+
+Na każdym etapie postać trans sprawdza najpierw podfolder trans/. Jeśli jest
+pusty, sprawdza podfolder swojej płci rejestrowej i dopiero potem przechodzi do
+kolejnego etapu.
+
+
+4. DLACZEGO TA SAMA TWARZ NIE WRACA W KÓŁKO
+-------------------------------------------
+
+Gra nie wybiera zdjęć całkowicie losowo. Sprawdza, ile postaci w aktualnym
+składzie korzysta już z każdego zdjęcia w folderze, porządkuje je według tej
+liczby i zwiększa szanse najrzadziej używanych. Łącznie 65% szansy przypada na
+40% najrzadziej używanych zdjęć, a pozostałe dzielą między sobą resztę.
+
+Wynikają z tego dwie rzeczy:
+
+  - Gdy zdjęć jest więcej niż postaci, powtórki zdarzają się rzadko.
+  - Gdy zdjęć jest mniej niż postaci, powtórki są nieuniknione, ale rozkładają
+    się równomiernie. Jedna twarz nie pojawia się dwadzieścia razy, podczas gdy
+    inna nie zostaje użyta ani razu.
+
+Licznik użycia nie jest zapisywany osobno. Gra oblicza go na podstawie postaci,
+które aktualnie posiadasz, więc sprzedaż lub utrata postaci automatycznie
+zmniejsza wykorzystanie jej zdjęcia. Nowe zdjęcia dodane do często używanego
+folderu od razu otrzymują wyraźne pierwszeństwo, ale nie przejmują wszystkich
+nowych postaci.
+
+
+5. KARTA, KADROWANIE I PEŁNY PODGLĄD
+------------------------------------
+
+Ramka portretu na karcie postaci jest wysoka i wąska, a w miarę powiększania
+okna staje się wyższa. Zdjęcie jest skalowane tak, aby wypełniło ramkę, a każdy
+wystający fragment zostaje przycięty.
+
+Karta zwykle pokazuje więc wykadrowany fragment zdjęcia zamiast całego obrazu.
+Możesz sobie z tym poradzić na dwa sposoby:
+
+  - Przycisk kadrowania na portrecie pozwala wybrać, którą część zdjęcia ma
+    pokazywać karta — osobno dla każdej postaci.
+  - Kliknięcie portretu otwiera całe, nieprzycięte zdjęcie w jego natywnej
+    rozdzielczości lub pomniejsza je, jeśli nie mieści się na ekranie.
+
+Gra nie skaluje w górę obrazu źródłowego przed jego wyświetleniem. Jeśli ramka
+jest od niego większa, interfejs musi go rozciągnąć, przez co wygląda nieostro.
+
+
+6. FOLDER "other"
+-----------------
+
+Ten folder służy do przechowywania zdjęć przypisywanych wyłącznie ręcznie. Nie
+bierze udziału w automatycznym wyborze, więc wygenerowana postać nigdy nie
+otrzyma żadnego z jego zdjęć. Przeglądarka wyświetla go tak samo jak pozostałe
+foldery i pozwala samodzielnie przypisać znajdujące się w nim zdjęcie.
+
+Użyj go, gdy przygotujesz zdjęcie dla jednej konkretnej postaci i nie chcesz,
+aby zostało przypisane komukolwiek innemu.
+
+
+7. RĘCZNY WYBÓR ZDJĘCIA
+-----------------------
+
+Po najechaniu na portret na karcie postaci pojawia się mały pasek z dwoma
+przyciskami. Jeden zmienia kadr bieżącego zdjęcia, a drugi otwiera bibliotekę.
+
+Biblioteka otwiera się w folderze przypisanym do danej postaci, a jej płeć jest
+już wybrana. Foldery bez zdjęć dla tej płci są przygaszone. Kliknięcie miniatury
+ją zaznacza, lupa w jej rogu otwiera pełny podgląd, a przycisk zatwierdzenia
+przypisuje wybrane zdjęcie. Do chwili zatwierdzenia nic się nie zmienia.
+
+Zmiana zdjęcia postaci usuwa kadr ustawiony dla poprzedniego obrazu, ponieważ
+ustawienie kadru jest powiązane ze zdjęciem, dla którego powstało.
+
+
+8. GDY ZDJĘCIE ZNIKNIE
+----------------------
+
+Zdjęcie postaci jest zapisane jako ścieżka do pliku. Jeśli usuniesz plik,
+zmienisz jego nazwę lub przeniesiesz go do innego folderu, zapisana ścieżka
+przestanie do niego prowadzić.
+
+Po wczytaniu zapisu gra wykrywa takie przypadki i zgodnie ze zwykłymi zasadami
+wybiera zdjęcie zastępcze dla każdej postaci, która straciła swoje. Dzięki temu
+zamiast szarego prostokąta pojawia się nowe zdjęcie, a standardowe ważenie według
+użycia nadal ogranicza liczbę powtórek w składzie. Ustawienie kadru brakującego
+zdjęcia jest usuwane, ponieważ powstało dla obrazu, który już nie istnieje.
+
+Postacie, którym nigdy nie przypisano zdjęcia, pozostają bez zmian. Niczego nie
+utraciły, a nadawanie im twarzy podczas wczytywania byłoby zmianą, o którą nikt
+nie prosił.
+
+Jeśli brakuje całego folderu portraits, gra niczego nie podmienia. Zachowuje
+zapisane ścieżki, dzięki czemu po przywróceniu folderu wracają oryginalne
+zdjęcia, a zapis gry nie zostaje trwale zmieniony.
+
+
+9. KIEDY ZMIANY SĄ WIDOCZNE
+---------------------------
+
+Gra odczytuje strukturę folderów tylko raz, podczas uruchamiania. Zdjęcia dodane
+w trakcie jej działania pojawią się dopiero po ponownym uruchomieniu.

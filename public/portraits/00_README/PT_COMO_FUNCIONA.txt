@@ -1,0 +1,197 @@
+﻿COMO FUNCIONA O SISTEMA DE RETRATOS
+===================================
+
+NOTA — PORTUGAL E BRASIL
+
+Este texto usa português europeu como base. Quando uma expressão puder causar
+confusão ou não ser reconhecida no Brasil, o equivalente brasileiro aparece
+entre parênteses retos [colchetes]. As restantes diferenças são suficientemente
+claras pelo contexto e ficam na forma usada em Portugal.
+
+Todas as personagens do jogo usam uma imagem desta árvore de pastas. Nada mais
+determina o seu aspeto: o jogo não consegue saber o que uma imagem contém, por
+isso a localização na árvore é a única ligação entre a imagem e a personagem.
+
+Se apenas quiser adicionar imagens, consulte PT_ADICIONAR_FOTOS.txt. Este
+ficheiro [arquivo] explica como o jogo as utiliza.
+
+English version: 00_EN_HOW_IT_WORKS.txt
+Polska wersja: PL_JAK_TO_DZIALA.txt
+Deutsche Version: DE_WIE_ES_FUNKTIONIERT.txt
+Versión española: ES_COMO_FUNCIONA.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Version française : FR_COMMENT_CA_MARCHE.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+Türkçe sürüm: TR_NASIL_CALISIR.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+Versione italiana: IT_COME_FUNZIONA.txt
+
+
+1. LOCALIZAÇÃO DESTA PASTA
+--------------------------
+
+Numa versão publicada, esta pasta fica junto ao .exe do jogo, tal como a pasta
+"saves". Isto é intencional: é o único local onde pode
+adicionar imagens próprias a um jogo instalado sem modificar os ficheiros
+incluídos no pacote.
+
+Nada nesta pasta é incorporado no jogo, por isso pode sempre editá-la
+livremente.
+
+
+2. A ÁRVORE DE PASTAS
+---------------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        other/
+
+As primeiras catorze pastas representam as regiões do mundo de onde uma
+personagem pode vir. As sete seguintes representam origens sem Estado: povos
+dispersos por muitas regiões, cuja região, por si só, diz pouco sobre a sua
+aparência. A última pasta é explicada na secção 6.
+
+O número no início do nome de uma pasta serve apenas para manter a lista
+ordenada. A parte seguinte tem de corresponder a uma região ou origem
+reconhecida pelo jogo. Qualquer outra pasta é completamente ignorada: não
+aparece na lista e nunca é usada.
+
+Cada pasta de grupo contém as mesmas três subpastas: women, men e trans.
+
+
+3. COMO UMA PERSONAGEM RECEBE A SUA IMAGEM
+------------------------------------------
+
+Quando uma personagem é criada, o jogo verifica os seguintes locais por ordem e
+para no primeiro que contenha uma imagem adequada:
+
+    1. A pasta com o nome da sua origem, caso exista.
+       É para isto que servem as pastas de grupos sem Estado. Uma mulher Roma
+       nascida na Alemanha recebe uma imagem de 15_roma, não da região europeia.
+
+    2. A pasta da região de onde vem.
+       É o país de origem que decide isto, não o mercado onde apareceu. Uma
+       mulher nigeriana comprada na Europa continua a receber uma imagem de
+       07_west_africa.
+
+    3. Qualquer pasta de grupo reconhecida, desde que o género corresponda.
+       Esta é a rede de segurança para uma região que ainda não tenha imagens.
+
+    4. Nada — é apresentada como um retângulo cinzento.
+
+Em cada etapa, uma personagem trans verifica primeiro a pasta trans/. Se estiver
+vazia, verifica a pasta correspondente ao seu sexo registado antes de avançar
+para a etapa seguinte.
+
+
+4. PORQUE NÃO APARECE SEMPRE A MESMA CARA
+-----------------------------------------
+
+As imagens não são escolhidas às cegas. O jogo conta quantas personagens da sua
+lista atual já usam cada imagem da pasta, ordena-as por essa contagem e favorece
+as menos usadas no sorteio. Os 40% menos usados de uma pasta recebem 65% da
+probabilidade de seleção; os restantes partilham o que sobra.
+
+Daí resultam duas consequências:
+
+  - Com mais imagens do que personagens, raramente verá uma repetição.
+  - Com menos imagens do que personagens, as repetições são inevitáveis, mas
+    ficam distribuídas de forma equilibrada, em vez de uma cara aparecer vinte
+    vezes enquanto outra nunca aparece.
+
+A contagem de utilizações não é guardada separadamente. É calculada a partir das
+personagens que possui nesse momento, pelo que vender ou perder uma personagem
+liberta automaticamente a sua imagem. As imagens novas adicionadas a uma pasta
+muito usada são claramente favorecidas, mas não são atribuídas a todas as
+personagens novas.
+
+
+5. O CARTÃO, O CORTE E A VISTA COMPLETA
+---------------------------------------
+
+A moldura do retrato num cartão de personagem é alta e estreita e cresce com a
+janela. A imagem é redimensionada até cobrir a moldura, e tudo o que ultrapassa
+os limites é cortado.
+
+Isto significa que o cartão mostra normalmente uma parte cortada da imagem, em
+vez da imagem completa. Há duas formas de lidar com isso:
+
+  - O botão de corte no retrato permite escolher, para cada personagem, a parte
+    da imagem apresentada no cartão.
+  - Clicar no retrato abre a imagem sem cortes no tamanho original ou, se for
+    necessário, reduzida para caber no ecrã [na tela].
+
+O jogo não amplia a imagem de origem antes de a apresentar, por isso um ficheiro
+pequeno perde nitidez quando a moldura do retrato tem de o esticar.
+
+
+6. A PASTA "other"
+------------------
+
+Use esta pasta para imagens que só devam ser atribuídas manualmente. Nunca
+participa na seleção automática, portanto uma personagem gerada nunca receberá
+uma das suas imagens. O seletor apresenta-a como qualquer outra pasta e permite
+atribuir manualmente uma imagem que esteja nela.
+
+Use-a quando tiver criado uma imagem para uma personagem específica e não quiser
+que seja atribuída a mais ninguém.
+
+
+7. ESCOLHER UMA IMAGEM MANUALMENTE
+----------------------------------
+
+Ao passar o ponteiro sobre um retrato num cartão de personagem, aparece uma
+pequena barra com dois botões: um permite reenquadrar a imagem atual e o outro
+abre a biblioteca de imagens.
+
+A biblioteca abre na pasta correspondente à personagem, com o género já
+selecionado. As pastas sem imagens para esse género aparecem
+esbatidas [esmaecidas]. Clicar numa miniatura seleciona-a; a lupa mostra a
+imagem completa; o botão de confirmação aplica-a. Nada muda até confirmar.
+
+Mudar a imagem de uma personagem elimina qualquer corte definido para a imagem
+anterior, porque o corte pertence à imagem para a qual foi criado.
+
+
+8. QUANDO UMA IMAGEM DESAPARECE
+-------------------------------
+
+A imagem de uma personagem é guardada como um caminho de ficheiro. Se eliminar
+esse ficheiro, mudar o seu nome ou movê-lo para outra pasta, o caminho guardado
+deixa de apontar para qualquer conteúdo.
+
+Quando um jogo guardado é carregado, o jogo verifica esta situação
+e escolhe uma substituição para cada personagem afetada segundo as regras
+normais. Isto evita um marcador cinzento, enquanto a ponderação habitual pelas
+utilizações continua a limitar as repetições na lista de personagens. Qualquer
+enquadramento definido para a imagem em falta é removido, porque foi criado para
+uma imagem que já não existe.
+
+As personagens que nunca tiveram uma imagem não são alteradas. Nesse caso nada
+se perdeu, e atribuir-lhes um rosto durante o carregamento seria uma mudança que
+ninguém pediu.
+
+Se toda a pasta portraits estiver em falta, nenhuma imagem é substituída. Os
+caminhos guardados são preservados, pelo que voltar a colocar a pasta no lugar
+restaura as imagens originais em vez de causar danos permanentes no jogo
+guardado.
+
+
+9. QUANDO AS ALTERAÇÕES SÃO DETETADAS
+-------------------------------------
+
+A árvore de pastas é lida apenas uma vez quando o jogo arranca. As imagens
+adicionadas enquanto o jogo está em execução aparecem depois de o reiniciar.

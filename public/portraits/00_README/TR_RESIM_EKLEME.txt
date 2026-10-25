@@ -1,0 +1,171 @@
+﻿KENDİ RESİMLERİNİZİ EKLEME
+==========================
+
+Kısaca: resim dosyalarını uygun bölge ve cinsiyet klasörüne bırakın, oyunu
+yeniden başlatın ve işlem tamamdır. Aşağıdaki açıklamalar resimlerin iyi
+görünmesini sağlamanıza yardımcı olur.
+
+Oyunun bir karaktere hangi resmi vereceğine nasıl karar verdiğini öğrenmek için
+TR_NASIL_CALISIR.txt dosyasını okuyun.
+
+English version: 00_EN_ADDING_PICTURES.txt
+Polska wersja: PL_DODAWANIE_ZDJEC.txt
+Deutsche Version: DE_BILDER_HINZUFUEGEN.txt
+Versión española: ES_ANADIR_IMAGENES.txt
+Русская версия: RU_DOBAVLENIE_IZOBRAZHENIY.txt
+简体中文版：ZH_CN_TIANJIA_ZHAOPIAN.txt
+日本語版：JA_SHASHIN_NO_TSUIKA.txt
+Version française : FR_AJOUTER_DES_PHOTOS.txt
+Versão em português: PT_ADICIONAR_FOTOS.txt
+Українська версія: UK_DODAVANNIA_ZOBRAZHEN.txt
+النسخة العربية: AR_IDAFAT_ALSUWAR.txt
+한국어 버전: KO_SAJIN_CHUGA.txt
+ฉบับภาษาไทย: TH_PHOEM_RUPPHAP.txt
+Versione italiana: IT_AGGIUNGERE_IMMAGINI.txt
+
+
+1. RESİMLERİ NEREYE KOYMALI
+---------------------------
+
+Karakterin bölge klasörünü, ardından bu klasördeki cinsiyet klasörünü seçin:
+
+    portraits/03_western_europe_nordics/women/
+
+Kendi klasörlerinizi oluşturmayın. Oyun yalnızca bildiği bir bölge veya kökenin
+adını taşıyan klasörleri kabul eder. Diğer klasörler tamamen yok sayılır; bu
+klasörlerdeki resimler hiçbir zaman görünmez.
+
+Yalnızca elle atanması gereken resimler için "other" klasörünü kullanın. Bu
+klasörden rastgele seçim yapılmaz, dolayısıyla oluşturulan bir karakter bu
+resimlerden birini kendiliğinden alamaz. Resmi seçim penceresinden kendiniz
+atamazsanız hiçbir zaman kullanılmaz.
+
+
+2. DOSYA BİÇİMLERİ
+------------------
+
+Desteklenen:     .webp   .png   .jpg   .jpeg
+Yok sayılan:     diğer her şey — .bmp, .gif, .tiff ve benzerleri
+
+Yok sayılan bir dosya oyun için görünmezdir: listelenmez ve hiçbir zaman
+kullanılmaz. Desteklenen bir uzantıya sahip olduğu hâlde içeriği bozuk olan bir
+dosya, seçim penceresinde dosya adını taşıyan gri bir kutu olarak görünür.
+
+
+3. WEBP LOSSY'Yİ 90 KALİTE AYARINDA KULLANIN
+--------------------------------------------
+
+Kitaplık için önerilen biçim budur ve nedenini bilmekte fayda vardır.
+
+90 kalite ayarındaki bir WebP resmi, oyun içinde normal görüntüleme sırasında
+özgün resimden görsel olarak ayırt edilemez. Buna karşın dosya boyutunu özgün
+boyutun küçük bir bölümüne indirir.
+Oyunla birlikte gelen resimlerin dönüştürülmesi toplam boyutu 22,5 MB'den
+7,2 MB'ye, yani yaklaşık üçte birine düşürdü. Oyunun kullandığı hiçbir boyutta
+görünür bir fark oluşmadı.
+
+Bu fark tek bir dosyadan çok bütün bir kitaplıkta önemlidir. Aşağıda önerilen
+boyutlarda bir WebP q90 portresi ortalama 90 KB'den az yer kaplar; bin portre
+yaklaşık 85 MB tutar. Aynı bin resim PNG biçiminde yaklaşık 1 GB yer kaplardı.
+
+Zaten WebP olan bir resmi yeniden kodlamayın. Kayıplı biçimler her kodlamada az
+da olsa kalite kaybeder ve ikinci bir kodlama hiçbir yarar sağlamaz.
+
+90'ın üzerindeki kalite ayarları neredeyse hiç görünür iyileşme sağlamaz, ancak
+dosya boyutunu hızla artırır. Yaklaşık 80'in altında sıkıştırma bozulmaları
+ten ve saçta görünmeye başlar; portrelerde özellikle dikkat dağıtır.
+
+
+4. BOYUT
+--------
+
+Önerilen:              yaklaşık 768 x 1152 veya benzer bir dikey çözünürlük
+Kullanışlı alt sınır:  yaklaşık 1000 piksel yükseklik
+Üst sınır:             kesin bir sınır yoktur, ancak çok büyük dosyalar belleği
+                       ve yükleme süresini boşa harcar
+
+Oyun, kaynak resmi göstermeden önce büyütmez. Dosya çerçeveden küçükse arayüzün
+alanı doldurmak için resmi germesi gerekir ve resim bulanık görünür. Örneğin
+100 x 150 boyutundaki bir resim karakter kartında çok bulanık görünür.
+
+Daha büyük dosyalar çalışır, ancak belirli bir boyuttan sonra ek ayrıntılar
+anlamsız hâle gelir. Tam ekran görünümü en büyük gösterim biçimidir; 1080p bir
+ekranda kullanılabilir yükseklik bin pikselin biraz altındadır. Daha büyük
+resimler sığacak şekilde küçültülse de kodlarının çözülmesi ek süre ve bellek
+gerektirir.
+
+
+5. ŞEKİL
+--------
+
+Dikey yönlendirme kullanın. Uzun ve dar bir resim kareden daha uygundur.
+
+Karakter kartındaki portre çerçevesi uzun ve dardır, ayrıca pencereyle birlikte
+uzar. Resim çerçeveyi kaplayacak şekilde ölçeklenir ve taşan bölümler kırpılır.
+Kesin kırpma, hem resmin biçimine hem de kartın o anki yüksekliğine bağlıdır.
+Kart en küçük boyutundayken sonuç yaklaşık olarak şöyledir:
+
+    600 x 2000   çok uzun    üstten ve alttan kırpılır
+    768 x 1152   önerilen    genişliğin yaklaşık %10'u kırpılır
+    800 x 800    kare        genişliğin yaklaşık %40'ı kırpılır
+    1200 x 600   yatay       genişliğin yaklaşık %70'i kırpılır
+
+Kart uzadıkça yanlardan daha fazla bölüm kırpılır. En düşük yüksekliğin yaklaşık
+iki katında son üç örnek genişliklerinin sırasıyla yaklaşık %55, %70 ve %85'ini
+kaybeder.
+
+Bu biçimlerin hiçbiri bir şeyi bozmaz. Yatay bir resim de çalışır; kart yalnızca
+dar ve dikey bir bölümünü gösterir. Portreye tıklamak resmin tamamını açar.
+Kırpma düğmesi ise kartta görünecek bölümü seçmenizi sağlar.
+
+Bunu göz önünde bulundurun: önemli öğeleri çerçevenin ortasına yakın tutun ve
+sol ya da sağ kenara görünmesi gereken bir şey yerleştirmeyin.
+
+
+6. DOSYA ADLARI
+---------------
+
+Oyunla birlikte gelen resimler şu şekilde adlandırılmıştır:
+
+    portrait01w_001.webp     bölge 01, kadınlar, ilk resim
+    portrait19t_002.webp     bölge 19, trans, ikinci resim
+
+Numaralandırma her klasörde yeniden başlar. Addaki bölge ve cinsiyet kodları,
+resim başka bir yere taşınırsa sayaçların çakışmasını önler.
+
+Oyun dosya adından hiçbir bilgi okumaz. Dosyalarınıza istediğiniz adı
+verebilirsiniz; bu düzen yalnızca klasörleri derli toplu tutmak içindir.
+
+Ancak bir kez adlandırdıktan sonra adlarını değiştirmeyin. Oyun, her resim için
+tam dosya yolunu saklar. Karakterler bir resmi kullanmaya başladıktan sonra
+adını değiştirmenin iki sonucu vardır:
+
+  - Bu resmi kullanan her karakter resmi kaybeder. Kayıt bir sonraki kez
+    yüklendiğinde karaktere kendi klasöründen farklı bir resim sessizce atanır.
+    Karakter gri kalmaz, ancak seçtiğiniz resim ve ayarladığınız kırpma
+    kaybolur.
+
+  - Yeniden adlandırılan dosya, oyunun daha önce görmediği bir resim sayılır.
+    Kullanım sayısı sıfırdan başlar. Bu nedenle klasörde en az kullanılan
+    resimlerden biri kabul edilir ve sıradaki yeni karakterlere atanma olasılığı
+    normalden çok daha yüksek olur.
+
+Bir resmi silmek veya başka bir klasöre taşımak da aynı etkiyi yaratır. Hata
+gösterilmez ve hiçbir karakter bozuk durumda kalmaz; kayıt bir sonraki kez
+yüklendiğinde karaktere yalnızca yeni bir resim atanır.
+
+Bir durum özellikle farklı ele alınır: portraits klasörünün tamamı taşındığı
+veya oyunun yanına kopyalanmadığı için yoksa atanacak hiçbir şey bulunmaz ve
+kimseye yeni bir resim verilmez. Karakterler gri dikdörtgenler olarak görünür ve
+klasör yerine döndüğünde özgün resimlerine yeniden kavuşur.
+
+
+7. RESİMLERİ EKLEDİKTEN SONRA
+-----------------------------
+
+Oyunu yeniden başlatın. Klasör ağacı başlangıçta yalnızca bir kez okunur; oyun
+çalışırken eklenen resimler yeniden başlatılana kadar görünmez.
+
+Yeni resimler, bundan sonra oluşturulan karakterlere atanırken güçlü biçimde
+önceliklendirilir, ancak seçimi tamamen ele geçirmez. Böylece yeni bir resim
+grubu karakter listesine bir anda değil, zaman içinde katılır.

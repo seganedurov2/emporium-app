@@ -1,0 +1,172 @@
+ADDING YOUR OWN PICTURES
+========================
+
+Short version: drop image files into the appropriate region and gender folder,
+restart the game, and you are done. Everything below explains how to make them
+look good.
+
+For how the game decides which picture a character gets, read
+00_EN_HOW_IT_WORKS.txt.
+
+Polska wersja: PL_DODAWANIE_ZDJEC.txt
+Deutsche Version: DE_BILDER_HINZUFUEGEN.txt
+Versión española: ES_ANADIR_IMAGENES.txt
+Русская версия: RU_DOBAVLENIE_IZOBRAZHENIY.txt
+简体中文版：ZH_CN_TIANJIA_ZHAOPIAN.txt
+日本語版：JA_SHASHIN_NO_TSUIKA.txt
+Version française : FR_AJOUTER_DES_PHOTOS.txt
+Versão em português: PT_ADICIONAR_FOTOS.txt
+Українська версія: UK_DODAVANNIA_ZOBRAZHEN.txt
+النسخة العربية: AR_IDAFAT_ALSUWAR.txt
+한국어 버전: KO_SAJIN_CHUGA.txt
+Türkçe sürüm: TR_RESIM_EKLEME.txt
+ฉบับภาษาไทย: TH_PHOEM_RUPPHAP.txt
+Versione italiana: IT_AGGIUNGERE_IMMAGINI.txt
+
+
+1. WHERE TO PUT THEM
+--------------------
+
+Choose the folder for the character's region, followed by the folder for her
+gender:
+
+    portraits/03_western_europe_nordics/women/
+
+Do not create folders of your own. The game only accepts folders named after a
+region or an origin it knows; anything else is ignored completely, so pictures
+inside it would simply never appear.
+
+Use the "other" folder for pictures that should only be assigned by hand. Nothing
+in it is selected at random, so a generated character will never receive one of
+these pictures. You must assign it yourself through the picker, or it will never
+be used.
+
+99_CEO is the same kind of manual-only folder. It uses women, men and trans
+like every other group, and it also never takes part in automatic selection.
+
+
+2. FORMATS
+----------
+
+Supported:      .webp   .png   .jpg   .jpeg
+Ignored:        everything else - .bmp, .gif, .tiff and so on
+
+An ignored file is invisible to the game: it is not listed and never used. A
+file with a supported extension but corrupt contents appears in the picker as a
+grey tile labelled with its file name.
+
+
+3. USE LOSSY WEBP AT QUALITY 90
+-------------------------------
+
+This is the recommended format for the library, and the reason is worth knowing.
+
+WebP at quality 90 keeps the picture visually indistinguishable from the original
+under normal in-game viewing while reducing it to a fraction of its original
+file size. Converting the pictures that ship with the game reduced them from
+22.5 MB to 7.2 MB - roughly one third - with no visible difference at any size
+used by the game.
+
+That matters across a whole library rather than for a single file. At the sizes
+recommended below, a WebP q90 portrait averages under 90 KB, so a thousand of
+them take about 85 MB. The same thousand as PNG would take roughly a gigabyte.
+
+Do not re-encode a picture that is already WebP. Lossy formats lose a little
+every time they are encoded, and a second pass buys you nothing.
+
+Quality settings above 90 offer almost no visible improvement but increase the
+file size quickly. Below about 80, compression artefacts start to become visible
+in skin and hair, where they are especially distracting in a portrait.
+
+
+4. SIZE
+-------
+
+Recommended:    about 768 x 1152, or a similar portrait resolution
+Minimum useful: around 1000 pixels tall
+Maximum:        no hard limit, but very large files waste memory and load time
+
+The game does not upscale the source image before displaying it. If a file is
+smaller than the frame, the interface still has to stretch it to fill the space,
+which makes it look soft. A 100 x 150 picture, for example, will look heavily
+blurred on a character card.
+
+Larger files work, but their extra detail becomes pointless past a certain size.
+The full-screen view is the largest display mode; on a 1080p screen, its usable
+height is just under one thousand pixels. Larger images are scaled down to fit,
+but still take extra time and memory to decode.
+
+
+5. SHAPE
+--------
+
+Use portrait orientation. Taller and narrower is better than square.
+
+The portrait frame on a character card is tall and narrow and grows with the
+window, so a picture is scaled to cover it and any overflow is cropped. The exact
+crop depends on both the shape of the picture and the current height of the card.
+At the card's minimum size, the result is approximately:
+
+    600 x 2000   very tall     cropped at the top and bottom
+    768 x 1152   recommended   about 10% of the width cropped
+    800 x 800    square        about 40% of the width cropped
+    1200 x 600   landscape     about 70% of the width cropped
+
+As the card grows taller, more is cropped from the sides. At roughly twice the
+minimum height, the last three examples lose about 55%, 70% and 85% of their
+width respectively.
+
+None of these will break anything. A landscape picture still works; the card
+simply shows a narrow vertical slice of it. Clicking the portrait opens the full
+image, and the crop button lets you choose which part appears on the card.
+
+Compose with that in mind: keep what matters near the middle of the frame, and
+do not put anything you care about at the far left or right edge.
+
+
+6. FILE NAMES
+-------------
+
+The pictures that ship with the game are named like this:
+
+    portrait01w_001.webp     region 01, women, first picture
+    portrait19t_002.webp     region 19, trans, second picture
+
+The number restarts inside every folder, while the region and gender codes in the
+name prevent those counters from clashing if a picture is moved elsewhere.
+
+The game reads nothing out of a file name. Name your files whatever you like -
+the scheme exists only to keep the folders tidy.
+
+Name them once, though, and then leave them alone. The game stores each picture's
+full path, so renaming one after characters have started using it has two
+consequences:
+
+  - Every character wearing that picture loses it. The next time the game loads
+    that save she is quietly given a different picture from her own folder, so
+    she will not stay grey - but the one you chose for her is gone, along with
+    any framing you set for it.
+
+  - The renamed file counts as a picture the game has never seen. Its usage
+    count starts at zero, so the game treats it as one of the least-used pictures
+    in the folder and the next characters created are unusually likely to get it.
+
+Deleting a picture has the same effect, as does moving it to another folder. No
+error is raised and no character is left broken; she is simply given a
+replacement the next time the save is loaded.
+
+One case is deliberately different: if the whole portrait folder is missing -
+moved aside, or not copied next to the game - nobody is given a replacement,
+because there is nothing to give. Characters show grey rectangles and get their
+own pictures back as soon as the folder is where it belongs.
+
+
+7. AFTER YOU ADD THEM
+---------------------
+
+Restart the game. The folder tree is read once at startup, so pictures added
+while it is running will not show up until the next restart.
+
+New pictures are strongly preferred for the next characters that get created,
+without taking over completely, so a fresh batch works its way into the roster
+over time instead of all at once.

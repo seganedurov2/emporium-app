@@ -1,0 +1,189 @@
+﻿ADICIONAR FOTOS
+===============
+
+NOTA — PORTUGAL E BRASIL
+
+Este texto usa português europeu como base. Quando uma expressão puder causar
+confusão ou não ser reconhecida no Brasil, o equivalente brasileiro aparece
+entre parênteses retos [colchetes]. As restantes diferenças são suficientemente
+claras pelo contexto e ficam na forma usada em Portugal.
+
+Versão curta: coloque os ficheiros [arquivos] de imagem na pasta correspondente
+à região e ao género, reinicie o jogo e está feito. O restante texto explica
+como obter bons resultados.
+
+Para saber como o jogo decide que imagem atribuir a uma personagem, consulte
+PT_COMO_FUNCIONA.txt.
+
+English version: 00_EN_ADDING_PICTURES.txt
+Polska wersja: PL_DODAWANIE_ZDJEC.txt
+Deutsche Version: DE_BILDER_HINZUFUEGEN.txt
+Versión española: ES_ANADIR_IMAGENES.txt
+Русская версия: RU_DOBAVLENIE_IZOBRAZHENIY.txt
+简体中文版：ZH_CN_TIANJIA_ZHAOPIAN.txt
+日本語版：JA_SHASHIN_NO_TSUIKA.txt
+Version française : FR_AJOUTER_DES_PHOTOS.txt
+Українська версія: UK_DODAVANNIA_ZOBRAZHEN.txt
+النسخة العربية: AR_IDAFAT_ALSUWAR.txt
+한국어 버전: KO_SAJIN_CHUGA.txt
+Türkçe sürüm: TR_RESIM_EKLEME.txt
+ฉบับภาษาไทย: TH_PHOEM_RUPPHAP.txt
+Versione italiana: IT_AGGIUNGERE_IMMAGINI.txt
+
+
+1. ONDE COLOCAR AS IMAGENS
+--------------------------
+
+Escolha a pasta da região da personagem e, dentro dela, a pasta correspondente
+ao género:
+
+    portraits/03_western_europe_nordics/women/
+
+Não crie pastas próprias. O jogo só aceita pastas com o nome de uma região ou
+origem que reconheça. Qualquer outra pasta é completamente ignorada, pelo que
+as imagens nela contidas nunca aparecerão.
+
+Use a pasta "other" para imagens que só devam ser atribuídas manualmente. Nada
+do que está nela participa na seleção aleatória, portanto uma personagem gerada
+nunca receberá uma dessas imagens. Terá de a atribuir através do seletor; caso
+contrário, nunca será usada.
+
+
+2. FORMATOS
+-----------
+
+Aceites:        .webp   .png   .jpg   .jpeg
+Ignorados:      todos os restantes — .bmp, .gif, .tiff, entre outros
+
+Um ficheiro ignorado é invisível para o jogo: não aparece na lista e nunca é
+usado. Um ficheiro com uma extensão aceite, mas com conteúdo danificado, aparece
+no seletor como um bloco cinzento identificado pelo nome do ficheiro.
+
+
+3. USE WEBP LOSSY COM QUALIDADE 90
+----------------------------------
+
+Este é o formato recomendado para a biblioteca, e vale a pena conhecer o motivo.
+
+WebP com qualidade 90 mantém a imagem visualmente indistinguível do original em
+condições normais de visualização no jogo, reduzindo-a a uma fração do tamanho
+original. A conversão das imagens incluídas no jogo reduziu o seu tamanho de
+22,5 MB para 7,2 MB — cerca de um terço — sem qualquer diferença visível nos
+tamanhos usados pelo jogo.
+
+Isto faz diferença numa biblioteca inteira, mesmo que não se note num único
+ficheiro. Com as dimensões recomendadas abaixo, um retrato WebP q90 ocupa em
+média menos de 90 KB; mil retratos ocupam cerca de 85 MB. Os mesmos mil
+ficheiros em PNG ocupariam aproximadamente um gigabyte.
+
+Não volte a codificar uma imagem que já esteja em WebP. Os formatos com perdas
+perdem um pouco de qualidade a cada codificação, e uma segunda passagem não traz
+qualquer vantagem.
+
+Uma qualidade superior a 90 quase não produz melhorias visíveis, mas aumenta
+rapidamente o tamanho do ficheiro. Abaixo de cerca de 80, os artefactos de
+compressão começam a tornar-se visíveis na pele e no cabelo, onde são
+especialmente incómodos num retrato.
+
+
+4. TAMANHO
+----------
+
+Recomendado:    cerca de 768 x 1152 ou uma resolução vertical semelhante
+Mínimo útil:    cerca de 1000 píxeis de altura
+Máximo:         sem limite rígido, mas ficheiros enormes desperdiçam memória
+                e aumentam o tempo de carregamento
+
+O jogo não amplia a imagem de origem antes de a apresentar. Se um ficheiro for
+menor do que a moldura, a interface terá de o esticar para preencher o espaço,
+o que reduz a nitidez. Uma imagem de 100 x 150, por exemplo, ficará muito
+desfocada num cartão de personagem.
+
+Os ficheiros maiores funcionam, mas o detalhe adicional deixa de ter utilidade
+a partir de certo ponto. A vista em ecrã inteiro [tela cheia] é o maior modo de
+visualização; num ecrã de 1080p, a altura útil é ligeiramente inferior a mil
+píxeis. As imagens maiores são reduzidas para caber, mas continuam a exigir mais
+tempo e memória para serem descodificadas.
+
+
+5. FORMATO DA IMAGEM
+--------------------
+
+Use orientação vertical. Uma imagem alta e estreita é melhor do que uma
+quadrada.
+
+A moldura do retrato num cartão de personagem é alta e estreita e cresce com a
+janela. A imagem é redimensionada para cobrir a moldura, e tudo o que ultrapassa
+os limites é cortado. O corte exato depende tanto do formato da imagem como da
+altura atual do cartão. No tamanho mínimo do cartão, o resultado é
+aproximadamente este:
+
+    600 x 2000   muito alta    cortada em cima e em baixo
+    768 x 1152   recomendada   cerca de 10% da largura cortada
+    800 x 800    quadrada      cerca de 40% da largura cortada
+    1200 x 600   horizontal    cerca de 70% da largura cortada
+
+À medida que o cartão fica mais alto, uma parte maior das laterais é cortada.
+Com aproximadamente o dobro da altura mínima, os três últimos exemplos perdem
+cerca de 55%, 70% e 85% da largura, respetivamente.
+
+Nenhuma destas imagens causará problemas. Uma imagem horizontal continua a
+funcionar; o cartão mostra apenas uma faixa vertical estreita. Clicar no retrato
+abre a imagem completa, e o botão de corte permite escolher a parte que aparece
+no cartão.
+
+Tenha isso em conta ao compor a imagem: mantenha o que é importante perto do
+centro e não coloque nada essencial junto às extremidades esquerda ou direita.
+
+
+6. NOMES DOS FICHEIROS
+----------------------
+
+As imagens incluídas no jogo têm nomes como estes:
+
+    portrait01w_001.webp     região 01, mulheres, primeira imagem
+    portrait19t_002.webp     região 19, trans, segunda imagem
+
+A numeração recomeça em cada pasta, enquanto os códigos de região e género no
+nome evitam conflitos entre os contadores se uma imagem for movida para outro
+local.
+
+O jogo não extrai qualquer informação do nome do ficheiro. Pode dar aos seus
+ficheiros os nomes que quiser; este esquema serve apenas para manter as pastas
+organizadas.
+
+No entanto, escolha os nomes uma vez e não volte a alterá-los. O jogo guarda o
+caminho completo de cada imagem, pelo que mudar um nome depois de as personagens
+começarem a usar a imagem tem duas consequências:
+
+  - Todas as personagens que usam essa imagem perdem-na. Da próxima vez que o
+    jogo guardado for carregado, cada uma recebe discretamente uma
+    imagem diferente da sua própria pasta. Não ficarão cinzentas, mas perderão a
+    imagem escolhida e qualquer enquadramento definido para ela.
+
+  - O ficheiro com o novo nome conta como uma imagem que o jogo nunca viu. A sua
+    contagem de utilizações começa em zero, pelo que será tratado como uma das
+    imagens menos usadas da pasta e terá uma probabilidade invulgarmente alta de
+    ser atribuído às próximas personagens criadas.
+
+Eliminar uma imagem tem o mesmo efeito, tal como movê-la para outra pasta. Não é
+apresentado qualquer erro e nenhuma personagem fica inutilizada; recebe apenas
+uma imagem de substituição da próxima vez que o jogo guardado for carregado.
+
+Existe um caso deliberadamente diferente: se toda a pasta portraits estiver em
+falta — por ter sido movida ou não ter sido copiada para junto do jogo — ninguém
+recebe uma imagem de substituição, porque não existe nada para atribuir. As
+personagens aparecem como retângulos cinzentos e recuperam as imagens originais
+assim que a pasta volta ao devido lugar.
+
+
+7. DEPOIS DE ADICIONAR AS IMAGENS
+---------------------------------
+
+Reinicie o jogo. A árvore de pastas é lida apenas uma vez durante o arranque,
+portanto as imagens adicionadas enquanto o jogo está em execução só aparecerão
+depois de o reiniciar.
+
+As imagens novas são fortemente favorecidas nas próximas atribuições, mas não
+excluem todas as outras. Assim, um novo conjunto entra gradualmente na lista de
+personagens em vez de aparecer todo de uma só vez.

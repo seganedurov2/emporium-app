@@ -1,0 +1,198 @@
+﻿COMMENT FONCTIONNE LE SYSTÈME DE PHOTOS DES PERSONNAGES
+=======================================================
+
+Chaque personnage du jeu utilise une photo provenant de cette arborescence de
+dossiers. Rien d'autre ne détermine son apparence : le jeu ne reconnaît pas le
+contenu d'un fichier image. Une photo n'est donc associée à un personnage qu'en
+fonction de son emplacement.
+
+Si vous souhaitez seulement ajouter des photos, consultez
+FR_AJOUTER_DES_PHOTOS.txt. Ce fichier explique comment le jeu les utilise.
+
+English version: 00_EN_HOW_IT_WORKS.txt
+Polska wersja: PL_JAK_TO_DZIALA.txt
+Deutsche Version: DE_WIE_ES_FUNKTIONIERT.txt
+Versión española: ES_COMO_FUNCIONA.txt
+Русская версия: RU_KAK_ETO_RABOTAET.txt
+简体中文版：ZH_CN_RUHE_YUNZUO.txt
+日本語版：JA_SHIKUMI.txt
+Versão em português: PT_COMO_FUNCIONA.txt
+Українська версія: UK_YAK_TSE_PRATSIUYE.txt
+النسخة العربية: AR_KAYFA_YAAMAL.txt
+한국어 버전: KO_JAKDONG_BANGSIK.txt
+Türkçe sürüm: TR_NASIL_CALISIR.txt
+ฉบับภาษาไทย: TH_THAMNGAN_YANGRAI.txt
+Versione italiana: IT_COME_FUNZIONA.txt
+
+
+1. EMPLACEMENT DE CE DOSSIER
+----------------------------
+
+Dans la version publiée du jeu, ce dossier se trouve à côté du fichier .exe,
+comme le dossier "saves". C'est volontaire : vous pouvez y ajouter vos propres
+photos à une installation existante sans modifier les fichiers fournis avec le
+jeu.
+
+Le contenu de ce dossier n'est pas intégré au jeu. Vous pouvez donc toujours le
+modifier librement.
+
+
+2. ARBORESCENCE DES DOSSIERS
+----------------------------
+
+    portraits/
+        01_north_america_central_caribbean/
+            women/
+            men/
+            trans/
+        02_south_america/
+        ...
+        14_australia_oceania/
+        15_roma/
+        ...
+        21_andean/
+        other/
+
+Les quatorze premiers dossiers représentent les régions du monde dont un
+personnage peut être originaire. Les sept suivants représentent des groupes
+sans État, dispersés dans plusieurs régions. La région seule donne donc peu
+d'indications sur leur apparence. Le dernier dossier est expliqué à la section
+6.
+
+Le nombre placé au début du nom d'un dossier sert uniquement à définir son
+ordre. Seule la partie qui suit le nombre compte : elle doit correspondre à une
+région ou à une origine reconnue par le jeu. Tout autre dossier est entièrement
+ignoré : il n'apparaît pas dans la liste et n'est jamais utilisé.
+
+Chacun de ces dossiers contient les trois mêmes sous-dossiers : women, men et
+trans.
+
+
+3. COMMENT UN PERSONNAGE OBTIENT SA PHOTO
+-----------------------------------------
+
+Lors de la création d'un personnage, le jeu vérifie les emplacements suivants
+dans l'ordre et s'arrête au premier qui contient une photo appropriée :
+
+    1. Le dossier correspondant à son origine, s'il existe.
+       C'est à cela que servent les dossiers des groupes sans État. Une femme
+       rom née en Allemagne reçoit sa photo depuis 15_roma, et non depuis la
+       région européenne.
+
+    2. Le dossier de la région dont elle est originaire.
+       C'est son pays d'origine qui compte, et non le marché où elle est
+       apparue.
+       Une Nigériane achetée en Europe reçoit toujours sa photo depuis
+       07_west_africa.
+
+    3. N'importe quel dossier de région ou d'origine reconnu, à condition que
+       le genre corresponde. C'est la solution de secours pour une région qui
+       ne contient pas encore de photos appropriées.
+
+    4. Aucune photo : le personnage apparaît sous forme de rectangle gris.
+
+À chaque étape, un personnage trans vérifie d'abord le sous-dossier trans/. S'il
+est vide, le jeu vérifie le dossier de son sexe enregistré avant de passer à
+l'étape suivante.
+
+
+4. POURQUOI LE MÊME VISAGE NE REVIENT PAS SANS CESSE
+----------------------------------------------------
+
+Le jeu ne choisit pas les photos de manière entièrement aléatoire. Il compte le
+nombre de personnages de votre effectif actuel qui utilisent déjà chaque photo
+du dossier, les trie selon ce nombre et favorise les moins utilisées. Les 40 %
+de photos les moins utilisées reçoivent 65 % de la probabilité totale de
+sélection ; les autres se partagent le reste.
+
+Deux conséquences en découlent :
+
+  - S'il y a plus de photos que de personnages, les répétitions sont rares.
+  - S'il y a moins de photos que de personnages, les répétitions sont
+    inévitables, mais elles restent réparties de façon uniforme. Un visage ne
+    revient pas vingt fois tandis qu'un autre n'est jamais utilisé.
+
+Le compteur d'utilisation n'est pas enregistré séparément. Le jeu le calcule à
+partir des personnages que vous possédez actuellement. Vendre ou perdre un
+personnage réduit donc automatiquement l'utilisation de sa photo. Les nouvelles
+photos ajoutées à un dossier très utilisé sont nettement favorisées, sans être
+attribuées à tous les nouveaux personnages.
+
+
+5. LA CARTE, LE CADRAGE ET L'AFFICHAGE COMPLET
+----------------------------------------------
+
+Le cadre de la photo sur une fiche de personnage est haut et étroit, et devient
+plus haut lorsque la fenêtre est agrandie. La photo est mise à l'échelle pour
+couvrir le cadre ; toute partie qui dépasse est rognée.
+
+La fiche affiche donc généralement une portion recadrée plutôt que la photo
+entière. Deux fonctions permettent de gérer ce comportement :
+
+  - Le bouton de réglage du cadrage permet de choisir, séparément pour chaque
+    personnage, la partie de la photo affichée sur la fiche.
+  - Cliquer sur la photo ouvre l'image entière, sans recadrage, à sa résolution
+    d'origine. Si elle ne tient pas à l'écran, elle est réduite pour
+    s'y adapter.
+
+Le jeu n'agrandit pas l'image source avant de l'afficher. Si le cadre est plus
+grand, l'interface doit étirer l'image, ce qui la rend floue.
+
+
+6. LE DOSSIER "other"
+---------------------
+
+Ce dossier est destiné aux photos qui doivent être attribuées uniquement à la
+main. Il ne participe pas à la sélection automatique : un personnage généré ne
+recevra donc jamais l'une de ses photos. Le sélecteur de photos l'affiche comme
+n'importe quel autre dossier et permet d'attribuer manuellement son contenu.
+
+Utilisez-le pour une photo créée spécialement pour un personnage donné et qui
+ne doit être attribuée à personne d'autre.
+
+
+7. CHOISIR UNE PHOTO MANUELLEMENT
+---------------------------------
+
+Lorsque vous survolez la photo d'une fiche de personnage, une petite barre à
+deux boutons apparaît. L'un règle le cadrage actuel et l'autre ouvre le
+sélecteur de photos.
+
+Le sélecteur s'ouvre dans le dossier du personnage, avec son genre déjà
+sélectionné. Les dossiers qui ne contiennent aucune photo pour ce genre sont
+estompés. Cliquer sur une miniature la sélectionne, la loupe dans son coin ouvre
+l'affichage complet et le bouton de confirmation attribue la photo. Rien ne
+change avant la confirmation.
+
+Changer la photo d'un personnage supprime le cadrage défini pour la précédente,
+car ce réglage appartient à la photo pour laquelle il a été créé.
+
+
+8. LORSQU'UNE PHOTO DISPARAÎT
+-----------------------------
+
+La photo d'un personnage est enregistrée sous la forme d'un chemin de fichier.
+Si vous supprimez le fichier, le renommez ou le déplacez vers un autre dossier,
+le chemin enregistré ne pointe plus vers lui.
+
+Lors du chargement d'une sauvegarde, le jeu détecte ces cas et choisit une photo
+de remplacement pour chaque personnage concerné selon les règles habituelles.
+Une nouvelle photo apparaît ainsi à la place du rectangle gris, tandis que la
+pondération normale selon l'utilisation continue de limiter les répétitions
+dans l'effectif. Le cadrage de la photo manquante est également supprimé, car il
+a été créé pour une image qui n'existe plus.
+
+Les personnages auxquels aucune photo n'a jamais été attribuée restent
+inchangés. Ils n'ont rien perdu. Leur attribuer une photo au chargement
+serait une modification qui n'a pas été demandée.
+
+Si tout le dossier portraits est absent, le jeu ne remplace rien. Les chemins
+enregistrés sont conservés : remettre le dossier à sa place restaure donc les
+photos d'origine sans modifier définitivement la sauvegarde.
+
+
+9. DÉTECTION DES MODIFICATIONS
+------------------------------
+
+Le jeu ne lit l'arborescence des dossiers qu'une seule fois au démarrage. Les
+photos ajoutées pendant son exécution n'apparaissent qu'après un redémarrage.

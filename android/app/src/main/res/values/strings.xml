@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Эмпориум</string>
+    <string name="title_activity_main">Эмпориум</string>
+    <string name="package_name">com.emporium.app</string>
+    <string name="custom_url_scheme">com.emporium.app</string>
+</resources>
