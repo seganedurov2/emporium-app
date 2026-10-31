@@ -135,7 +135,7 @@ export function NotificationCenter({ feed, onNavigate }: NotificationCenterProps
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative flex items-center gap-3">
       <button
         type="button"
         onClick={() => setIsOpen(open => !open)}

@@ -12,6 +12,7 @@ import { PersonnelCard } from '../roster/PersonnelCard';
 import { VenueAdministratorPanel } from '../venue/VenueAdministratorPanel';
 import { VenueBanner, VenueToolbar, VENUE_APPEARANCES } from '../venue';
 import { formatMoney } from '../../currency';
+import { getTerm, type Platform } from '../../terminology';
 import {
   ROSTER_SORT_OPTIONS,
   rosterSortValue,
@@ -540,3 +541,4 @@ export function BeautySalonTab({
     </div>
   );
 }
+

@@ -364,7 +364,7 @@ export const REGION_CITIES: Record<string, string[]> = {
   '04_eastern_europe': [
     'Москва', 'Санкт-Петербург', 'Киев', 'Варшава', 'Прага', 'Будапешт',
     'Бухарест', 'София', 'Афины', 'Белград', 'Загреб', 'Сараево', 'Подгорица',
-    'Скопье', 'Тирана', 'Кишинёв', 'Минск', 'Вильнюс', 'Рига', 'Таллин',
+    'Скопье', 'Тирана', 'Кишинёв', 'Минск', 'Калинковичи', 'Вильнюс', 'Рига', 'Таллин',
     'Братислава', 'Любляна', 'Краков', 'Одесса', 'Харьков'
   ],
   '05_middle_east': [
@@ -507,7 +507,7 @@ export const LAST_NAMES = [
   'Фрост', 'Джулиан', 'Сендваль', 'Орлов', 'Шнайдер', 'Кравц', 'Мартинес', 'Дэвис', 'Ли', 'Гроссман'
 ];
 
-export function generateCharacter(regionId?: string, genderOverride?: 'women' | 'men'): Character {
+export function generateCharacter(regionId?: string, genderOverride?: 'women' | 'men' | 'trans'): Character {
   const reg = regionId ? REGIONS.find(r => r.id === regionId) || REGIONS[0] : REGIONS[Math.floor(Math.random() * REGIONS.length)];
   const genderRand = Math.random();
   const gender: 'women' | 'men' | 'trans' = genderOverride ?? (genderRand < 0.48 ? 'women' : genderRand < 0.96 ? 'men' : 'trans');
@@ -586,7 +586,7 @@ export const MARKET_POOL_SIZE = MARKET_POOL_MAX_SIZE;
  * occupy their existing slots for one refresh; hired operatives leave the market
  * and live on in the roster.
  */
-export function refreshMarketPool(pool: Character[], reservedCharacterIds: string[] = [], marketDemand: Record<string, number> = {}, regionalStanding: Record<string, number> = {}): Character[] {
+export function refreshMarketPool(pool: Character[], reservedCharacterIds: string[] = []): Character[] {
   const preserved = pool
     .filter(character => !character.acquired && reservedCharacterIds.includes(character.id))
     .slice(0, MARKET_POOL_SIZE);
@@ -600,9 +600,7 @@ export function refreshMarketPool(pool: Character[], reservedCharacterIds: strin
       ? pool[Math.floor(Math.random() * pool.length)].region 
       : REGIONS[Math.floor(Math.random() * REGIONS.length)].id;
     
-    const demand = marketDemand[sourceRegion] ?? 1;
-    const standing = regionalStanding[sourceRegion] ?? 50;
-    const fresh = generateCharacter(sourceRegion, undefined, demand, standing);
+    const fresh = generateCharacter(sourceRegion, undefined);
     
     if (usedImages.has(fresh.image)) continue;
     usedImages.add(fresh.image);

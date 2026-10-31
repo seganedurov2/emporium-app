@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { formatMoney, formatSignedMoney, getBtcRate } from './currency';
 import { useBtcRate } from './useBtcRate';
-import { updateRegionalMarketAfterPurchase, decayMarketDynamics } from './marketEconomyEngine';
-import { calculateVenueSynergies } from './synergyEngine';
-import { getTerm, type Platform } from './terminology';
+import { updateRegionalMarketAfterPurchase } from './marketEconomyEngine';
+import { calculateVenueSynergies, type SynergyResult } from './synergyEngine';
+import type { Platform } from './terminology';
 import {
   Users, Calendar, Bitcoin, Award,
 
@@ -30,6 +30,7 @@ import { advanceEmployeesWeek, createEmployeeCandidates, EMPLOYEE_CANDIDATE_CAP,
 import { buildChiefDoctorReport } from './chiefDoctorEngine';
 import { calculateStaffing } from './staffingCalculator';
 import { createInitialCampaign, migrateCampaignState, readCampaignFromStorage, type ManagedCampaignState } from './saveState';
+import type { MezzanineViewState } from './mezzanineViewState';
 import {
   generateVenueRequests,
   stripClubAssignmentError,
@@ -109,6 +110,8 @@ import { SchoolKindergartenTab } from './components/school/SchoolKindergartenTab
 import { SchoolTab } from './components/school/SchoolTab';
 import { CorrectionCenterTab } from './components/correction/CorrectionCenterTab';
 import { SelfDevelopmentTab } from './components/selfDevelopment/SelfDevelopmentTab';
+import { MezzanineTab } from './components/mezzanine/MezzanineTab';
+
 import type { ClientContract } from './contractsEngine';
 import { generateContract } from './contractsEngine';
 import type { SlaveBuyerContract, SlaveContractChannel, StandingMap, CaptiveLotOffer, TradeSupplyContract } from './slaveContractsEngine';
@@ -130,14 +133,17 @@ import {
 import { triggerWeeklyMarketRefresh } from './marketRefreshLogic';
 import type { AppTab } from './appNavigation';
 import { APP_NAVIGATION } from './appNavigation';
-import { NotificationCenter } from './components/header/NotificationCenter';
 import { buildActivityFeed } from './components/header/notificationFeed';
+import { NotificationCenter } from './components/header/NotificationCenter';
+import { AuthScreen } from './components/auth/AuthScreen';
+import { FileUpload } from './components/ui/FileUpload';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { setPortrait3dEnabled } from './portrait3dFlag';
 import { setOrientationLock } from './telegram';
+import { assetUrl } from './assetUrl';
+import { ceoPortraitFileNames } from './portraitAssets';
 import { BeautySalonTab } from './components/salon/BeautySalonTab';
-import { EventModal } from './components/events/EventModal';
 import { VenueBanner, VENUE_APPEARANCES } from './components/venue';
 import {
   ACHIEVEMENT_BY_ID,
@@ -363,15 +369,25 @@ const legacyRosterViewEnabled: boolean = false;
 
 export default function App() {
   useBtcRate();
-  const [currentPlatform, setCurrentPlatform] = useState<Platform>('original');
+  const [currentPlatform, setCurrentPlatform] = useState<Platform>(() =>
+    new URLSearchParams(window.location.search).get('platform') === 'tiktok' ? 'tiktok' : 'original'
+  );
   const [currentScreen, setCurrentScreen] = useState<'main_menu' | 'playing' | 'load_game' | 'new_game'>('main_menu');
   const [showInGameMenu, setShowInGameMenu] = useState(false);
 
 
   // New game creator state
   const [newCampaignName, setNewCampaignName] = useState('Глобальный синдикат Эмпориум');
-  const [newCeoName, setNewCeoName] = useState('Елена Вэнс (генеральный директор)');
+  const [newCeoName, setNewCeoName] = useState('Елена Вэнс');
+  const [newCeoGender, setNewCeoGender] = useState<Character['gender']>('women');
+  const [newCeoBirthDate, setNewCeoBirthDate] = useState('1985-06-15');
+  const [newCeoBirthPlace, setNewCeoBirthPlace] = useState('Вена, Австрия');
+  const [newCeoPhoto, setNewCeoPhoto] = useState<string | null>(null);
+  const [newCeoPortraitUrl, setNewCeoPortraitUrl] = useState<string | null>(null);
   const [newStartingFunds, setNewStartingFunds] = useState(125000);
+  const [mapCoords] = useState<{ lat: number; lon: number } | null>(null);
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [gameState, setGameState] = useState<ManagedCampaignState>(() => {
     try {
@@ -389,6 +405,9 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => loadLeaderboard());
 
 const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
+  // Which mezzanine map mode is shown; the game tabs keep their own state, so
+  // switching between the мезонин and the campaign never resets either side.
+  const [mezzanineView, setMezzanineView] = useState<'mezzanine' | AppTab>('mezzanine');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
@@ -471,6 +490,8 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
     }
   }, []);
 
+  useEffect(() => {
+    if (currentScreen === 'playing') {
       const saveData = {
         ...gameState,
         timestamp: new Date().toLocaleString()
@@ -490,15 +511,29 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
     setPortrait3dEnabled(appSettings.emporium_3d);
   }, [appSettings.emporium_3d]);
 
+  // Closes the in-game menu and mobile navigation on Escape.
+  useEffect(() => {
+    if (!showInGameMenu && !isMobileMenuOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      if (showInGameMenu) setShowInGameMenu(false);
+      if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showInGameMenu, isMobileMenuOpen]);
+
   const renderNavigationItems = (collapsed = false, mobile = false) => APP_NAVIGATION.map(tab => {
     const Icon = tab.icon;
-    const isActive = activeTab === tab.id;
+    const isActive = activeTab === tab.id && mezzanineView === tab.id;
     return (
       <button
         key={tab.id}
         type="button"
         onClick={() => {
           setActiveTab(tab.id);
+          setMezzanineView(tab.id);
           if (mobile) setIsMobileMenuOpen(false);
         }}
         aria-current={isActive ? 'page' : undefined}
@@ -548,6 +583,25 @@ showNotify(`Кампания загружена из слота ${slotNum}!`);
     }
   };
 
+  // Mezzanine map view (0.3.7): the hub reports its region/city/zoom/pan, and
+  // the campaign save keeps it so the map comes back where the player left it.
+  const handleMezzanineViewChange = (mezzanine: MezzanineViewState) => {
+    setGameState(prev => {
+      const current = prev.mezzanine;
+      if (current
+        && current.viewMode === mezzanine.viewMode
+        && current.selectedRegionId === mezzanine.selectedRegionId
+        && current.selectedCity?.seed === mezzanine.selectedCity?.seed
+        && current.gridSize === mezzanine.gridSize
+        && current.offset.x === mezzanine.offset.x
+        && current.offset.y === mezzanine.offset.y
+        && current.citySeed === mezzanine.citySeed) {
+        return prev;
+      }
+      return { ...prev, mezzanine };
+    });
+  };
+
   const deleteSlotData = (slotNum: number) => {
     localStorage.removeItem(getSlotKey(slotNum));
     showNotify(`Слот ${slotNum} удалён.`);
@@ -555,46 +609,23 @@ showNotify(`Кампания загружена из слота ${slotNum}!`);
     setGameState({ ...gameState });
   };
 
-  const handleEventChoice = (choice: EventChoice) => {
-    setGameState(prev => {
-      let nextFunds = prev.funds + (choice.fundsDelta ?? 0);
-      let nextReputation = prev.reputation + (choice.reputationDelta ?? 0);
-      
-      if (choice.effect) {
-        const result = choice.effect(prev);
-        if (result) {
-          return { 
-            ...prev, 
-            ...result, 
-            funds: nextFunds, 
-            reputation: nextReputation 
-          };
-        }
-      }
-
-      return {
-        ...prev,
-        funds: nextFunds,
-        reputation: nextReputation,
-        log: [choice.resultMessage, ...prev.log].slice(0, 50)
-      };
-    });
-    setActiveEvent(null);
-    showNotify('Событие разрешено.');
-  };
-
   const startNewCampaign = () => {
     const newState = createInitialCampaign({
-campaignName: newCampaignName.trim() || 'Глобальный синдикат Эмпориум',
-      ceoName: newCeoName.trim() || 'Елена Вэнс (генеральный директор)',
+      campaignName: newCampaignName.trim() || 'Глобальный синдикат Эмпориум',
+      ceoName: `${newCeoName.trim() || 'Елена Вэнс'} (${newCeoGender === 'women' ? 'женщина' : newCeoGender === 'men' ? 'мужчина' : 'трансгендер'}, ${newCeoBirthDate}, ${newCeoBirthPlace}) (генеральный директор)`,
+      ceoGender: newCeoGender,
+      ceoImage: newCeoPhoto ?? newCeoPortraitUrl ?? undefined,
       funds: newStartingFunds,
       week: 1,
       fresh: true
     });
 
     setGameState(newState);
+    if (newCeoPhoto) localStorage.setItem('ceoPhoto', newCeoPhoto);
     localStorage.setItem(getSlotKey(1), JSON.stringify(newState));
     setCurrentScreen('playing');
+    setActiveTab('mezzanine');
+    setMezzanineView('mezzanine');
     showNotify('Новая кампания началась!');
   };
 
@@ -1465,15 +1496,12 @@ const advanceWeek = () => {
     let venueRevenue = 0;
 
     // Calculate synergies for each venue once per week
-    const venueSynergies = useMemo(() => {
-      const synergies: Record<string, SynergyResult> = {};
-      const venues = ['beauty_salon', 'strip_club', 'pleasure_house', 'trade', 'security', 'auction_house', 'bdsm_room'];
-      venues.forEach(v => {
-        const staff = gameState.roster.filter(c => c.assignedVenue === v);
-        synergies[v] = calculateVenueSynergies(staff);
-      });
-      return synergies;
-    }, [gameState.roster]);
+    const venueSynergies: Record<string, SynergyResult> = {};
+    const venues = ['beauty_salon', 'strip_club', 'pleasure_house', 'trade', 'security', 'auction_house', 'bdsm_room'];
+    for (const v of venues) {
+      const staff = gameState.roster.filter(c => c.assignedVenue === v);
+      venueSynergies[v] = calculateVenueSynergies(staff);
+    }
 
     const updatedRosterVenues = gameState.roster.map(c => {
 
@@ -1825,7 +1853,7 @@ if (isOnCaptureOp(c) || hospitalPatientIds.has(c.id) || restingIds.has(c.id)) re
     let suppliesUsedThisWeek = 0;
     const updatedTreatments: ScheduledTreatment[] = [];
     const exhaustionLevel = gameState.exhaustionUpgrades.beauty_salon;
-    const supplyDiscount = [1.0, 1.0, 0.75, 0.65][exhaustionLevel] ?? 1.0;
+const supplyDiscount = [1.0, 1.0, 0.75, 0.65][exhaustionLevel] ?? 1.0;
     const managerTrait = gameState.beautySalon.managerTraitId
       ? MANAGER_TRAITS.find(t => t.id === gameState.beautySalon.managerTraitId)
       : null;
@@ -2214,8 +2242,7 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
     // slots for one refresh, everything else is replaced.
     const marketRefresh = triggerWeeklyMarketRefresh(
       gameState.marketPool || [],
-      gameState.reservedMarketCharacterIds || [],
-      gameState.marketDemand || {}
+      gameState.reservedMarketCharacterIds || []
     );
     if (marketRefresh.triggered) {
       newLogs.push(marketRefresh.message);
@@ -2376,11 +2403,10 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
           auxiliaryBuildings: gameState.auxiliaryBuildings
         }, gameState.seenExpansionEventIds);
         if (expansionEvent && rollChance(0.65)) setActiveEvent(expansionEvent);
-        else setActiveEvent(getRandomEvent(gameState));
+        else setActiveEvent(getRandomEventWithAuction(nextWeek));
       }
     }
 
-    }
 
     const loanNote = loanPayment > 0 ? ` — Кредит: -${formatMoney(loanPayment)}` : '';
     showNotify(`Наступила неделя ${gameState.week + 1}. Чистый доход: ${formatMoney(netIncome)}${loanNote}`);
@@ -2742,8 +2768,8 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
     }
     setGameState(prev => ({
       ...prev,
-      funds: prev.funds + choice.fundsDelta,
-      reputation: Math.min(100, Math.max(0, prev.reputation + choice.reputationDelta)),
+      funds: prev.funds + (choice.fundsDelta ?? 0),
+      reputation: Math.min(100, Math.max(0, prev.reputation + (choice.reputationDelta ?? 0))),
       log: [`Результат события: ${choice.resultMessage}`, ...prev.log]
     }));
     showNotify(choice.resultMessage);
@@ -3256,6 +3282,14 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
     showNotify(`Записано: ${treatment.name} для ${targetChar.name}!`);
   };
 
+  if (!isAuthenticated) {
+    return (
+      <AuthScreen
+        onAuthenticated={() => setIsAuthenticated(true)}
+      />
+    );
+  }
+
   // --- MAIN MENU SCREEN ---
   if (currentScreen === 'main_menu') {
     return (
@@ -3268,7 +3302,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
           </div>
 
           <h1 className="text-3xl font-black tracking-tight text-white mb-2">EMPORIUM</h1>
-          <p className="text-xs text-slate-400 font-mono mb-8 uppercase tracking-widest">Глобальная стратегия и торговая симуляция v0.3.0</p>
+          <p className="text-xs text-slate-400 font-mono mb-8 uppercase tracking-widest">Глобальная стратегия и торговая симуляция v0.3.7</p>
 
           <div className="space-y-3">
             <button
@@ -3325,26 +3359,149 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
             <ArrowLeft className="w-4 h-4" /> Назад в главное меню
           </button>
 
-          <h2 className="text-2xl font-bold text-white mb-2">Настройка новой кампании</h2>
-          <p className="text-slate-400 text-sm mb-6">Настройте параметры предприятия синдиката перед выходом на мировую торговлю и управление.</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Создание персонажа</h2>
+          <p className="text-slate-400 text-sm mb-6">Создайте своего главу синдиката, как в начале новой игры.</p>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Название синдиката кампании</label>
+              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Имя</label>
               <input
                 type="text"
-                value={newCampaignName}
-                onChange={e => setNewCampaignName(e.target.value)}
+                value={newCeoName}
+                onChange={e => setNewCeoName(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white text-sm focus:border-pink-500 outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Имя оперативника-CEO</label>
+              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Пол</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCeoGender('women');
+                    setNewCeoPortraitUrl(null);
+                  }}
+                  className={`px-3 py-2 rounded-lg text-sm border ${newCeoGender === 'women' ? 'bg-pink-600/20 border-pink-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                >
+                  Женщина
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCeoGender('men');
+                    setNewCeoPortraitUrl(null);
+                  }}
+                  className={`px-3 py-2 rounded-lg text-sm border ${newCeoGender === 'men' ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                >
+                  Мужчина
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCeoGender('trans');
+                    setNewCeoPortraitUrl(null);
+                  }}
+                  className={`px-3 py-2 rounded-lg text-sm border ${newCeoGender === 'trans' ? 'bg-purple-600/20 border-purple-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                >
+                  Трансгендер
+                </button>
+              </div>
+              <p className="mt-1 text-[10px] text-slate-500">
+                Выбор пола исключает портреты других полов — доступны только портреты выбранного пола.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Дата рождения</label>
+                <input
+                  type="date"
+                  value={newCeoBirthDate}
+                  onChange={e => setNewCeoBirthDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white text-sm focus:border-pink-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Место рождения</label>
+                <input
+                  type="text"
+                  value={newCeoBirthPlace}
+                  onChange={e => setNewCeoBirthPlace(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white text-sm focus:border-pink-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                  Фото главного героя
+                </label>
+                <FileUpload
+                  accept="image/*"
+                  label="Фото главного героя"
+                  onFile={f => {
+                    const r = new FileReader();
+                    r.onload = () => {
+                      setNewCeoPhoto(r.result as string);
+                      setNewCeoPortraitUrl(null);
+                    };
+                    r.readAsDataURL(f);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Портреты из игры для выбранного пола: при выборе женщин остальные полы недоступны. */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                Портрет из игры
+              </label>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {ceoPortraitFileNames(newCeoGender).map(fileName => {
+                  const url = assetUrl(`/portraits/99_CEO/${newCeoGender}/${fileName}.webp`);
+                  const selected = newCeoPortraitUrl === url;
+                  return (
+                    <button
+                      key={fileName}
+                      type="button"
+                      onClick={() => {
+                        setNewCeoPortraitUrl(url);
+                        setNewCeoPhoto(null);
+                      }}
+                      aria-pressed={selected}
+                      className={`aspect-square rounded-lg border overflow-hidden ${selected ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-700 bg-slate-950 hover:border-slate-500'}`}
+                    >
+                      <img src={url} alt={`Портрет ${newCeoGender}`} className="h-full w-full object-cover" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Предпросмотр фото главного героя. */}
+            <div className="mt-3">
+              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Предпросмотр</label>
+              <div className="relative h-32 w-32 rounded-lg border border-slate-700 bg-slate-900 overflow-hidden flex items-center justify-center">
+                {newCeoPhoto ?? newCeoPortraitUrl ? (
+                  <img src={newCeoPhoto ?? newCeoPortraitUrl!} alt="Фото главного героя" className="h-full w-full object-cover" />
+                ) : (
+                  <img
+                    src={assetUrl(`/portraits/99_CEO/${newCeoGender}/${ceoPortraitFileNames(newCeoGender)[0]}.webp`)}
+                    alt="Портрет по умолчанию"
+                    className="h-full w-full object-cover opacity-50 grayscale"
+                  />
+                )}
+                <span className="absolute bottom-1 left-1 bg-slate-900/80 text-[10px] text-slate-300 px-1.5 py-0.5 rounded">
+                  {newCeoPhoto ? 'Загруженное фото' : newCeoPortraitUrl ? 'Портрет из игры' : 'По умолчанию'}
+                </span>
+              </div>
+              {newCeoPhoto === null && newCeoPortraitUrl === null && (
+                <p className="mt-1 text-[10px] text-slate-500">Показан портрет по умолчанию для выбранного пола.</p>
+              )}
+            </div>
               <input
                 type="text"
-                value={newCeoName}
-                onChange={e => setNewCeoName(e.target.value)}
+                value={newCampaignName}
+                onChange={e => setNewCampaignName(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white text-sm focus:border-pink-500 outline-none"
               />
             </div>
@@ -3367,12 +3524,21 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
               className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-3.5 px-6 rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer mt-6"
             >
               <Play className="w-4 h-4 fill-slate-950" />
-              Запустить империю синдиката
+              Создать и начать игру
             </button>
           </div>
+
+          {mapCoords && (
+            <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-left">
+              <h4 className="text-amber-400 font-bold text-sm mb-2">Координаты локации (Яндекс.Карты)</h4>
+              <p className="text-xs text-slate-300 mb-1">
+                <span className="font-mono font-bold">{mapCoords.lat}, {mapCoords.lon}</span>
+                — террейн будет сгенерирован по этой точке.
+              </p>
+            </div>
+          )}
         </div>
-      </div>
-    );
+  );
   }
 
   // --- LOAD GAME SCREEN ---
@@ -3758,7 +3924,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
               {activeEvent.choices.map((choice, idx) => {
                 const choiceCost = 'effects' in choice
                   ? choice.effects.reduce((sum, effect) => sum + (effect.type === 'funds' ? Math.max(0, -effect.delta) : 0), 0)
-                  : Math.max(0, -choice.fundsDelta);
+                  : Math.max(0, -(choice.fundsDelta ?? 0));
                 const cannotAfford = choiceCost > gameState.funds;
                 return (
                   <button
@@ -3977,7 +4143,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
             <Sparkles className="w-6 h-6 font-bold" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white m-0 p-0">EMPORIUM <span className="text-xs px-2 py-0.5 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full font-mono">v0.3.0 Web</span></h1>
+            <h1 className="text-xl font-bold tracking-tight text-white m-0 p-0">EMPORIUM <span className="text-xs px-2 py-0.5 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full font-mono">v0.3.7 Web</span></h1>
             <p className="text-xs text-slate-400">{gameState.campaignName} (Слот #{gameState.slot})</p>
           </div>
         </div>
@@ -4023,17 +4189,18 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsSettingsOpen(true)}
-            aria-label="Настройки приложения"
-            title="Настройки"
-            className="rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-slate-200 transition hover:bg-slate-700"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-          <NotificationCenter feed={activityFeed} onNavigate={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
+           <div className="flex items-center gap-3" data-platform={currentPlatform}>
+             <button
+               type="button"
+               onClick={() => setIsSettingsOpen(true)}
+               aria-label="Настройки приложения"
+               title="Настройки"
+               className="rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-slate-200 transition hover:bg-slate-700"
+             >
+               <Settings className="w-4 h-4" />
+             </button>
+              <NotificationCenter feed={activityFeed} onNavigate={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
+
 
           <button
             onClick={() => setShowInGameMenu(true)}
@@ -4076,7 +4243,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         </nav>
       )}
 
-      <div className="flex min-h-0 flex-1">
+      <div className={`flex min-h-0 flex-1 ${mezzanineView === 'mezzanine' ? 'h-[calc(100vh-5rem)]' : ''}`}>
         <aside className={`hidden shrink-0 flex-col border-r border-slate-800 bg-slate-900/70 transition-[width] duration-200 md:flex ${isSidebarExpanded ? 'w-64' : 'w-[4.5rem]'}`}>
           <div className={`flex min-h-14 items-center border-b border-slate-800 px-3 ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
             {isSidebarExpanded && <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Навигация</span>}
@@ -4101,7 +4268,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         </aside>
 
         {/* Main Content Area */}
-        <main className={`min-w-0 flex-1 overflow-y-auto ${activeTab === 'slave_market' || activeTab === 'supply_contracts' || activeTab === 'market' || activeTab === 'roster' || activeTab === 'strip_club' || activeTab === 'salon' ? 'max-w-none p-3 sm:p-4' : 'mx-auto w-full max-w-7xl p-4 sm:p-6'}`}>
+        <main className={`min-w-0 flex-1 overflow-y-auto ${mezzanineView === 'mezzanine' ? 'overflow-hidden p-3 sm:p-4' : activeTab === 'slave_market' || activeTab === 'supply_contracts' || activeTab === 'market' || activeTab === 'roster' || activeTab === 'strip_club' || activeTab === 'salon' ? 'max-w-none p-3 sm:p-4' : 'mx-auto w-full max-w-7xl p-4 sm:p-6'}`}>
         {/* BANKRUPTCY & RECEIVERSHIP WARNING BANNER */}
         {gameState.isBankrupt && (
           <div className="mb-6 bg-red-950/80 border border-red-500/50 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 text-red-200">
@@ -4217,7 +4384,8 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         {/* GLOBAL MARKETPLACE TAB */}
         {activeTab === 'market' && (
           <GlobalMarketTab
-            candidates={gameState.marketPool.filter(character => !character.acquired)}
+          platform={currentPlatform}
+          candidates={gameState.marketPool.filter(character => !character.acquired)}
             funds={gameState.funds}
             reservedCharacterIds={gameState.reservedMarketCharacterIds || []}
             onBuySlave={buyMarketSlave}
@@ -4302,8 +4470,9 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
             </div>
 
             {/* 1. Buy side — captive lots for arbitrage */}
-              <CaptiveLotsMarketPanel
-                lots={gameState.captiveLots || []}
+          <CaptiveLotsMarketPanel
+          platform={currentPlatform}
+          lots={gameState.captiveLots || []}
                 funds={gameState.funds}
                 reservedLotIds={gameState.reservedCaptiveLotIds || []}
                 onBuyLot={buyCaptiveLot}
@@ -4351,8 +4520,9 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
               )}
             />
 
-            <SupplyContractsPanel
-              contracts={gameState.tradeSupplyContracts || []}
+           <SupplyContractsPanel
+           platform={currentPlatform}
+contracts={gameState.tradeSupplyContracts || []}
               funds={gameState.funds}
               onSign={signRegionSupply}
               onBuy={buyFromRegionSupply}
@@ -4363,7 +4533,8 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         {/* ROSTER TAB */}
         {activeTab === 'roster' && (
           <PleasureHouseTab
-            gameState={gameState}
+          platform={currentPlatform}
+          gameState={gameState}
             sortedRoster={sortedRoster}
             rosterSortId={rosterSortId}
             rosterSortDescending={rosterSortDescending}
@@ -4605,7 +4776,8 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         {/* PLEASURE HOUSE PRISONERS TAB */}
         {activeTab === 'pleasure_house_prisoners' && (
           <PleasureHousePrisonersTable
-            gameState={gameState}
+          platform={currentPlatform}
+          gameState={gameState}
             excludeVenue="strip_club"
             onUpgrade={upgradePleasureHouse}
             onAssignVenue={assignVenue}
@@ -4628,7 +4800,8 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         {/* STRIP CLUB TAB */}
         {activeTab === 'strip_club' && (
           <StripClubTab
-            funds={gameState.funds}
+          platform={currentPlatform}
+          funds={gameState.funds}
             roster={gameState.roster}
             stripClubUpgrades={gameState.stripClubUpgrades}
             administratorRequest={gameState.venueRequests?.strip_club ?? null}
@@ -4969,7 +5142,8 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         {/* BDSM ROOM TAB */}
         {activeTab === 'bdsm_room' && (
           <BDSMRoomTab
-            state={gameState}
+          platform={currentPlatform}
+          state={gameState}
             onAcceptRequest={acceptVenueRequest}
           />
         )}
@@ -4997,7 +5171,8 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         {/* BEAUTY SALON TAB */}
         {activeTab === 'salon' && (
           <BeautySalonTab
-            salon={gameState.beautySalon}
+          platform={currentPlatform}
+          salon={gameState.beautySalon}
             funds={gameState.funds}
             roster={gameState.roster}
             exhaustionUpgrades={gameState.exhaustionUpgrades}
@@ -5629,13 +5804,24 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
             <LeaderboardPanel records={gameRecords} leaderboard={leaderboard} />
           </div>
         )}
+
+        {/* MEZZANINE — the hub map; the campaign tabs above live on top of it. */}
+        {mezzanineView === 'mezzanine' && (
+          <MezzanineTab
+            gameState={gameState}
+            onViewChange={handleMezzanineViewChange}
+            onOpenTab={tab => { setActiveTab(tab); setMezzanineView(tab); setIsMobileMenuOpen(false); }}
+          />
+        )}
         </main>
       </div>
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 px-6 py-4 text-center text-xs text-slate-500">
-        Emporium Web Edition v0.3.0 • Симулятор стратегии и управления • Все права защищены.
+        Emporium Web Edition v0.3.7 • Симулятор стратегии и управления • Все права защищены.
       </footer>
     </div>
   );
 }
+
+

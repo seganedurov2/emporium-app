@@ -116,6 +116,7 @@ export const SecurityServiceTab: React.FC<SecurityServiceTabProps> = ({ state })
               <PersonnelCard
                 key={character.id}
                 character={character}
+                platform={'original'}
                 accentClassName="border-l-2 border-l-blue-500/70"
                 metrics={metrics}
                 badges={(

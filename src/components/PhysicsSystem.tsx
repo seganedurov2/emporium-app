@@ -20,11 +20,11 @@ export function PhysicsObject({
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   scale = [1, 1, 1],
-  mass = 1,
-  friction = 0.5,
-  restitution = 0.3,
-  type = 'dynamic',
-  onCollisionEnter,
+  _mass = 1,
+  _friction = 0.5,
+  _restitution = 0.3,
+  _type = 'dynamic',
+  _onCollisionEnter,
   ...props
 }: {
   children: React.ReactNode;

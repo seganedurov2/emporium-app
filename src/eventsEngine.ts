@@ -280,5 +280,5 @@ export const AUCTION_EVENT: GameEvent = {
  */
 export function getRandomEventWithAuction(week: number): GameEvent {
   if (week % 4 === 0) return AUCTION_EVENT;
-  return getRandomEvent();
+  return getRandomEvent({} as any);
 }

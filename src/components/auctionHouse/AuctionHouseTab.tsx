@@ -524,6 +524,7 @@ export function AuctionHouseTab({
                 <PersonnelCard
                   key={char.id}
                   character={char}
+                  platform={'original'}
                   accentClassName="border-l-2 border-l-amber-500/60"
                   onPreviewImage={onPreviewImage}
                   badges={(

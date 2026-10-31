@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { formatMoney } from '../../currency';
 import { FileSignature, Handshake, MapPin, PackagePlus, Truck, WalletCards } from 'lucide-react';
-import { getTerm, type Platform } from '../../terminology';
+import { type Platform } from '../../terminology';
 import type { TradeSupplyContract } from '../../slaveContractsEngine';
 import { VenueToolbar } from '../venue';
 

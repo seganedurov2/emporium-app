@@ -1,4 +1,11 @@
 import { StrictMode } from 'react'
+import * as buffer from 'buffer'
+if (typeof globalThis !== 'undefined') {
+  (globalThis as any).Buffer = (globalThis as any).Buffer || buffer.Buffer
+}
+if (typeof window !== 'undefined') {
+  (window as any).Buffer = (window as any).Buffer || buffer.Buffer
+}
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'

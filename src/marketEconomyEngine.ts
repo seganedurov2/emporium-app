@@ -1,4 +1,3 @@
-import type { Character } from './gameEngine';
 
 /**
  * Calculates the final purchase price of a candidate based on market demand 

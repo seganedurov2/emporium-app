@@ -69,6 +69,18 @@ export function pickCeoPortraitName(sex: PortraitSex): string {
   return `${index}${suffix}`;
 }
 
+/** Every CEO portrait file name (without extension) for a sex, index then suffix. */
+export function ceoPortraitFileNames(sex: PortraitSex): string[] {
+  const suffixes = CEO_SUFFIXES[sex];
+  const names: string[] = [];
+  for (let index = 1; index <= CEO_PORTRAIT_INDEX_COUNT; index += 1) {
+    for (const suffix of suffixes) {
+      names.push(`${index}${suffix}`);
+    }
+  }
+  return names;
+}
+
 /** Every folder the manifest knows about. */
 export function hasPortraitFolder(folder: string): boolean {
   return Object.prototype.hasOwnProperty.call(PORTRAIT_COUNTS, folder);

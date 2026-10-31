@@ -1,6 +1,7 @@
 import { Building2 } from 'lucide-react';
 import type { AuxiliaryBuildingState, Employee } from '../../expansionTypes';
 import { getBuildingDefinition, getBuildingStatus } from '../../buildingsEngine';
+import { useEffect, useState } from 'react';
 
 const STATUS_STYLES: Record<string, { bg: string; border: string; text: string; label: string }> = {
   unbuilt: { bg: 'bg-slate-800/60', border: 'border-slate-700', text: 'text-slate-500', label: 'Не построено' },
@@ -31,6 +32,13 @@ interface OfficeFloorPlanProps {
 }
 
 export function OfficeFloorPlan({ buildings, employees }: OfficeFloorPlanProps) {
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setRevealed(true), 150);
+    return () => clearTimeout(timer);
+  }, []);
+
   const cells: { buildingId: string; col: number; row: number; span: number }[][][] = Array.from({ length: GRID_ROWS }, () =>
     Array.from({ length: GRID_COLS }, () => [])
   );
@@ -45,7 +53,7 @@ export function OfficeFloorPlan({ buildings, employees }: OfficeFloorPlanProps) 
         <Building2 className="h-4 w-4 text-amber-400" />
         <h3 className="text-sm font-bold text-white">План офиса (вид сверху)</h3>
       </div>
-      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}>
+      <div className={`grid gap-2 transition-all duration-700 ${revealed ? 'opacity-100' : 'opacity-0 translate-y-2'}`} style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}>
         {cells.flat(2).map((slot, index) => {
           const building = buildings.find(item => item.id === slot.buildingId);
           const definition = building ? getBuildingDefinition(building.id) : null;
@@ -63,7 +71,8 @@ export function OfficeFloorPlan({ buildings, employees }: OfficeFloorPlanProps) 
           return (
             <div
               key={slot.buildingId}
-              className={`relative flex flex-col items-center justify-center rounded-lg border p-2 text-center ${style.bg} ${style.border} transition hover:border-slate-500`}
+              className={`relative flex flex-col items-center justify-center rounded-lg border p-2 text-center ${style.bg} ${style.border} transition-all duration-500 hover:border-slate-500 ${revealed ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+              style={{ transitionDelay: `${index * 60}ms` }}
               title={`${definition.name} — ${style.label}`}
             >
               <Building2 className={`h-5 w-5 ${style.text}`} aria-hidden="true" />
