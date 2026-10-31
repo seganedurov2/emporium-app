@@ -39,9 +39,27 @@ LAST UPDATED: 2026-10-31
       single press never opens and closes the same overlay.
     - Hotkeys are ignored while typing in inputs/selects; the keymap overlay
       renders straight from the resolver table, so help cannot drift.
+* Fixes (mezzanine map):
+    - The hub showed a flat green field because the city window collapsed to
+      zero width for Kalinkovichi (cell -21, west of the Gomel reference); the
+      window now slides inside the map and keeps its full radius.
+    - Region and city maps share one isometric projection centred on the box;
+      before, x was placed by column centre and y by row offset.
+    - The canvas was sized from parentElement.clientHeight, which grew with the
+      content (1494px canvas in a 720px window); it is now sized from the hub
+      box via ResizeObserver and clipped to the visible area.
+    - The region diamond is fitted to the box with a 10% margin instead of
+      overflowing it; wheel zoom still zooms in.
+    - Map tiles no longer draw under the side panels and the bottom toolbar;
+      the drawing area is padded to the free region.
+    - The bottom toolbar moved inside the hub (it sat below the fold), the
+      right-hand controls became one column (they overlapped), the sections
+      button joined the left column, and the mini map gained a compact mode.
 * Tech debt:
     - Removed HiringTab.new.tsx and HiringTab_temp.tsx (~370 lines of dead
       copies); HiringTab_new2.tsx renamed to HiringTab.tsx.
+    - tools/qa-mezzanine.mjs + npm run qa:mezzanine: browser smoke that waits
+      for real screens and asserts on DOM geometry, not shared page text.
     - Version strings in the title screen, header badge and footer were stuck
       on v0.3.0; now read v0.3.7 from the same release.
 * Tests:
