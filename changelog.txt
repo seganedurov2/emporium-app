@@ -1,43 +1,142 @@
 CHANGELOG.txt
 ================================================================================
 PROJECT: Pawn Pleasure
-LAST UPDATED: 2026-10-25
+VERSION: 0.3.7
+LAST UPDATED: 2026-10-31
 ================================================================================
 
-[VERSION 0.4.0 - CURRENT RELEASE]
+[VERSION 0.3.7 - CURRENT RELEASE] "MEZZANINE: PERSISTENCE & PERFORMANCE"
 
---- 🔧 CHANGES SINCE 0.3.2 ---
-* Global Market:
-    - Fixed critical bug where the marketplace would remain empty if the initial 
-      pool was empty. Generation logic now correctly selects regions regardless 
-      of current pool state.
-    - Refactored triggerWeeklyMarketRefresh for better stability across 
-      Android APK and Telegram WebView.
+--- CHANGES SINCE 0.3.6 ---
+* Save state:
+    - New mezzanine block in the campaign save: selected region, selected city,
+      view mode, zoom (gridSize), pan offset and city-builder seed.
+    - Migration on load: pre-0.3.7 saves load with an empty view instead of
+      failing; corrupted blocks are repaired (zoom clamped to 8..200,
+      coordinates clamped, unusable city dropped, seeds floored to >= 1).
+    - The hub reports its view through onViewChange; App stores it in
+      gameState so saves, slot switching and autosave pick it up.
+    - src/mezzanineViewState.ts holds the schema and normalizer (React-free).
+* Performance:
+    - Wheel zoom is coalesced with requestAnimationFrame: several wheel ticks
+      inside one frame produce a single render instead of one per event.
+    - drawBlock moved to src/mezzanineRender.ts with a seeded PRNG for grass
+      strokes - panning no longer re-rolls the texture every frame.
+    - City window geometry (cityVisibleRect) is clamped as a pair, so a city far
+      off its region collapses to an empty window instead of negative bounds.
+    - Visible-area clipping: a 64x64 region at tile 48 used to fill an
+      8k x 4k canvas on every render, freezing the hub on the second click;
+      off-screen rows/columns are now culled (847k -> ~780x420 px of drawing).
+    - Keymap and pause overlays moved to a fixed layer; as absolute children of
+      the 100vh hub box they were hidden behind the app header.
+    - Map constants (regions, cities, terrain generator) are memoized and the
+      pan offset is read from a ref, so dragging does not rebuild the render
+      callback.
+* Keyboard:
+    - 1..7 quick-switch regions, C toggle city, R/M region/city map,
+      B city plan, K 3D map, + / - zoom, Tab sections, ? keymap, Esc menu.
+    - One keydown listener owns Escape: 3D -> keymap -> city plan -> menu, so a
+      single press never opens and closes the same overlay.
+    - Hotkeys are ignored while typing in inputs/selects; the keymap overlay
+      renders straight from the resolver table, so help cannot drift.
+* Tech debt:
+    - Removed HiringTab.new.tsx and HiringTab_temp.tsx (~370 lines of dead
+      copies); HiringTab_new2.tsx renamed to HiringTab.tsx.
+    - Version strings in the title screen, header badge and footer were stuck
+      on v0.3.0; now read v0.3.7 from the same release.
+* Tests:
+    - New suites: mezzanineViewState (save schema), mezzanineShortcuts
+      (keymap resolver), mezzanineRender (terrain colours, window geometry),
+      plus 4 mezzanine migration cases in saveState.test.ts.
+
+[VERSION 0.3.6 - PREVIOUS RELEASE]
+
+--- CHANGES SINCE 0.3.5 ---
+* Mezzanine / Map:
+    - Isometric performance groundwork for large maps.
+    - Region quick-switch support in the map tab.
+* Systems:
+    - Save-state groundwork for the mezzanine view.
+
+[VERSION 0.3.5 - PREVIOUS RELEASE]
+
+--- 🔧 CHANGES SINCE 0.3.4 ---
+* Mezzanine / UI:
+    - Added ESC-pause menu in Mezzanine tab (Skyrim-style) using same navigation list as "Разделы игры".
+    - Added start-5174.cmd and desktop shortcut for running dev server on port 5174.
+
+[VERSION 0.3.8 - PLANNED]
+* Mezzanine / Map:
+    - Add city bookmarks for faster navigation.
+    - Static-layer cache so panning a large map re-uses drawn tiles.
 * UI/UX:
-    - Optimized candidate filtering and sorting in GlobalMarketTab for 
-      faster response times.
-    - Improved visual feedback for "Value Mismatch" between appraiser and market.
+    - Unify ESC-menu with global game pause (sync with other tabs).
+    - Add tooltips for navigation icons.
+    - Improve mobile menu accessibility (pinch-zoom instead of wheel only).
+* Systems:
+    - Minor balance tweaks for market rotation.
+* Kilo proposes (0.3.8):
+    - Lazy-load region chunks for isometric map to reduce memory.
+    - Add e2e smoke tests for mezzanine navigation and pause menu.
 
-[PLANNED FOR 0.5.0]
-- Dynamic Market Pricing: prices will fluctuate based on supply and demand.
-- Regional Reputation: introduction of regional standing affecting trade costs.
-- Synergy System: bonuses for combining specific skill-sets in one venue.
-- Random Weekly Events: raids, health crises, and political shifts.
+[VERSION 0.3.3 - PREVIOUS RELEASE]
+* Global Market improvements engine and auction house flow refinements.
+* Save state and expansion/employee engines: stability fixes.
 
 [VERSION 0.3.2 - PREVIOUS RELEASE]
 * Hiring tab: Redesign to 3-column grid, advanced filters for specialty/skill/pay.
 * EmployeeCandidate: Added support for 3D portraits.
+
+[VERSION 0.3.1 - PREVIOUS RELEASE]
+
+--- 🔧 CHANGES SINCE 0.3.0 ---
+* School & Kindergarten tab:
+    - Refinements to children grouping and per-child cards.
+* Dependents registry:
+    - Human-readable dependent age formatting (days / weeks / years+months).
+* Prisoner narrative engine:
+    - Family paragraph and biography generation polish.
+* Global Market & Auction House:
+    - Market improvements engine and auction house flow refinements.
+* Save state and expansion/employee engines: stability fixes.
+* 3D portrait pipeline (dev tooling):
+    - Procedural 3D backend tools/generate-portraits-3d.mjs:
+      seeded, region-aware raw .glb busts for the conversion
+      pipeline (no Blender required; CI-friendly).
+    - Blender backend tools/blender/generate_portraits.py:
+      same parametric bust inside Blender for authored art.
+    - Pilot batch converted for 03_western_europe_nordics
+      (3 models per gender) via --src; PORTRAIT_3D_COUNTS
+      verified with npm run verify:portraits-3d.
+    - R2 hosting: wrangler.toml, tools/r2-setup.mjs
+      (create/verify bucket), tools/r2-sync.mjs (upload
+      public/portraits3d/ with --delete/--dry-run),
+      npm scripts r2:setup / r2:sync.
+    - CDP harness: tools/cdp-lib.mjs (Chrome discovery:
+      $CHROME_PATH > Playwright Chromium > system installs;
+      headless launch; CdpClient), cdp-check.mjs refactored
+      onto it, new tools/cdp-webgl-off.mjs verifying the
+      2D portrait fallback when WebGL is disabled.
+    - Telegram Mini App diagnostics: probeGraphicsInfo()
+      (WebGL2/WebGL + unmasked renderer/vendor) added to
+      the sendLogsToBot() payload.
+    - 3D coverage expanded to every game region (15 more
+      folders x 3 genders x 3 models = 135 new GLBs,
+      144 total, ~0.9 MB): characters in all regions
+      now receive a model3d URL when emporium_3d is on;
+      99_CEO keeps its index+suffix scheme (no models
+      yet); portrait3d.test.ts updated for full coverage.
 
 [VERSION 0.3.0 "EDUCATION" - MAJOR UPDATE]
 
 --- 🏫 NEW FACILITIES & SYSTEMS ---
 * School:
     - New facility with 4 development levels.
-    - Courses: Basic (Assimilation/Skills), Vocational (Specialized), 
+    - Courses: Basic (Assimilation/Skills), Vocational (Specialized),
       Predisposition, and Commercial.
-    - "Trained at Emporium" status: Permanent bonuses to Exhaustion, 
+    - "Trained at Emporium" status: Permanent bonuses to Exhaustion,
       earnings, and market value.
-    - Teacher management: Skill-based training, experience gain, and 
+    - Teacher management: Skill-based training, experience gain, and
       exhaustion handling.
 * Correction Center:
     - New facility for fear-based training.
@@ -85,100 +184,10 @@ LAST UPDATED: 2026-10-25
 * Employees engine:
     - Генерация портретов для кандидатов при создании
 
-[VERSION 0.3.1 - PREVIOUS RELEASE]
-
---- 🔧 CHANGES SINCE 0.3.0 ---
-* School & Kindergarten tab:
-    - Refinements to children grouping and per-child cards.
-* Dependents registry:
-    - Human-readable dependent age formatting (days / weeks / years+months).
-* Prisoner narrative engine:
-    - Family paragraph and biography generation polish.
-* Global Market & Auction House:
-    - Market improvements engine and auction house flow refinements.
-* Save state and expansion/employee engines: stability fixes.
-* 3D portrait pipeline (dev tooling):
-    - Procedural 3D backend tools/generate-portraits-3d.mjs:
-      seeded, region-aware raw .glb busts for the conversion
-      pipeline (no Blender required; CI-friendly).
-    - Blender backend tools/blender/generate_portraits.py:
-      same parametric bust inside Blender for authored art.
-    - Pilot batch converted for 03_western_europe_nordics
-      (3 models per gender) via --src; PORTRAIT_3D_COUNTS
-      verified with npm run verify:portraits-3d.
-    - R2 hosting: wrangler.toml, tools/r2-setup.mjs
-      (create/verify bucket), tools/r2-sync.mjs (upload
-      public/portraits3d/ with --delete/--dry-run),
-      npm scripts r2:setup / r2:sync.
-    - CDP harness: tools/cdp-lib.mjs (Chrome discovery:
-      $CHROME_PATH > Playwright Chromium > system installs;
-      headless launch; CdpClient), cdp-check.mjs refactored
-      onto it, new tools/cdp-webgl-off.mjs verifying the
-      2D portrait fallback when WebGL is disabled.
-    - Telegram Mini App diagnostics: probeGraphicsInfo()
-      (WebGL2/WebGL + unmasked renderer/vendor) added to
-      the sendLogsToBot() payload.
-    - 3D coverage expanded to every game region (15 more
-      folders x 3 genders x 3 models = 135 new GLBs,
-      144 total, ~0.9 MB): characters in all regions
-      now receive a model3d URL when emporium_3d is on;
-      99_CEO keeps its index+suffix scheme (no models
-      yet); portrait3d.test.ts updated for full coverage.
-
-[VERSION 0.3.0 - PREVIOUS RELEASE]
-
---- 🏫 NEW FEATURES ---
-* School & Kindergarten tab:
-    - New navigation tab «Школа и детский сад» (GraduationCap icon).
-    - Children of personnel split into kindergarten (0–6 years) and
-      school (6–16 years) groups with counts and per-child cards
-      (gender, age, parent name).
-    - Reminder that children become company property at 16.
-* Prisoner biography — family:
-    - Deterministic family member generator (mother / child / relative)
-      seeded per character id; existing biography paragraphs unchanged.
-    - Real children born in captivity (dependents registry) take priority
-      over the random roll and are marked as growing up in the camp.
-    - Family paragraph added to the market-entry story; chat AI answers
-      family questions (мать, ребёнок, родственник, семья).
-    - New chat suggestion: «У тебя есть семья?».
-
-[VERSION 0.2.1 - PREVIOUS RELEASE]
-
---- 🛠 CORE ARCHITECTURE ---
-* Implementation of a cross-platform web-app using React 19 and Vite.
-* Integrated Capacitor for Android deployment (native android/ folder).
-* State management powered by Zustand.
-* UI styling implemented with Tailwind CSS v4.
-
---- 📈 ECONOMY & GAME ENGINE ---
-* Global Market System:
-    - Implementation of 21 distinct geographic regions.
-    - Dynamic pricing based on regional demand (0.15 to 0.95 multipliers).
-    - Tiered quality system: Low, Medium, and High/Elite.
-    - Arbitrage mechanics: Route optimization from low-cost sources (e.g., Central Africa) to premium markets (e.g., North Africa).
-* Character Generation Engine:
-    - complex quality score formula: (Submission * 0.6 + Skill * 0.4).
-    - Dynamic trait generation (Health, Exhaustion, Loyalty).
-    - High-tier ("Elite") character specifications for luxury venues.
-
---- 🎨 ASSET PIPELINE ---
-* Automated Portrait System:
-    - Developed `tools/generate-portraits.mjs` for AI-driven character visuals.
-    - Integration with multiple providers: OpenAI (DALL-E 3), Pollinations (Flux/SDXL), Ollama, and SD WebUI.
-    - Support for adult-themed aesthetics ("bdsm" style) and precise framing (Head, Chest, Three-quarter, Full-body).
-    - Automatic manifest synchronization via `src/portraitAssets.ts`.
-    - Image processing pipeline using `sharp` for WebP optimization.
-
---- 📦 PROJECT STRUCTURE ---
-* /src          - Core game logic, engine, and UI components.
-* /public       - Static assets and regional portrait libraries.
-* /tools        - Automation scripts for content generation.
-* /android      - Native Android wrapper configuration.
-* MARKET_DATA.md - Comprehensive export of economic balances and formulas.
+[VERSION 0.2.2 - PREVIOUS RELEASE]
 
 --- 🚀 RECENT ACTIVITY ---
-* Global Market Improvements (v0.2.2):
+* Global Market Improvements:
     - Five upgrade tracks for the Global Market: buyer network, market
       research, logistics (administrator-authored) plus risk management
       and trade financing (financier-authored).
@@ -190,6 +199,3 @@ LAST UPDATED: 2026-10-25
 * Automated generation of full-body character portraits for all 21 regions and 3 genders using the Pollinations provider.
 * Optimization of the asset pipeline to support bulk generation via PowerShell scripting.
 ================================================================================
-
-
-
