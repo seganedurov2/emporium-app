@@ -1,10 +1,13 @@
 import { Canvas } from '@react-three/fiber';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { KalinkovichiMap } from './KalinkovichiMap';
+import { Starfield } from './Starfield';
+import { NightHudFrame } from './NightHudFrame';
 import { KalinkovichiCamera } from './KalinkovichiCamera';
 import { Player } from './Player';
 import { FileUpload } from '../ui/FileUpload';
 import { imageToMap } from '../../utils/imageToMap';
+import { TerrainGenerator } from '../../terrain';
 
 export interface MapCenter {
   lat: number;
@@ -19,8 +22,12 @@ interface KalinkovichiGameProps {
 }
 
 export function KalinkovichiGame({ className = '', onExit, initialCenter }: KalinkovichiGameProps) {
-  const [heightmap, setHeightmap] = useState<number[][] | null>(null);
-  const [mapStatus, setMapStatus] = useState<string | null>(null);
+  // A terrain is generated up front: without one the map was a flat plane with
+  // floating boxes. A heightmap image replaces it when the player uploads one.
+  const [heightmap, setHeightmap] = useState<number[][] | null>(() =>
+    new TerrainGenerator({ size: 64 }).generate(1101)
+  );
+  const [mapStatus, setMapStatus] = useState<string | null>('Сгенерирован ландшафт · seed 1101');
   const [zoom, setZoom] = useState(50);
   // Pan offset of the orthographic camera in world units (x = east, y = north).
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -122,19 +129,32 @@ export function KalinkovichiGame({ className = '', onExit, initialCenter }: Kali
   };
 
   return (
-    <div className={`relative w-full h-screen ${className}`} style={{ background: '#1a4d2e' }}>
-      <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-2 rounded text-xs z-10 max-w-[50%]">
-        {mapStatus || 'Загрузите изображение — станет картой высот террейна'}
+    <div className={`relative h-full w-full ${className}`} style={{ background: '#03060b' }}>
+      {/* Status and the upload control live in the top-left card area, not on
+          the bottom edge where the view is cut off by the shell. */}
+      <div className="absolute bottom-16 left-4 z-20 max-w-[320px]">
+        <div className="nasa-label">Статус террейна</div>
+        <div className="nasa-readout mt-1 text-[11px] text-slate-300">
+          {mapStatus || 'Сгенерирован ландшафт · можно загрузить свою карту высот'}
+        </div>
+        <div className="mt-2 w-56">
+          <FileUpload
+            accept="image/*"
+            label={heightmap ? 'Заменить карту высот' : 'Загрузить карту высот'}
+            onFile={loadHeightmap}
+          />
+        </div>
       </div>
-      <div className="absolute bottom-4 right-4 w-64 z-10">
-        <FileUpload
-          accept="image/*"
-          label={heightmap ? 'Карта высот загружена' : 'Загрузить карту высот'}
-          onFile={loadHeightmap}
-        />
-      </div>
-      <Canvas shadows={false}>
+      <Canvas
+        shadows={false}
+        camera={{ position: [0, 25, 0], fov: 45 }}
+        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 1.75]}
+        style={{ position: 'absolute', inset: 0 }}
+      >
         <Suspense fallback={null}>
+          {/* Night sky behind the terrain; the city map itself stays lit. */}
+          <Starfield count={2200} radius={110} drift={0.004} />
           <KalinkovichiCamera
             position={[0, 25, 0]}
             target={[pan.x + walk.x, 0, pan.y + walk.y]}
@@ -144,10 +164,18 @@ export function KalinkovichiGame({ className = '', onExit, initialCenter }: Kali
             <KalinkovichiMap scale={1} heightmap={heightmap} />
           </group>
           <Player position={[0, 0, 0]} speed={0.15} />
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[20, 30, 10]} intensity={0.9} castShadow={false} />
+          <ambientLight intensity={0.55} color="#9fc3ff" />
+          <directionalLight position={[20, 30, 10]} intensity={0.85} color="#ffe4b5" castShadow={false} />
+          <directionalLight position={[-25, 12, -20]} intensity={0.35} color="#38bdf8" />
         </Suspense>
       </Canvas>
+
+      {/* Top-right is reserved for the toolbar, so telemetry sits bottom-centre. */}
+      <NightHudFrame label="KALINKOVICHI · NIGHT" />
+      <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-md border border-sky-400/20 bg-black/70 px-3 py-1.5 text-center backdrop-blur">
+        <span className="nasa-label mr-2">GPS</span>
+        <span className="nasa-readout text-xs text-sky-200">{gps}</span>
+      </div>
 
       {/* Drag-to-pan surface; sits above the canvas, below the controls. */}
       <div
@@ -158,7 +186,7 @@ export function KalinkovichiGame({ className = '', onExit, initialCenter }: Kali
         onPointerCancel={onPointerUp}
       />
 
-      <div className="absolute top-4 right-4 flex flex-col gap-1 z-10">
+      <div className="absolute right-4 top-14 z-20 flex flex-col gap-1">
         <button
           onClick={zoomIn}
           className="bg-black/70 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-black/90 active:scale-95 transition"
@@ -207,19 +235,20 @@ export function KalinkovichiGame({ className = '', onExit, initialCenter }: Kali
         </div>
       </div>
 
-      <div className="absolute top-4 left-4 bg-black/70 text-white px-4 py-3 rounded-lg text-sm max-w-xs z-10 pointer-events-none">
-        <div className="font-bold mb-1">Калинковичи</div>
-        <div className="text-xs text-gray-300">Республика Беларусь</div>
-        <div className="text-xs mt-1 font-mono text-amber-300">GPS: {gps}</div>
-        <div className="text-xs mt-2 text-gray-400">
-          WASD - движение, перетаскивание / стрелки - сдвиг, колесо мыши - масштаб, PageUp/PageDown - масштаб
+      {/* Info card: sits under the HUD label and matches the glass panels. */}
+      <div className="nasa-panel pointer-events-none absolute left-4 top-14 z-20 max-w-[260px] p-3 text-sm text-slate-200">
+        <div className="text-sm font-semibold tracking-wide">Калинковичи</div>
+        <div className="nasa-label mt-0.5">Республика Беларусь</div>
+        <div className="nasa-readout mt-2 text-[11px] text-sky-200">GPS {gps}</div>
+        <div className="mt-2 border-t border-slate-400/10 pt-2 text-[11px] leading-relaxed text-slate-400">
+          WASD — движение · перетаскивание/стрелки — сдвиг · колесо — масштаб
         </div>
       </div>
 
       {onExit && (
         <button
           onClick={onExit}
-          className="absolute top-4 right-24 bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded z-10"
+          className="absolute right-4 top-4 z-30 rounded-md border border-red-400/40 bg-red-600/85 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur hover:bg-red-600"
         >
           Выход
         </button>

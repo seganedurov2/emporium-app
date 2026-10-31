@@ -21,17 +21,14 @@ function ProgressBar({ label, current, goal, format }: { label: string; current:
   const done = current >= goal;
   return (
     <div>
-      <div className="flex justify-between text-xs mb-1">
-        <span className="text-slate-400">{label}</span>
-        <span className={`font-mono ${done ? 'text-emerald-400' : 'text-slate-200'}`}>
+      <div className="mb-1.5 flex items-baseline justify-between gap-3">
+        <span className="text-xs text-slate-300">{label}</span>
+        <span className={`nasa-readout text-xs ${done ? 'text-emerald-300' : 'text-slate-100'}`}>
           {format(current)} / {format(goal)}
         </span>
       </div>
-      <div className="h-2 bg-slate-950 rounded-full border border-slate-800 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${done ? 'bg-emerald-500' : 'bg-amber-500'}`}
-          style={{ width: `${percent}%` }}
-        />
+      <div className="nasa-rail">
+        <span data-done={done} style={{ width: `${percent}%` }} />
       </div>
     </div>
   );
@@ -43,28 +40,31 @@ export function CampaignGoalPanel({ week, funds, reputation, goalStatus, prestig
   const defeat = goalStatus === 'defeat';
 
   return (
-    <div className={`rounded-xl border p-6 shadow-xl text-left ${victory ? 'border-emerald-500/40 bg-emerald-950/20' : defeat ? 'border-red-500/40 bg-red-950/20' : 'bg-slate-900 border-slate-800'}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+    <section
+      className={`nasa-panel p-5 text-left sm:p-6 ${victory ? '!border-emerald-400/35' : defeat ? '!border-red-400/35' : ''}`}
+    >
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-bold text-white text-base mb-1 flex items-center gap-2">
-            <Target className="w-4 h-4 text-amber-400" /> Цель кампании
-          </h3>
-          <p className="text-slate-400 text-sm">
+          <div className="nasa-label mb-1.5 flex items-center gap-2">
+            <Target className="h-3.5 w-3.5 text-amber-300/90" aria-hidden="true" /> Условие победы
+          </div>
+          <h3 className="text-lg font-semibold tracking-wide text-slate-50">Цель кампании</h3>
+          <p className="mt-1 max-w-xl text-sm leading-relaxed text-slate-400">
             Достигните {CAMPAIGN_GOAL_WEEK}-й недели с казной {formatMoney(CAMPAIGN_GOAL_FUNDS)} и репутацией {CAMPAIGN_GOAL_REPUTATION}+,
             чтобы завершить кампанию победой и открыть New Game+.
           </p>
         </div>
         {prestigeLevel > 0 && (
-          <span className="font-mono text-xs text-purple-300 border border-purple-500/30 bg-purple-500/10 rounded-md px-2 py-1 flex items-center gap-1">
-            <Crown className="w-3 h-3" /> Престиж {prestigeLevel} · доход ×{prestigeRevenueMultiplier(prestigeLevel).toFixed(2)}
+          <span className="nasa-readout flex items-center gap-1 rounded-md border border-purple-400/25 bg-purple-400/5 px-2 py-1 text-xs text-purple-200">
+            <Crown className="h-3 w-3" aria-hidden="true" /> Престиж {prestigeLevel} · доход ×{prestigeRevenueMultiplier(prestigeLevel).toFixed(2)}
           </span>
         )}
       </div>
 
       {victory ? (
-        <p className="text-emerald-300 text-sm font-semibold">Цель выполнена — кампания выиграна. New Game+ доступен через меню достижений.</p>
+        <p className="text-sm font-semibold text-emerald-300">Цель выполнена — кампания выиграна. New Game+ доступен через меню достижений.</p>
       ) : defeat ? (
-        <p className="text-red-300 text-sm font-semibold">Синдикат объявлен банкротом. Кампания проиграна — но вы можете продолжить под внешним управлением.</p>
+        <p className="text-sm font-semibold text-red-300">Синдикат объявлен банкротом. Кампания проиграна — но вы можете продолжить под внешним управлением.</p>
       ) : (
         <div className="space-y-3">
           <ProgressBar label="Неделя кампании" current={week} goal={CAMPAIGN_GOAL_WEEK} format={v => `${Math.floor(v)}`} />
@@ -72,6 +72,6 @@ export function CampaignGoalPanel({ week, funds, reputation, goalStatus, prestig
           <ProgressBar label="Репутация" current={reputation} goal={CAMPAIGN_GOAL_REPUTATION} format={v => `${Math.floor(v)}%`} />
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -35,3 +35,297 @@ body,
   min-height: 0;
   overflow: hidden;
 }
+
+/*
+ * "Interstellar" surface language.
+ *
+ * Cold end of the palette: near-black space, pale ice text, one warm accent
+ * (the cockpit amber) and one cold accent (engine blue). Surfaces are glass
+ * over a starfield, edges are hairlines, and type is spaced out like console
+ * readouts. Nothing here is game-state dependent — these are presentation
+ * tokens the campaign screens opt into with `nasa-panel` / `nasa-button`.
+ */
+@layer components {
+  .nasa-panel {
+    position: relative;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(148 163 184 / 0.18);
+    background:
+      radial-gradient(ellipse 120% 90% at 15% -10%, rgb(125 211 252 / 0.10), transparent 60%),
+      radial-gradient(ellipse 100% 80% at 100% 0%, rgb(217 119 6 / 0.08), transparent 55%),
+      linear-gradient(180deg, rgb(8 12 20 / 0.92), rgb(4 7 12 / 0.96));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 24px 60px -30px rgb(0 0 0 / 0.9);
+    backdrop-filter: blur(14px);
+  }
+
+  /* Hairline that fades at both ends — a HUD rule rather than a border. */
+  .nasa-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(125 211 252 / 0.55), transparent);
+    pointer-events: none;
+  }
+
+  /* Corner brackets, like a targeting frame. */
+  .nasa-panel::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgb(125 211 252 / 0.10);
+    border-radius: 0.5rem;
+    mask-image:
+      linear-gradient(#000 0 0) top left / 14px 1px no-repeat,
+      linear-gradient(#000 0 0) top left / 1px 14px no-repeat,
+      linear-gradient(#000 0 0) top right / 14px 1px no-repeat,
+      linear-gradient(#000 0 0) top right / 1px 14px no-repeat,
+      linear-gradient(#000 0 0) bottom left / 14px 1px no-repeat,
+      linear-gradient(#000 0 0) bottom left / 1px 14px no-repeat,
+      linear-gradient(#000 0 0) bottom right / 14px 1px no-repeat,
+      linear-gradient(#000 0 0) bottom right / 1px 14px no-repeat;
+    pointer-events: none;
+  }
+
+  .nasa-label {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgb(148 163 184);
+  }
+
+  /* Monospaced telemetry: tabular digits, no font jitter as values change. */
+  .nasa-readout {
+    font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+  }
+
+  .nasa-accent {
+    color: rgb(251 191 36);
+    text-shadow: 0 0 12px rgb(251 191 36 / 0.35);
+  }
+
+  .nasa-button {
+    border: 1px solid rgb(148 163 184 / 0.22);
+    background: linear-gradient(180deg, rgb(30 41 59 / 0.65), rgb(8 12 20 / 0.75));
+    transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+  }
+  .nasa-button:hover {
+    border-color: rgb(125 211 252 / 0.45);
+    background: linear-gradient(180deg, rgb(30 41 59 / 0.85), rgb(8 12 20 / 0.9));
+  }
+  .nasa-button[aria-current="step"] {
+    border-color: rgb(251 191 36 / 0.6);
+    box-shadow:
+      inset 0 0 0 1px rgb(251 191 36 / 0.12),
+      0 0 24px -8px rgb(251 191 36 / 0.55);
+  }
+
+  /* Objective track: a thin rail with a lit fill. 6px rather than 4 because at
+     1% the fill was a sub-pixel sliver and read as an empty bar; every non-zero
+     value now keeps a visible 2px head. */
+  .nasa-rail {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background: rgb(148 163 184 / 0.16);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.5);
+    overflow: hidden;
+  }
+  .nasa-rail > span {
+    display: block;
+    height: 100%;
+    min-width: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgb(56 189 248 / 0.85), rgb(251 191 36 / 0.95));
+    box-shadow: 0 0 10px rgb(251 191 36 / 0.45);
+  }
+  .nasa-rail > span[data-done="true"] {
+    background: linear-gradient(90deg, rgb(52 211 153 / 0.8), rgb(16 185 129 / 0.95));
+    box-shadow: 0 0 10px rgb(52 211 153 / 0.5);
+  }
+}
+
+/* Starfield behind the app: three parallax layers, kept very dim so text
+   stays readable. Disabled by prefers-reduced-motion, like every pulse. */
+.nasa-starfield {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: #03060b;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgb(255 255 255 / 0.55) 50%, transparent 51%),
+    radial-gradient(1px 1px at 75% 12%, rgb(255 255 255 / 0.45) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 48% 78%, rgb(191 219 254 / 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 62%, rgb(255 255 255 / 0.35) 50%, transparent 51%),
+    radial-gradient(1px 1px at 12% 84%, rgb(255 255 255 / 0.4) 50%, transparent 51%),
+    radial-gradient(ellipse 60% 40% at 50% 120%, rgb(30 64 175 / 0.22), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 80% -10%, rgb(120 53 15 / 0.18), transparent 70%);
+  background-size: 520px 520px, 460px 460px, 700px 700px, 380px 380px, 620px 620px, 100% 100%, 100% 100%;
+  animation: nasa-drift 240s linear infinite;
+}
+
+@keyframes nasa-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: -520px 260px, 230px -460px, -350px 350px, 190px 190px, -310px 310px, 0 0, 0 0; }
+}
+
+/* Slow breathing glow for the current-act marker. */
+@keyframes nasa-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(251 191 36 / 0.35); }
+  50%      { box-shadow: 0 0 0 3px rgb(251 191 36 / 0); }
+}
+.nasa-pulse {
+  animation: nasa-pulse 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nasa-starfield,
+  .nasa-pulse {
+    animation: none;
+  }
+}
+
+/*
+ * CRT / RGB-mask overlay for the 3D views.
+ *
+ * Three stacked gradients do the work: scanlines, the aperture-grille mask
+ * (RGB subpixels), and a vignette that darkens the corners like a curved tube.
+ * Kept at low opacity — it decorates the frame, it must never fight the scene.
+ */
+.crt-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  mix-blend-mode: screen;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.035) 0px,
+      rgb(255 255 255 / 0.035) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgb(255 0 60 / 0.055) 0px,
+      rgb(0 255 140 / 0.04) 1px,
+      rgb(0 120 255 / 0.055) 2px,
+      transparent 3px
+    );
+  animation: crt-flicker 6s steps(2, end) infinite;
+}
+
+/* Scanline band drifting down the screen, like a slow refresh. */
+.crt-overlay::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 22%;
+  background: linear-gradient(to bottom, transparent, rgb(125 211 252 / 0.06), transparent);
+  animation: crt-sweep 9s linear infinite;
+}
+
+.crt-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.75) 100%);
+}
+
+@keyframes crt-flicker {
+  0%, 100% { opacity: 0.85; }
+  48% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes crt-sweep {
+  from { transform: translateY(-30%); }
+  to   { transform: translateY(460%); }
+}
+
+/* ---------------------------------------------------------------------------
+ * Glitch: chromatic split + jitter. Used on short-lived state changes (act
+ * transition, ending), never on body text the player has to read.
+ * ------------------------------------------------------------------------- */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(0 0 55% 0);
+}
+.glitch::before {
+  color: rgb(255 0 80 / 0.85);
+  transform: translate(-1.5px, -1px);
+  animation: glitch-shift-a 2.6s steps(2, end) infinite;
+}
+.glitch::after {
+  color: rgb(0 220 255 / 0.85);
+  transform: translate(1.5px, 1px);
+  clip-path: inset(50% 0 0 0);
+  animation: glitch-shift-b 2.1s steps(2, end) infinite;
+}
+
+@keyframes glitch-shift-a {
+  0%, 92%, 100% { transform: translate(-1.5px, -1px); }
+  93% { transform: translate(3px, 0); }
+  95% { transform: translate(-4px, 1px); }
+}
+@keyframes glitch-shift-b {
+  0%, 90%, 100% { transform: translate(1.5px, 1px); }
+  91% { transform: translate(-3px, -1px); }
+  94% { transform: translate(4px, 0); }
+}
+
+/* ---------------------------------------------------------------------------
+ * RGB grid floor: perspective grid lines tinted per channel. A retro console
+ * backdrop for the night views; static, so it stays cheap.
+ * ------------------------------------------------------------------------- */
+.rgb-grid {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 42%;
+  pointer-events: none;
+  z-index: 2;
+  background-image:
+    linear-gradient(rgb(255 0 80 / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(0 220 255 / 0.14) 1px, transparent 1px);
+  background-size: 48px 48px, 48px 48px;
+  transform: perspective(320px) rotateX(62deg);
+  transform-origin: bottom center;
+  mask-image: linear-gradient(to top, rgb(0 0 0 / 0.9), transparent 85%);
+  opacity: 0.55;
+}
+
+/* HUD frame: hairline corners around a viewport, like a cockpit window. */
+.hud-frame {
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+  z-index: 12;
+  border: 1px solid rgb(125 211 252 / 0.14);
+  border-radius: 10px;
+  box-shadow: inset 0 0 40px -18px rgb(125 211 252 / 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt-overlay,
+  .crt-overlay::after,
+  .glitch::before,
+  .glitch::after {
+    animation: none;
+  }
+}
