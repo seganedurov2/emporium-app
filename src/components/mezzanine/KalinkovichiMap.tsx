@@ -12,6 +12,11 @@ interface KalinkovichiMapProps {
   defaultLon?: number;
   onPick?: (center: MapCenter) => void;
   onOpen3d?: (center: MapCenter) => void;
+  /**
+   * Overlay mode for the mezzanine hub: a small picker instead of the full
+   * 560px panel, so it does not stretch the left column of the map screen.
+   */
+  compact?: boolean;
 }
 
 // The SVG uses the same projection family as the site's city map, so a point
@@ -26,7 +31,8 @@ export function KalinkovichiMap({
   defaultLat = 52.128814,
   defaultLon = 29.332527,
   onPick,
-  onOpen3d
+  onOpen3d,
+  compact = false
 }: KalinkovichiMapProps) {
   const [coords, setCoords] = useState({ lat: defaultLat, lon: defaultLon });
 
@@ -69,6 +75,34 @@ export function KalinkovichiMap({
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  if (compact) {
+    return (
+      <div className="rounded-xl border border-amber-500/30 bg-black/80 p-2 text-left backdrop-blur">
+        <div className="mb-1 flex items-center justify-between gap-2 px-1">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Мини-карта</span>
+          <span className="font-mono text-[10px] text-slate-400">{coords.lat.toFixed(4)}, {coords.lon.toFixed(4)}</span>
+        </div>
+        <div className="flex h-[150px] w-full items-center justify-center overflow-hidden rounded-lg bg-slate-800">
+          <img
+            src={kalinkovichiMap}
+            alt="Карта Калинковичей"
+            onClick={pickPoint}
+            className="block max-h-full max-w-full cursor-crosshair object-contain"
+            title="Кликните по карте, чтобы выбрать точку"
+          />
+        </div>
+        {onOpen3d && (
+          <button
+            onClick={() => onOpen3d(coords)}
+            className="mt-1 w-full rounded bg-emerald-600/85 py-1 text-[11px] font-semibold text-white hover:bg-emerald-600"
+          >
+            3D с этой точки
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-left shadow-xl">

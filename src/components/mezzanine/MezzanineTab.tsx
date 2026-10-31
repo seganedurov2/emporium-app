@@ -331,20 +331,37 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
 
     // Below the map there is no "outside": the canvas is bigger than the
     // viewport, so the surrounding hill colour is drawn on it as well.
+    // Layout is in canvas pixels: panels on the left and right (~300px each)
+    // and the bottom toolbar sit above the map. Keep the map inside the free
+    // area so tiles never run underneath the controls.
+    const PAD_LEFT = 300;
+    const PAD_RIGHT = 300;
+    const PAD_TOP = 24;
+    const PAD_BOTTOM = 96;
+    const viewW = Math.max(240, w - PAD_LEFT - PAD_RIGHT);
+    const viewH = Math.max(200, h - PAD_TOP - PAD_BOTTOM);
+
     ctx.fillStyle = '#1a4d2e';
     ctx.fillRect(0, 0, w, h);
 
+    // Clip everything to the free area, then move the origin into it.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PAD_LEFT, PAD_TOP, viewW, viewH);
+    ctx.clip();
+    ctx.translate(PAD_LEFT, PAD_TOP);
+
     // ox/oy is the screen position of the map centre; both branches place
     // tiles relative to it, so the diamond stays centred while panning.
-    const ox = w / 2 + offsetRef.current.x;
-    const oy = h / 2 + offsetRef.current.y;
+    const ox = viewW / 2 + offsetRef.current.x;
+    const oy = viewH / 2 + offsetRef.current.y;
 
     // Only the visible part of a big map is drawn (0.3.7): a 64x64 region at
     // tile 48 is 8k x 4k px, and filling that every frame made the second
-    // click on the hub show a blank canvas for seconds. The rest is clipped.
+    // click on the hub show a blank canvas for seconds.
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, 0, w, h);
+    ctx.rect(0, 0, viewW, viewH);
     ctx.clip();
 
     // city view: render a focused small map around the selected city
@@ -370,8 +387,8 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
         for (let x = startX; x < endX; x++) {
           const sx = screenX(x, y);
           const sy = screenY(x, y);
-          if (sx + halfW < 0 || sx - halfW > w) continue;
-          if (sy + halfH < 0 || sy - halfH > h) continue;
+          if (sx + halfW < 0 || sx - halfW > viewW) continue;
+          if (sy + halfH < 0 || sy - halfH > viewH) continue;
           drawBlock(ctx, sx, sy, cityTile, grid[y][x], x * 7919 + y);
         }
       }
@@ -383,7 +400,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
       // Keep a 10% margin so the corners are not flush against the canvas edge,
       // and let gridSize zoom in past the fitted size.
       const margin = 0.9;
-      const fitTile = Math.max(3, Math.min((w * margin) / size, (h * 2 * margin) / size));
+      const fitTile = Math.max(3, Math.min((viewW * margin) / size, (viewH * 2 * margin) / size));
       const regionTile = gridSize <= fitTile ? gridSize : fitTile;
 
       // Same isometric projection as the city branch, centred on ox/oy: the
@@ -416,8 +433,8 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
         for (let x = 0; x < size; x++) {
           const cx = screenX(x, y);
           const cy = screenY(x, y);
-          if (cx + halfW < 0 || cx - halfW > w) continue;
-          if (cy + halfH < 0 || cy - halfH > h) continue;
+          if (cx + halfW < 0 || cx - halfW > viewW) continue;
+          if (cy + halfH < 0 || cy - halfH > viewH) continue;
           drawBlock(ctx, cx, cy, regionTile, grid[y][x], x * 7919 + y);
         }
       }
@@ -522,29 +539,65 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
             <div className="rounded-lg bg-black/50 border border-amber-500/20 px-2 py-1 text-[10px] font-bold text-amber-300">Ю</div>
           </div>
           {cityView && selectedCity && (
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/90 text-white px-6 py-3 rounded-full z-20 border border-amber-500 shadow-lg">
-              <div className="flex items-center gap-3">
-                <button onClick={backToRegion} className="text-xs text-amber-400 hover:text-amber-300 underline">Назад к области</button>
-                <div className="bg-amber-600/60 px-3 py-1 rounded text-xs font-bold border border-amber-400/30">
+            <div className="absolute bottom-20 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-500 bg-black/90 px-4 py-1.5 text-white shadow-lg">
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <button onClick={backToRegion} className="text-[11px] text-amber-400 underline hover:text-amber-300">Назад к области</button>
+                <span className="rounded border border-amber-400/30 bg-amber-600/60 px-2 py-0.5 text-[11px] font-bold">
                   {selectedCity.name}
-                </div>
-                <div className="text-xs text-gray-400">({selectedCity.lat.toFixed(4)}, {selectedCity.lon.toFixed(4)})</div>
+                </span>
+                <span className="hidden text-[10px] text-gray-400 sm:inline">
+                  {selectedCity.lat.toFixed(3)}, {selectedCity.lon.toFixed(3)}
+                </span>
               </div>
-              <div className="text-[10px] text-gray-500 mt-1">Малая карта города · пиксель-арт</div>
             </div>
           )}
         </div>
       )}
-      <div className="absolute top-4 left-4 bg-black/70 text-white px-4 py-3 rounded-lg text-sm z-10 pointer-events-none">
-        <div className="font-bold">{t(lang, 'topDown')}</div>
-        <div className="text-xs text-gray-400 mt-1">Pixel art · LPM перетаскивать · колёсико зум · ? — клавиши</div>
-      </div>
-      {selectedRegion && (
-        <div className="absolute top-[5.5rem] left-4 bg-black/80 text-white px-3 py-2 rounded-lg text-sm z-10 border border-amber-500/30">
-          <div className="font-bold text-amber-400">{REGIONS.find(r => r.id === selectedRegion)?.name}</div>
-          <div className="text-xs text-gray-400 mt-1">Область Беларуси</div>
+      {/* Left stack: title, region badge and the mini map share one column, so
+          the badge text is never clipped by the canvas underneath. */}
+      {/* Left column: one flow so the title, the region badge and the
+          sections button cannot overlap each other. */}
+      <div className="absolute left-4 top-4 z-20 flex w-[260px] max-w-[42%] flex-col gap-2">
+        <div className="pointer-events-none rounded-lg bg-black/85 px-4 py-3 text-sm text-white backdrop-blur">
+          <div className="truncate font-bold">{t(lang, 'topDown')}</div>
+          <div className="mt-1 text-xs text-gray-400">Pixel art · ЛКМ перетаскивать · колёсико зум · ? — клавиши</div>
         </div>
-      )}
+        {selectedRegion && (
+          <div className="pointer-events-none rounded-lg border border-amber-500/30 bg-black/90 px-3 py-2 text-sm text-white backdrop-blur">
+            <div className="truncate font-bold text-amber-400">{REGIONS.find(r => r.id === selectedRegion)?.name}</div>
+            <div className="mt-0.5 text-xs text-gray-400">Область Беларуси</div>
+          </div>
+        )}
+        {onOpenTab && (
+          <div>
+          <button
+            onClick={() => setSectionsOpen(o => !o)}
+            aria-expanded={sectionsOpen}
+            className="w-full rounded-lg border border-amber-500/40 bg-black/90 px-3 py-2 text-left text-xs font-bold text-amber-300 backdrop-blur hover:bg-black"
+          >
+            {sectionsOpen ? 'Свернуть разделы' : `Разделы игры (${APP_NAVIGATION.length})`}
+          </button>
+          {sectionsOpen && (
+            <div className="mt-1 flex max-h-[40vh] flex-col gap-0.5 overflow-y-auto rounded-lg border border-amber-500/30 bg-black/85 p-1 backdrop-blur">
+              {APP_NAVIGATION.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => onOpenTab(tab.id)}
+                    disabled={tab.id === 'mezzanine'}
+                    className={`flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition ${tab.id === 'mezzanine' ? 'cursor-default bg-amber-500/10 text-amber-300' : 'text-slate-300 hover:bg-slate-700/80 hover:text-white'}`}
+                  >
+                    <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          </div>
+        )}
+      </div>
       {/* One control column: earlier these panels were positioned separately
           (right-80 / right-4 / right-[340px]) and overlapped each other. */}
       <div className="absolute top-4 right-4 z-10 flex w-64 flex-col gap-2">
@@ -642,43 +695,15 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
           <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if(f) loadMap(f); }} />
         </label>
       </div>
-      <div className="absolute bottom-20 left-4 z-10 w-[300px]">
+      <div className="absolute bottom-20 left-4 z-10 w-[220px] max-w-[40%]">
         <KalinkovichiMap
+          compact
           onPick={setCenterPick}
           onOpen3d={(c: MapCenter) => { setMapCenter(c); setView(prev => ({ ...prev, viewMode: '3d' })); }}
         />
       </div>
 
-      {/* Hub links: every campaign section is one click away from the map. */}
-      {onOpenTab && (
-        <div className="absolute top-40 left-4 z-20 w-64">
-          <button
-            onClick={() => setSectionsOpen(o => !o)}
-            aria-expanded={sectionsOpen}
-            className="w-full bg-black/80 hover:bg-black text-amber-300 border border-amber-500/40 rounded-lg px-3 py-2 text-xs font-bold text-left"
-          >
-            {sectionsOpen ? 'Свернуть разделы' : `Разделы игры (${APP_NAVIGATION.length})`}
-          </button>
-          {sectionsOpen && (
-            <div className="mt-1 max-h-[45vh] overflow-y-auto bg-black/85 backdrop-blur border border-amber-500/30 rounded-lg p-1 flex flex-col gap-0.5">
-              {APP_NAVIGATION.map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => onOpenTab(tab.id)}
-                    disabled={tab.id === 'mezzanine'}
-                    className={`flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition ${tab.id === 'mezzanine' ? 'text-amber-300 bg-amber-500/10 cursor-default' : 'text-slate-300 hover:bg-slate-700/80 hover:text-white'}`}
-                  >
-                    <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* Overlays live in a fixed layer: the hub box is 100vh tall inside the app
           shell, so an absolute overlay would sit under the header and get
