@@ -1,0 +1,30 @@
+{
+  "name": "Калинковичи",
+  "country": "Беларусь",
+  "region": "04_eastern_europe",
+  "centerLat": 52.128814,
+  "centerLon": 29.332527,
+  "zoom": 16,
+  "mapSize": 2048,
+  "tileSize": 256,
+  "startPosition": {
+    "x": 1024,
+    "y": 1024
+  },
+  "playerHeight": 1.8,
+  "cameraHeight": 15,
+  "viewAngle": -1.5707963267948966,
+  "tileCount": {
+    "x": 8,
+    "y": 8
+  },
+  "tileOrigin": {
+    "x": 38103,
+    "y": 21605
+  },
+  "textures": {
+    "ground": "/textures/kalinkovichi/ground.webp",
+    "roads": "/textures/kalinkovichi/roads.webp",
+    "buildings": "/textures/kalinkovichi/buildings.webp"
+  }
+}
