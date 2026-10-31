@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Build / release artefacts
+build.out
+dist.zip
+*.apk
+*.bak
+*.new
+
+# Local scratch files
+fix.mjs
+*.ps1.bak
+
 # Local agent/tool configs
 .kilo/
 .kombai/
