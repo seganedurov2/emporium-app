@@ -27,6 +27,7 @@ import {
   type MarketImprovementRequest
 } from './marketImprovementsEngine';
 import { formatMoney } from './currency';
+import { createDefaultMezzanineView, normalizeMezzanineViewState, type MezzanineViewState } from './mezzanineViewState';
 
 export interface ManagedCampaignState extends CampaignState {
   beautySalon: BeautySalonState;
@@ -72,18 +73,22 @@ export interface ManagedCampaignState extends CampaignState {
   marketImprovements: Record<MarketImprovementId, number>;
   /** Active weekly proposal from the market administrator or financier. */
   marketRequest: MarketImprovementRequest | null;
+  /** Last mezzanine map view, restored when the player returns to the hub. */
+  mezzanine: MezzanineViewState;
 }
 
 export interface InitialCampaignOptions {
   campaignName?: string;
   ceoName?: string;
+  ceoGender?: Character['gender'];
+  ceoImage?: string;
   funds?: number;
   week?: number;
   fresh?: boolean;
 }
 
-const createStartingRoster = (ceoName: string, week: number): Character[] => {
-  const ceo = generateCharacter('03_western_europe');
+const createStartingRoster = (ceoName: string, week: number, ceoGender?: Character['gender']): Character[] => {
+  const ceo = generateCharacter('03_western_europe', ceoGender);
   ceo.name = ceoName;
   ceo.role = 'Chief Executive Officer';
   return [
@@ -102,9 +107,11 @@ const ALL_REGION_IDS = [
 export function createInitialCampaign(options: InitialCampaignOptions = {}): ManagedCampaignState {
   const campaignName = options.campaignName ?? 'Глобальный синдикат «Эмпориум»';
   const ceoName = options.ceoName ?? 'Елена Вэнс (CEO)';
+  const ceoGender = options.ceoGender;
   const week = options.week ?? 12;
   const fresh = options.fresh ?? false;
-  const roster = createStartingRoster(ceoName, week);
+  const roster = createStartingRoster(ceoName, week, ceoGender);
+  if (options.ceoImage) roster[0].image = options.ceoImage;
 
   return {
     version: 4,
@@ -188,6 +195,7 @@ export function createInitialCampaign(options: InitialCampaignOptions = {}): Man
       trade_financing: 0
     },
     marketRequest: null,
+    mezzanine: createDefaultMezzanineView(),
     log: [
       `Неделя ${week}: кампания успешно запущена.`,
       fresh
@@ -195,6 +203,8 @@ export function createInitialCampaign(options: InitialCampaignOptions = {}): Man
         : 'Добро пожаловать в «Эмпориум», веб-версия. Объекты и система сотрудников готовы.'
     ],
     marketRefreshDone: false,
+    marketDemand: {},
+    regionalStanding: {},
     purchasedUpgrades: []
   } as ManagedCampaignState;
 }
@@ -734,6 +744,7 @@ export function migrateCampaignState(raw: unknown): ManagedCampaignState {
       ...(parsed.marketImprovements as Partial<ManagedCampaignState['marketImprovements']> | undefined)
     },
     marketRequest: normalizeMarketRequest(parsed.marketRequest),
+    mezzanine: normalizeMezzanineViewState(parsed.mezzanine),
     log: Array.isArray(parsed.log) ? parsed.log.filter((entry): entry is string => typeof entry === 'string') : []
   } as ManagedCampaignState;
 }

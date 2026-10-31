@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialCampaign, migrateCampaignState } from './saveState';
+import { createDefaultMezzanineView } from './mezzanineViewState';
 
 describe('saveState meta-progress migration', () => {
   it('creates a campaign with meta progress and an empty report history', () => {
@@ -75,6 +76,56 @@ describe('saveState meta-progress migration', () => {
     expect(migrated.metaProgress.prestige).toEqual({ level: 2, victories: 1 });
     expect(migrated.metaProgress.goalStatus).toBe('victory');
     expect(migrated.metaProgress.endingWeek).toBe(100);
+  });
+
+  it('starts a new campaign with an empty mezzanine view', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    expect(campaign.mezzanine).toEqual({
+      selectedRegionId: null,
+      selectedCity: null,
+      viewMode: 'region',
+      gridSize: 64,
+      offset: { x: 0, y: 0 },
+      citySeed: 1101
+    });
+  });
+
+  it('restores the mezzanine view saved in 0.3.7', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const withView = {
+      ...campaign,
+      mezzanine: {
+        selectedRegionId: 'gomel',
+        selectedCity: { name: 'Калинковичи', lat: 52.1288, lon: 29.3325, seed: 1101 },
+        viewMode: 'city',
+        gridSize: 48,
+        offset: { x: 0, y: 0 },
+        citySeed: 1101
+      }
+    };
+    const migrated = migrateCampaignState(JSON.parse(JSON.stringify(withView)));
+    expect(migrated.mezzanine.viewMode).toBe('city');
+    expect(migrated.mezzanine.selectedRegionId).toBe('gomel');
+    expect(migrated.mezzanine.selectedCity?.name).toBe('Калинковичи');
+    expect(migrated.mezzanine.gridSize).toBe(48);
+  });
+
+  it('loads pre-0.3.7 saves that have no mezzanine block', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const { mezzanine: _mezzanine, ...legacy } = campaign;
+    const migrated = migrateCampaignState(JSON.parse(JSON.stringify(legacy)));
+    expect(migrated.mezzanine).toEqual(createDefaultMezzanineView());
+  });
+
+  it('repairs a corrupted mezzanine block instead of dropping the campaign', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const migrated = migrateCampaignState({
+      ...JSON.parse(JSON.stringify(campaign)),
+      mezzanine: { viewMode: 'city', gridSize: 5000, selectedCity: { name: 'X', lat: 0, lon: 0, seed: 0 } }
+    });
+    expect(migrated.mezzanine.gridSize).toBe(200);
+    expect(migrated.mezzanine.selectedCity?.seed).toBe(1);
+    expect(migrated.mezzanine.viewMode).toBe('city');
   });
 
   it('falls back to defaults when meta progress is missing entirely', () => {
