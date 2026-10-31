@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { TerrainGenerator, t, type Lang, type Heightmap } from '../../terrain';
 import { KalinkovichiGame, type MapCenter } from '../world/KalinkovichiGame';
 import { KalinkovichiMap } from './KalinkovichiMap';
@@ -210,6 +210,12 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
     const keys: Record<string, boolean> = {};
     const handleKeyDown = (e: KeyboardEvent) => {
       keys[e.code] = true;
+      // A focused toolbar button would be "clicked" by Space and Enter, so
+      // hotkeys must not leak into whatever the pointer last touched.
+      if (e.key === ' ' || e.key === 'Enter') {
+        const active = document.activeElement as HTMLElement | null;
+        if (active && active.tagName === 'BUTTON') active.blur();
+      }
       const target = e.target as HTMLElement | null;
       const typing = Boolean(
         target && (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA')
@@ -242,10 +248,19 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
       applyShortcut(action);
     };
     const handleKeyUp = (e: KeyboardEvent) => { keys[e.code] = false; };
+    // Leaving the hub drops focus on a toolbar button; otherwise every hotkey it
+    // did not use would "click" the map again. Mapping the world still needs
+    // the key state (__gameKeys), which this does not touch.
+    const dropMapFocus = () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== document.body && active.closest('[data-map-controls]')) active.blur();
+    };
+    document.addEventListener('click', dropMapFocus, true);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     (window as any).__gameKeys = keys;
     return () => {
+      document.removeEventListener('click', dropMapFocus, true);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
@@ -276,7 +291,23 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
     };
   }, [inGame]);
 
+  // Layout effect: the canvas is filled before the browser paints, so the hub
+  // never shows an empty map frame after a mount or a view change.
+  // Redraw on resize: the canvas is sized from the host box, so a window
+  // resize (or a sidebar toggle) must rebuild it instead of stretching it.
+  const [box, setBox] = useState({ w: 0, h: 0 });
   useEffect(() => {
+    const host = canvasRef.current?.closest('[data-map-controls]') as HTMLElement | null;
+    if (!host) return;
+    const observer = new ResizeObserver(entries => {
+      const rect = entries[0]?.contentRect;
+      if (rect) setBox({ w: Math.round(rect.width), h: Math.round(rect.height) });
+    });
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !grid) return;
     const ctx = canvas.getContext('2d');
@@ -284,9 +315,13 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
 
     const size = grid.length;
     const dpr = window.devicePixelRatio || 1;
-    const tile = gridSize;
-    const w = Math.max(canvas.parentElement?.clientWidth || 600, size * tile * 2 + 100);
-    const h = Math.max(canvas.parentElement?.clientHeight || 600, size * tile + 100);
+    // The canvas must match the hub box, never grow with its own content: with
+    // `parentElement.clientHeight` a 1494px canvas was created inside a 720px
+    // viewport and pushed the map (and the controls) off screen. `clientHeight`
+    // of the host is already clipped by the flex parent.
+    const host = canvas.closest('[data-map-controls]') as HTMLElement | null;
+    const w = Math.max(box.w || host?.clientWidth || 0, 320);
+    const h = Math.max(box.h || host?.clientHeight || 0, 320);
 
     canvas.width = w * dpr;
     canvas.height = h * dpr;
@@ -294,10 +329,15 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
     canvas.style.height = h + 'px';
     ctx.scale(dpr, dpr);
 
-    ctx.clearRect(0, 0, w, h);
+    // Below the map there is no "outside": the canvas is bigger than the
+    // viewport, so the surrounding hill colour is drawn on it as well.
+    ctx.fillStyle = '#1a4d2e';
+    ctx.fillRect(0, 0, w, h);
 
+    // ox/oy is the screen position of the map centre; both branches place
+    // tiles relative to it, so the diamond stays centred while panning.
     const ox = w / 2 + offsetRef.current.x;
-    const oy = h / 3 + offsetRef.current.y;
+    const oy = h / 2 + offsetRef.current.y;
 
     // Only the visible part of a big map is drawn (0.3.7): a 64x64 region at
     // tile 48 is 8k x 4k px, and filling that every frame made the second
@@ -316,67 +356,75 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
       const rect = cityVisibleRect(size, selectedCity.lon, selectedCity.lat, refLon, refLat, cityTile);
       const { startX, endX, startY, endY, centerX: cx, centerY: cy } = rect;
 
-      // draw visible city grid
-      ctx.strokeStyle = 'rgba(174, 170, 65, 0.25)';
-      ctx.lineWidth = 1;
-      for (let y = startY; y <= endY; y++) {
-        ctx.beginPath();
-        ctx.moveTo(ox - (endX - startX) * cityTile / 2, oy + (y - startY) * cityTile / 4);
-        ctx.lineTo(ox + (endX - startX) * cityTile / 2, oy - (y - startY) * cityTile / 4);
-        ctx.stroke();
-      }
-      for (let x = startX; x <= endX; x++) {
-        ctx.beginPath();
-        ctx.moveTo(ox - (endX - startX) * cityTile / 2 + (x - startX) * cityTile / 2, oy + (x - startX) * cityTile / 4);
-        ctx.lineTo(ox + (endX - startX) * cityTile / 2 - (x - startX) * cityTile / 2, oy - (x - startX) * cityTile / 4);
-        ctx.stroke();
-      }
+      // Isometric cell (x, y) sits at ((x - y) * half, (x + y) * quarter)
+      // relative to the window centre, so the diamond is centred on ox/oy.
+      // Using x/cx per axis (as before) skewed a 14-tile window into a corner.
+      const screenX = (gx: number, gy: number) => ox + (gx - cx - (gy - cy)) * cityTile / 2;
+      const screenY = (gx: number, gy: number) => oy + (gx - cx + gy - cy) * cityTile / 4;
 
-      // Cull the corner tiles that cannot land inside the visible canvas.
-      const halfSpanX = (endX - startX) * cityTile / 4;
-      const halfSpanY = (endY - startY) * cityTile / 8;
+      // Tile extent: half a tile wide, quarter tile tall, plus the height lift.
+      const halfW = cityTile / 2 + 2;
+      const halfH = cityTile / 2 + 2;
+
       for (let y = startY; y < endY; y++) {
-        const rowOffset = (y - cy) * cityTile / 4;
-        if (oy + rowOffset + halfSpanY < 0) continue;
-        if (oy + rowOffset - halfSpanY > h) break;
         for (let x = startX; x < endX; x++) {
-          const dx = (x - cx) * cityTile / 2;
-          if (ox + dx + halfSpanX < 0) continue;
-          if (ox + dx - halfSpanX > w) break;
-          drawBlock(ctx, ox + dx, oy + rowOffset, cityTile, grid[y][x], x * 7919 + y);
+          const sx = screenX(x, y);
+          const sy = screenY(x, y);
+          if (sx + halfW < 0 || sx - halfW > w) continue;
+          if (sy + halfH < 0 || sy - halfH > h) continue;
+          drawBlock(ctx, sx, sy, cityTile, grid[y][x], x * 7919 + y);
         }
       }
     } else {
-      // draw a subtle ground plane grid
+      // Fit the whole region into the box: a 64x64 grid at tile 48 spans
+      // ~3000 px, so only a handful of cells would be visible. gridSize from
+      // the wheel stays the upper bound, so zooming in still works.
+      // A 64x64 diamond spans `size * tile` wide and `size * tile / 2` tall.
+      // Keep a 10% margin so the corners are not flush against the canvas edge,
+      // and let gridSize zoom in past the fitted size.
+      const margin = 0.9;
+      const fitTile = Math.max(3, Math.min((w * margin) / size, (h * 2 * margin) / size));
+      const regionTile = gridSize <= fitTile ? gridSize : fitTile;
+
+      // Same isometric projection as the city branch, centred on ox/oy: the
+      // whole grid's centre is (size / 2, size / 2), so the diamond is
+      // symmetric and never drifts towards a corner as the tile size changes.
+      const mid = size / 2;
+      const screenX = (gx: number, gy: number) => ox + (gx - gy) * regionTile / 2;
+      const screenY = (gx: number, gy: number) => oy + (gx + gy - 2 * mid) * regionTile / 4;
+
+      // Ground plane lines, drawn first so the blocks cover them.
       ctx.strokeStyle = 'rgba(0,0,0,0.08)';
       ctx.lineWidth = 1;
       for (let y = 0; y <= size; y++) {
         ctx.beginPath();
-        ctx.moveTo(ox - size * tile / 2, oy + y * tile / 4);
-        ctx.lineTo(ox + size * tile / 2, oy - y * tile / 4);
+        ctx.moveTo(screenX(0, y), screenY(0, y));
+        ctx.lineTo(screenX(size, y), screenY(size, y));
         ctx.stroke();
       }
       for (let x = 0; x <= size; x++) {
         ctx.beginPath();
-        ctx.moveTo(ox - size * tile / 2 + x * tile / 2, oy + x * tile / 4);
-        ctx.lineTo(ox + size * tile / 2 - x * tile / 2, oy - x * tile / 4);
+        ctx.moveTo(screenX(x, 0), screenY(x, 0));
+        ctx.lineTo(screenX(x, size), screenY(x, size));
         ctx.stroke();
       }
 
-      // draw blocks back-to-front, skipping rows/columns outside the viewport
+      // Draw back-to-front: x + y grows towards the viewer.
+      const halfW = regionTile / 2 + 2;
+      const halfH = regionTile / 2 + 2;
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
-          const cx = (x - y) * tile / 2 + ox;
-          const cy = (x + y) * tile / 4 + oy;
-          if (cx + tile < 0 || cx - tile > w) continue;
-          if (cy + tile < 0 || cy - tile > h) continue;
-          drawBlock(ctx, cx, cy, tile, grid[y][x], x * 7919 + y);
+          const cx = screenX(x, y);
+          const cy = screenY(x, y);
+          if (cx + halfW < 0 || cx - halfW > w) continue;
+          if (cy + halfH < 0 || cy - halfH > h) continue;
+          drawBlock(ctx, cx, cy, regionTile, grid[y][x], x * 7919 + y);
         }
       }
     }
 
     ctx.restore();
-  }, [cityView, grid, gridSize, offset, selectedCity, selectedRegion]);
+  }, [cityView, grid, gridSize, offset, selectedCity, selectedRegion, box.w, box.h]);
 
   const loadMap = async (f: File) => {
     try {
@@ -421,7 +469,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
   // (which assume the last game screen) can never swallow the pointer.
   if (view3d) {
     return (
-      <div className="relative w-full h-screen overflow-hidden">
+      <div className="relative h-full w-full overflow-hidden">
         <KalinkovichiGame
           key={mapCenter ? `${mapCenter.lat},${mapCenter.lon}` : 'default'}
           initialCenter={mapCenter ?? undefined}
@@ -434,7 +482,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
   // City builder: named streets, numbered lots and animated construction.
   if (viewCity) {
     return (
-      <div className="relative w-full h-[calc(100vh-8rem)] min-h-[640px] overflow-hidden rounded-xl border border-slate-800">
+      <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-xl border border-slate-800">
         <CityBuilderView citySeed={citySeed} peopleCount={gameState?.roster.length ?? 0} />
         <button
           onClick={() => setView(prev => ({ ...prev, viewMode: 'city' }))}
@@ -447,17 +495,31 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
   }
 
   return (
-    <div className="relative w-full h-screen bg-[#1a4d2e] overflow-hidden" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+    // h-full, not h-screen: the app shell already sizes the content area
+    // (`h-[calc(100vh-5rem)]`), and adding 100vh inside it made the page
+    // scroll past the hub instead of stopping on the map.
+    // Height is taken from the viewport, not from the flex parent: the parent
+    // has no explicit height, so `h-full` resolved against the content and the
+    // hub grew to 1494px inside a 720px window.
+    <div
+      data-map-controls
+      className="relative w-full overflow-hidden"
+      style={{ height: 'calc(100vh - 5rem)' }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
       {grid && (
         <div className="absolute inset-0 flex items-center justify-center">
           <canvas ref={canvasRef} className="block cursor-grab active:cursor-grabbing" />
-          <div className="absolute top-12 right-4 z-20 flex flex-col items-center gap-2 pointer-events-none">
-            <div className="bg-black/70 border border-amber-500/30 rounded-lg px-3 py-2 text-xs font-bold text-amber-300 shadow-lg">С</div>
+          {/* Compass sits under the right-hand controls, not on top of them. */}
+          <div className="absolute bottom-24 right-4 z-20 flex flex-col items-center gap-2 pointer-events-none opacity-70">
+            <div className="rounded-lg bg-black/50 border border-amber-500/20 px-2 py-1 text-[10px] font-bold text-amber-300">С</div>
             <div className="flex items-center gap-1">
-              <div className="bg-black/70 border border-amber-500/30 rounded-lg px-2 py-1 text-xs font-bold text-amber-300 shadow-lg">З</div>
-              <div className="bg-black/70 border border-amber-500/30 rounded-lg px-2 py-1 text-xs font-bold text-amber-300 shadow-lg">В</div>
+              <div className="rounded-lg bg-black/50 border border-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">З</div>
+              <div className="rounded-lg bg-black/50 border border-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">В</div>
             </div>
-            <div className="bg-black/70 border border-amber-500/30 rounded-lg px-3 py-2 text-xs font-bold text-amber-300 shadow-lg">Ю</div>
+            <div className="rounded-lg bg-black/50 border border-amber-500/20 px-2 py-1 text-[10px] font-bold text-amber-300">Ю</div>
           </div>
           {cityView && selectedCity && (
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/90 text-white px-6 py-3 rounded-full z-20 border border-amber-500 shadow-lg">
@@ -478,12 +540,15 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
         <div className="text-xs text-gray-400 mt-1">Pixel art · LPM перетаскивать · колёсико зум · ? — клавиши</div>
       </div>
       {selectedRegion && (
-        <div className="absolute top-24 left-4 bg-black/80 text-white px-3 py-2 rounded-lg text-sm z-10 border border-amber-500/30">
+        <div className="absolute top-[5.5rem] left-4 bg-black/80 text-white px-3 py-2 rounded-lg text-sm z-10 border border-amber-500/30">
           <div className="font-bold text-amber-400">{REGIONS.find(r => r.id === selectedRegion)?.name}</div>
           <div className="text-xs text-gray-400 mt-1">Область Беларуси</div>
         </div>
       )}
-      <div className="absolute top-4 right-80 w-64 bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 z-10 flex flex-col gap-2 shadow-lg">
+      {/* One control column: earlier these panels were positioned separately
+          (right-80 / right-4 / right-[340px]) and overlapped each other. */}
+      <div className="absolute top-4 right-4 z-10 flex w-64 flex-col gap-2">
+      <div className="bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg">
         <div className="text-xs text-amber-400 font-bold mb-1">Режим вида</div>
         <select
           value={cityView ? 'city' : 'region'}
@@ -508,7 +573,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
           <option value="city">Карта города</option>
         </select>
       </div>
-      <div className="absolute top-4 right-4 w-64 bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 z-10 flex flex-col gap-2 shadow-lg">
+      <div className="bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg">
         <div className="text-xs text-amber-400 font-bold mb-1">Область Беларуси</div>
         <select
           value={selectedRegion || ''}
@@ -522,7 +587,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
         </select>
       </div>
       {selectedRegion && REGION_CITIES[selectedRegion] && (
-        <div className="absolute top-4 right-4 w-72 bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 z-10 mt-[calc(4rem+14px)] flex flex-col gap-2 shadow-lg">
+        <div className="bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg">
           <div className="text-xs text-amber-400 font-bold mb-1">Город {REGIONS.find(r => r.id === selectedRegion)?.name}</div>
           <select
             value={selectedCity?.name || ''}
@@ -539,43 +604,50 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
           </select>
         </div>
       )}
-      <div className="absolute top-24 right-[340px] w-32 bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 z-10 flex items-center justify-center gap-2 shadow-lg">
-        <button onClick={() => setView(prev => ({ ...prev, gridSize: clampTile(prev.gridSize - 8, prev.gridSize) }))} className="bg-black/70 text-white px-3 py-1 rounded">−</button>
-        <button onClick={() => setView(prev => ({ ...prev, gridSize: clampTile(prev.gridSize + 8, prev.gridSize) }))} className="bg-black/70 text-white px-3 py-1 rounded">+</button>
+      <div className="bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 flex items-center justify-center gap-2 shadow-lg">
+        <span className="text-[10px] uppercase tracking-widest text-slate-400">Зум</span>
+        <button onClick={() => setView(prev => ({ ...prev, gridSize: clampTile(prev.gridSize - 8, prev.gridSize) }))} className="bg-black/60 hover:bg-black/80 text-white px-3 py-1 rounded">−</button>
+        <button onClick={() => setView(prev => ({ ...prev, gridSize: clampTile(prev.gridSize + 8, prev.gridSize) }))} className="bg-black/60 hover:bg-black/80 text-white px-3 py-1 rounded">+</button>
       </div>
-      <button onClick={() => setGrid(gen.generate(Date.now()))} className="absolute bottom-4 left-4 bg-amber-600/80 text-white px-4 py-2 rounded z-10">Новая карта</button>
-      <button onClick={loadKalinkovichi} className="absolute bottom-4 left-36 bg-blue-600/80 text-white px-4 py-2 rounded z-10">Калинковичи</button>
-      <button
-        onClick={() => setView(prev => ({ ...prev, citySeed: selectedCity?.seed ?? 1101, viewMode: 'city_plan' }))}
-        className="absolute bottom-4 left-[344px] bg-fuchsia-600/80 hover:bg-fuchsia-600 text-white px-4 py-2 rounded z-10"
-        title="План города: улицы, адреса, стройка домов"
-      >
-        Стройка города
-      </button>
-      <button
-        onClick={() => { setMapCenter(centerPick); setView(prev => ({ ...prev, viewMode: '3d' })); }}
-        className="absolute bottom-4 left-64 bg-emerald-600/80 hover:bg-emerald-600 text-white px-4 py-2 rounded z-10"
-        title="Трёхмерная карта Калинковичей"
-      >
-        3D-карта
-      </button>
-      <button
-        onClick={() => setKeymapOpen(open => !open)}
-        className="absolute bottom-4 left-[452px] bg-slate-700/85 hover:bg-slate-700 text-white px-3 py-2 rounded z-10 text-xs"
-        title="Горячие клавиши (?)"
-      >
-        ?
-      </button>
-      <div className="absolute bottom-20 left-4 w-[340px] z-10">
+      </div>
+      {/* Bottom toolbar: one row inside the hub. The previous buttons were
+          pinned to bottom-4 of the 100vh box, which sat below a 720px viewport
+          and was unreachable (0.3.7 follow-up). */}
+      <div className="absolute inset-x-4 bottom-4 z-10 flex flex-wrap items-center gap-2">
+        <button onClick={() => setGrid(gen.generate(Date.now()))} className="bg-amber-600/85 hover:bg-amber-600 text-white px-4 py-2 rounded text-sm">Новая карта</button>
+        <button onClick={loadKalinkovichi} className="bg-blue-600/85 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">Калинковичи</button>
+        <button
+          onClick={() => setView(prev => ({ ...prev, citySeed: selectedCity?.seed ?? 1101, viewMode: 'city_plan' }))}
+          className="bg-fuchsia-600/85 hover:bg-fuchsia-600 text-white px-4 py-2 rounded text-sm"
+          title="План города: улицы, адреса, стройка домов"
+        >
+          Стройка города
+        </button>
+        <button
+          onClick={() => { setMapCenter(centerPick); setView(prev => ({ ...prev, viewMode: '3d' })); }}
+          className="bg-emerald-600/85 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm"
+          title="Трёхмерная карта Калинковичей"
+        >
+          3D-карта
+        </button>
+        <button
+          onClick={() => setKeymapOpen(open => !open)}
+          className="bg-slate-700/85 hover:bg-slate-700 text-white px-3 py-2 rounded text-xs"
+          title="Горячие клавиши (?)"
+        >
+          ?
+        </button>
+        <label className="ml-auto cursor-pointer rounded bg-blue-600/85 px-4 py-2 text-sm text-white hover:bg-blue-600">
+          Загрузить heightmap
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if(f) loadMap(f); }} />
+        </label>
+      </div>
+      <div className="absolute bottom-20 left-4 z-10 w-[300px]">
         <KalinkovichiMap
           onPick={setCenterPick}
           onOpen3d={(c: MapCenter) => { setMapCenter(c); setView(prev => ({ ...prev, viewMode: '3d' })); }}
         />
       </div>
-      <label className="absolute bottom-4 right-4 bg-blue-600/80 text-white px-4 py-2 rounded cursor-pointer z-10">
-        Загрузить heightmap
-        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if(f) loadMap(f); }} />
-      </label>
 
       {/* Hub links: every campaign section is one click away from the map. */}
       {onOpenTab && (

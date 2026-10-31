@@ -27,21 +27,28 @@ describe("shade", () => {
 });
 
 describe("cityVisibleRect", () => {
-  it("centres a radius-sized window on the city cell", () => {
-    // At the region centre the cell is 0, so the window is clamped to the corner.
+  it("keeps a full window for a city at the region reference point", () => {
     const centred = cityVisibleRect(64, 29.3325, 52.1288, 29.3325, 52.1288, 48);
     expect(centred.startX).toBe(0);
-    expect(centred.endX).toBe(CITY_RADIUS);
+    expect(centred.endX).toBe(CITY_RADIUS * 2);
     expect(centred.startY).toBe(0);
-    expect(centred.endY).toBe(CITY_RADIUS);
+    expect(centred.endY).toBe(CITY_RADIUS * 2);
+  });
 
-    // A city ~1.5 tiles east lands inside the map and gets a full window.
-    const rect = cityVisibleRect(64, 30.4525, 52.1288, 29.3325, 52.1288, 48);
+  it("keeps a full window for Kalinkovichi, west of its region centre", () => {
+    // Gomel reference is 30.98E; Kalinkovichi is 29.33E, ~20 cells west at
+    // tile 48. A zero-width window left the city view blank.
+    const rect = cityVisibleRect(64, 29.3325, 52.1288, 30.9764, 52.4345, 48);
+    expect(rect.endX - rect.startX).toBe(CITY_RADIUS * 2);
+    expect(rect.endY - rect.startY).toBe(CITY_RADIUS * 2);
+    expect(rect.startX).toBe(0);
+  });
+
+  it("slides the window inside the map for an off-map city", () => {
+    const rect = cityVisibleRect(64, 10, 50, 30, 50, 48);
     expect(rect.startX).toBe(0);
     expect(rect.endX).toBe(CITY_RADIUS * 2);
-    expect(rect.centerX).toBe(CITY_RADIUS);
-    expect(rect.startY).toBe(0);
-    expect(rect.endY).toBe(CITY_RADIUS);
+    expect(rect.endY - rect.startY).toBe(CITY_RADIUS * 2);
   });
 
   it("clamps the window to the map bounds instead of going negative", () => {
@@ -54,14 +61,7 @@ describe("cityVisibleRect", () => {
     expect(rect.endY - rect.startY).toBeLessThanOrEqual(CITY_RADIUS * 2);
   });
 
-  it("flattens the window for a city far outside the region", () => {
-    // 20° west of the reference puts the cell at -300. Only the X slice is
-    // empty; Y stays centred on the reference row.
-    const rect = cityVisibleRect(64, 10, 50, 30, 50, 48);
-    expect(rect.startX).toBe(0);
-    expect(rect.endX).toBe(0);
-    expect(rect.endY - rect.startY).toBe(CITY_RADIUS);
-  });
+
 });
 
 describe("region tile budget", () => {

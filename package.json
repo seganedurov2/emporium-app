@@ -14,7 +14,8 @@
     "convert:portraits-3d": "node tools/convert-portraits-3d.mjs",
     "verify:portraits-3d": "node tools/convert-portraits-3d.mjs --verify",
     "r2:setup": "node tools/r2-setup.mjs",
-    "r2:sync": "node tools/r2-sync.mjs"
+    "r2:sync": "node tools/r2-sync.mjs",
+    "qa:mezzanine": "node ../.codegpt/skills/browser-automation/browser.mjs http://localhost:4178/ --script ./tools/qa-mezzanine.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

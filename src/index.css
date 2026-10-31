@@ -23,3 +23,15 @@ body,
   min-height: var(--tg-viewport-height, 100dvh);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/*
+ * The mezzanine hub is a fixed-height map (100vh inside the shell), so it must
+ * fit the viewport exactly. Any extra space around it (a tall tab, the safe
+ * area padding) pushed the canvas below the fold and the page scrolled to the
+ * next tab instead of parking on the map (0.3.7 follow-up).
+ */
+.tg-app-shell:has([data-map-controls]) {
+  height: var(--tg-viewport-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+}

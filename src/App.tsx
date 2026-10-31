@@ -4243,7 +4243,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         </nav>
       )}
 
-      <div className={`flex min-h-0 flex-1 ${mezzanineView === 'mezzanine' ? 'h-[calc(100vh-5rem)]' : ''}`}>
+      <div className={`flex min-h-0 flex-1 ${mezzanineView === 'mezzanine' ? 'h-[calc(100vh-5rem)] flex-none' : ''}`}>
         <aside className={`hidden shrink-0 flex-col border-r border-slate-800 bg-slate-900/70 transition-[width] duration-200 md:flex ${isSidebarExpanded ? 'w-64' : 'w-[4.5rem]'}`}>
           <div className={`flex min-h-14 items-center border-b border-slate-800 px-3 ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
             {isSidebarExpanded && <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Навигация</span>}

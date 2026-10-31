@@ -135,12 +135,15 @@ export function cityVisibleRect(
 ): IsometricRect {
   const cxGrid = Math.round(((cityLon - refLon) * CITY_GRID_SCALE) / tile);
   const cyGrid = Math.round((-(cityLat - refLat) * CITY_GRID_SCALE) / tile);
-  // Clamp the pair, not each edge: a city far off the region must collapse to
-  // an empty window instead of producing end < start.
-  const startX = Math.min(size, Math.max(0, cxGrid - CITY_RADIUS));
-  const endX = Math.max(startX, Math.min(size, cxGrid + CITY_RADIUS));
-  const startY = Math.min(size, Math.max(0, cyGrid - CITY_RADIUS));
-  const endY = Math.max(startY, Math.min(size, cyGrid + CITY_RADIUS));
+  // The city does not have to sit inside its region centre: Kalinkovichi is
+  // ~20 cells west of the Gomel reference point, which used to clamp the
+  // window to zero width and leave the city view a blank field. Slide the
+  // window back inside the map instead, keeping the full radius.
+  const span = Math.min(2 * CITY_RADIUS, size);
+  const startX = Math.min(Math.max(0, cxGrid - CITY_RADIUS), size - span);
+  const startY = Math.min(Math.max(0, cyGrid - CITY_RADIUS), size - span);
+  const endX = startX + span;
+  const endY = startY + span;
   return {
     startX,
     startY,

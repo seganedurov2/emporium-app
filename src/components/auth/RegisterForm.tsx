@@ -40,12 +40,13 @@ export function RegisterForm({ onAuth, onSwitchToLogin }: RegisterFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form autoComplete="off" onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
             Логин
           </label>
           <input
+            autoComplete="off"
             type="text"
             value={login}
             onChange={e => setLogin(e.target.value)}
@@ -58,6 +59,7 @@ export function RegisterForm({ onAuth, onSwitchToLogin }: RegisterFormProps) {
             Пароль
           </label>
           <input
+            autoComplete="off"
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
@@ -70,6 +72,7 @@ export function RegisterForm({ onAuth, onSwitchToLogin }: RegisterFormProps) {
             Повторите пароль
           </label>
           <input
+            autoComplete="off"
             type="password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
