@@ -31,6 +31,8 @@ import { buildChiefDoctorReport } from './chiefDoctorEngine';
 import { calculateStaffing } from './staffingCalculator';
 import { createInitialCampaign, migrateCampaignState, readCampaignFromStorage, type ManagedCampaignState } from './saveState';
 import type { MezzanineViewState } from './mezzanineViewState';
+import { actForWeek, advanceCampaignScript, createCampaignScript, type ScriptSnapshot } from './campaignScript';
+import { CampaignScriptPanel } from './components/meta/CampaignScriptPanel';
 import {
   generateVenueRequests,
   stripClubAssignmentError,
@@ -1480,7 +1482,32 @@ log: [`Партия ${lotId} ${wasReserved ? 'снята с брони' : 'за�
     showNotify(wasReserved ? 'Бронирование отменено.' : 'Партия зарезервирована до следующего еженедельного обновления.');
   };
 
-const advanceWeek = () => {
+// Snapshot the campaign script is measured against. Shared by the dashboard
+  // and the achievements tab so both panels report the same numbers.
+  const campaignSnapshot = useMemo<ScriptSnapshot>(() => ({
+    week: gameState.week,
+    funds: gameState.funds,
+    reputation: gameState.reputation,
+    activeVenues: gameState.auxiliaryBuildings.filter(building => building.level > 0).length,
+    employees: gameState.employees.length + 1,
+    dealsCompleted:
+      (gameState.metaProgress?.stats.auctionsCompleted ?? 0)
+      + (gameState.metaProgress?.stats.caravansCompleted ?? 0)
+      + (gameState.metaProgress?.stats.captureOpsCompleted ?? 0),
+    cityHubUnlocked: Boolean(gameState.mezzanine?.selectedRegionId),
+    isBankrupt: gameState.isBankrupt
+  }), [
+    gameState.week,
+    gameState.funds,
+    gameState.reputation,
+    gameState.auxiliaryBuildings,
+    gameState.employees.length,
+    gameState.metaProgress?.stats,
+    gameState.mezzanine?.selectedRegionId,
+    gameState.isBankrupt
+  ]);
+
+  const advanceWeek = () => {
     let currentFunds = gameState.funds;
     const buildingEffects = calculateBuildingWeeklyEffects(gameState.auxiliaryBuildings, gameState.employees);
     const employeeWeek = advanceEmployeesWeek(gameState.employees, buildingEffects, gameState.week);
@@ -2331,6 +2358,9 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
          totalRevenue: prev.beautySalon.totalRevenue + salonTreatmentRevenue
        },
         log: [...newLogs, ...prev.log].slice(0, 50),
+        // Campaign script follows the week: crossing week 30/60/85 moves the
+        // run into the next act, and the log records the transition.
+        campaignScript: advanceCampaignScript(prev.campaignScript ?? createCampaignScript(prev.week), nextWeekNumber),
         // Администраторы площадок выносят новые запросы и предложения
         // с учётом только что подсчитанных доходов и расходов.
         venueRequests: generateVenueRequests({
@@ -3770,7 +3800,9 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
   // --- PLAYING MAIN APP UI ---
   const weeklyReport = gameState.lastWeeklyReport;
   return (
-    <div className="tg-app-shell overflow-x-hidden bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="tg-app-shell relative overflow-x-hidden bg-slate-950 text-slate-100 flex flex-col font-sans">
+      {/* Deep-space backdrop for the whole shell (see .nasa-starfield). */}
+      <div className="nasa-starfield" aria-hidden="true" />
       {/* IN-GAME MENU / SAVE MODAL */}
       {showInGameMenu && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -4144,34 +4176,46 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white m-0 p-0">EMPORIUM <span className="text-xs px-2 py-0.5 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full font-mono">v0.3.7 Web</span></h1>
-            <p className="text-xs text-slate-400">{gameState.campaignName} (Слот #{gameState.slot})</p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
+              <span className="truncate">{gameState.campaignName} (Слот #{gameState.slot})</span>
+              <span className="nasa-readout inline-flex shrink-0 items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] tracking-widest text-amber-200">
+                <span className="text-amber-400/70">ACT</span>
+                {String(actForWeek(gameState.week).number).padStart(2, '0')}
+                <span className="text-amber-100/80 normal-case tracking-normal">{actForWeek(gameState.week).title}</span>
+              </span>
+            </div>
           </div>
         </div>
 
           {/* Status Metrics */}
           <div className="flex flex-wrap items-center gap-4 my-2 sm:my-0 sm:gap-6">
-          <div className="flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-lg border border-slate-800">
-            <Calendar className="w-4 h-4 text-amber-400" />
-            <div>
-              <div className="text-[10px] uppercase text-slate-400 font-semibold">Хронология</div>
-              <div className="text-sm font-bold font-mono">Неделя {gameState.week}</div>
+          {/* Telemetry blocks: same glass surface as the script board. */}
+          <div className="flex items-center gap-2 rounded-lg border border-slate-400/15 bg-slate-950/70 px-3 py-1.5 backdrop-blur">
+            <Calendar className="w-4 h-4 shrink-0 text-amber-400" />
+            <div className="leading-tight">
+              <div className="nasa-label whitespace-nowrap">Неделя</div>
+              <div className="nasa-readout text-sm font-semibold text-slate-100 whitespace-nowrap">
+                <span className="nasa-accent">{String(gameState.week).padStart(3, '0')}</span>
+                <span className="text-slate-500">/100</span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-lg border border-slate-800" title={`Курс BTC/USD: $1 = ₿${(1 / getBtcRate()).toFixed(8)} · 1 BTC ≈ $${getBtcRate().toLocaleString()} (реальный рыночный курс)`}>
-            <Bitcoin className="w-4 h-4 text-emerald-400" />
-            <div>
-              <div className="text-[10px] uppercase text-slate-400 font-semibold">Казна</div>
-              <div className="text-sm font-bold font-mono text-emerald-400">{formatMoney(gameState.funds)}</div>
-              <div className="text-[9px] font-mono text-slate-500">1 BTC ≈ ${getBtcRate().toLocaleString()}</div>
+          <div className="flex items-center gap-2 rounded-lg border border-slate-400/15 bg-slate-950/70 px-3 py-1.5 backdrop-blur" title={`Курс BTC/USD: $1 = ₿${(1 / getBtcRate()).toFixed(8)} · 1 BTC ≈ $${getBtcRate().toLocaleString()} (реальный рыночный курс)`}>
+            <Bitcoin className="w-4 h-4 shrink-0 text-sky-300" />
+            <div className="leading-tight">
+              <div className="nasa-label whitespace-nowrap">Казна</div>
+              <div className="nasa-readout whitespace-nowrap text-sm font-semibold text-sky-200">{formatMoney(gameState.funds)}</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-lg border border-slate-800">
-            <Award className="w-4 h-4 text-purple-400" />
-            <div>
-              <div className="text-[10px] uppercase text-slate-400 font-semibold">Репутация синдиката</div>
-              <div className="text-sm font-bold font-mono text-purple-300">{gameState.reputation}%</div>
+          <div className="flex items-center gap-2 rounded-lg border border-slate-400/15 bg-slate-950/70 px-3 py-1.5 backdrop-blur">
+            <Award className="w-4 h-4 shrink-0 text-amber-300/80" />
+            <div className="leading-tight">
+              <div className="nasa-label whitespace-nowrap">Репутация</div>
+              <div className="nasa-readout whitespace-nowrap text-sm font-semibold text-slate-100">
+                {gameState.reputation}%
+              </div>
             </div>
           </div>
 
@@ -4326,6 +4370,9 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
               goalStatus={gameState.metaProgress?.goalStatus ?? 'ongoing'}
               prestigeLevel={gameState.metaProgress?.prestige.level ?? 0}
             />
+
+            {/* CAMPAIGN SCRIPT — which act of the story the run is in */}
+            <CampaignScriptPanel actId={gameState.campaignScript?.actId} snapshot={campaignSnapshot} />
 
             {/* OFFICE FLOOR PLAN — top-down view of the syndicate's buildings */}
             <OfficeFloorPlan buildings={gameState.auxiliaryBuildings} employees={gameState.employees} />
@@ -5798,6 +5845,9 @@ contracts={gameState.tradeSupplyContracts || []}
               goalStatus={gameState.metaProgress?.goalStatus ?? 'ongoing'}
               prestigeLevel={gameState.metaProgress?.prestige.level ?? 0}
             />
+
+            {/* The four acts of the script, measured against this run. */}
+            <CampaignScriptPanel actId={gameState.campaignScript?.actId} snapshot={campaignSnapshot} />
 
             <AchievementsPanel metaProgress={gameState.metaProgress ?? { achievements: {}, stats: createEmptyLifetimeStats(), prestige: { level: 0, victories: 0 }, goalStatus: 'ongoing', endingWeek: null }} />
 

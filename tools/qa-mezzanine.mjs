@@ -18,13 +18,32 @@
 const TEST_USER = { login: 'qa_mezzanine', password: 'qa_mezzanine' };
 
 async function seedAccount(page) {
-  await page.evaluate((user) => {
-    localStorage.setItem('emporium_auth_user', JSON.stringify({ ...user, createdAt: new Date().toISOString() }));
-  }, TEST_USER);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  // The auth provider only reads localStorage on mount, so seeding it and
+  // reloading raced the first render. Sign in through the real form instead:
+  // an unknown login switches to register, where the same test user is created.
+  const textInputs = () => page.locator('input[type="text"]');
+  const passInputs = () => page.locator('input[type="password"]');
+
+  if (await textInputs().first().count()) {
+    await textInputs().first().fill(TEST_USER.login);
+    await passInputs().first().fill(TEST_USER.password);
+    await page.locator('button', { hasText: /^Войти$/ }).first().click();
+    await page.waitForTimeout(1200);
+  }
+
+  // Register screen (first run) — log in screen is gone, fill it and submit.
+  const register = page.locator('button', { hasText: /^Зарегистрироваться$/ }).first();
+  if (await register.count()) {
+    await textInputs().first().fill(TEST_USER.login);
+    const passes = passInputs();
+    await passes.nth(0).fill(TEST_USER.password);
+    await passes.nth(1).fill(TEST_USER.password);
+    await register.click();
+  }
+
   // Wait for the title screen instead of a fixed delay: a cold preview server
   // takes seconds to hydrate, and a short sleep leaves the auth screen up.
-  await page.getByRole('button', { name: /Продолжить кампанию|Новая игра/ }).first().waitFor({ timeout: 30000 });
+  await page.getByRole('button', { name: /Продолжить кампанию|Новая игра/ }).first().waitFor({ timeout: 40000 });
 }
 
 async function sampleVisibleCanvas(page) {

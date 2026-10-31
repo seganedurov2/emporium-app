@@ -128,6 +128,29 @@ describe('saveState meta-progress migration', () => {
     expect(migrated.mezzanine.viewMode).toBe('city');
   });
 
+  it('starts every campaign in the act its week belongs to', () => {
+    expect(createInitialCampaign({ fresh: true, week: 12 }).campaignScript)
+      .toEqual({ actId: 'founding', enteredWeek: 1 });
+    expect(createInitialCampaign({ fresh: true, week: 70 }).campaignScript)
+      .toEqual({ actId: 'syndicate', enteredWeek: 61 });
+  });
+
+  it('loads pre-0.3.7 saves without a campaign script', () => {
+    const campaign = createInitialCampaign({ fresh: true, week: 40 });
+    const { campaignScript: _script, ...legacy } = campaign;
+    const migrated = migrateCampaignState(JSON.parse(JSON.stringify(legacy)));
+    expect(migrated.campaignScript).toEqual({ actId: 'expansion', enteredWeek: 31 });
+  });
+
+  it('moves a stale script to the act of the saved week', () => {
+    const campaign = createInitialCampaign({ fresh: true, week: 90 });
+    const migrated = migrateCampaignState({
+      ...JSON.parse(JSON.stringify(campaign)),
+      campaignScript: { actId: 'founding', enteredWeek: 1 }
+    });
+    expect(migrated.campaignScript).toEqual({ actId: 'reckoning', enteredWeek: 86 });
+  });
+
   it('falls back to defaults when meta progress is missing entirely', () => {
     const campaign = createInitialCampaign({ fresh: true });
     const { metaProgress: _metaProgress, weeklyReports: _weeklyReports, ...legacy } = campaign;
