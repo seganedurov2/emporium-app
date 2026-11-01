@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { generateCity, placeBuilding } from './cityBuilder';
+import { serializeCityPlan } from './cityPlanState';
 import { createInitialCampaign, migrateCampaignState } from './saveState';
 import { createDefaultMezzanineView } from './mezzanineViewState';
 
 describe('saveState meta-progress migration', () => {
   it('creates a campaign with meta progress and an empty report history', () => {
     const campaign = createInitialCampaign({ fresh: true });
+    expect(campaign.version).toBe(5);
+    expect(campaign.cityPlan).toBeNull();
     expect(campaign.metaProgress).toBeDefined();
     expect(campaign.metaProgress.goalStatus).toBe('ongoing');
     expect(campaign.metaProgress.prestige.level).toBe(0);
@@ -129,6 +133,50 @@ describe('saveState meta-progress migration', () => {
     expect(migrated.mezzanine.gridSize).toBe(200);
     expect(migrated.mezzanine.selectedCity?.seed).toBe(1);
     expect(migrated.mezzanine.viewMode).toBe('city');
+  });
+
+  it('migrates a v4 save without a city plan to an empty v5 plan', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const { cityPlan: _cityPlan, ...legacy } = campaign;
+    const migrated = migrateCampaignState({ ...JSON.parse(JSON.stringify(legacy)), version: 4 });
+
+    expect(migrated.version).toBe(5);
+    expect(migrated.cityPlan).toBeNull();
+    expect(migrated.funds).toBe(campaign.funds);
+    expect(migrated.roster).toHaveLength(campaign.roster.length);
+  });
+
+  it('round-trips a valid city plan through campaign migration', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const city = generateCity(1101);
+    let point: { x: number; y: number } | null = null;
+    for (let y = 0; y < city.size && !point; y++) {
+      for (let x = 0; x < city.size; x++) {
+        if (city.cells[y][x].type === 'lot') {
+          point = { x, y };
+          break;
+        }
+      }
+    }
+    expect(point).not.toBeNull();
+    placeBuilding(city, point!.x, point!.y, 'office', 1000);
+    const cityPlan = serializeCityPlan(city, 1101, { savedAt: 2000, wasOpenAtSave: true });
+    const migrated = migrateCampaignState({ ...JSON.parse(JSON.stringify(campaign)), cityPlan });
+
+    expect(migrated.cityPlan).toEqual(cityPlan);
+    expect(migrated.version).toBe(5);
+  });
+
+  it('drops a corrupt city plan without losing the campaign', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const migrated = migrateCampaignState({
+      ...JSON.parse(JSON.stringify(campaign)),
+      cityPlan: { schemaVersion: 99, seed: -1, buildings: 'bad' }
+    });
+
+    expect(migrated.cityPlan).toBeNull();
+    expect(migrated.funds).toBe(campaign.funds);
+    expect(migrated.roster).toHaveLength(campaign.roster.length);
   });
 
   it('starts every campaign in the act its week belongs to', () => {

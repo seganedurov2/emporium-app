@@ -8,17 +8,18 @@ This document proposes scope; it does not change or replace the published `v0.3.
 
 ## Proposed priorities
 
-### P0 — Persist the city plan
+### P0 — Persist the city plan (approved)
 
 The city builder currently reconstructs its city from `citySeed` when `CityBuilderView` mounts. Buildings, demolition, and construction progress are held in component state and are lost when the view unmounts or the app reloads.
 
-- Add a versioned city-plan save shape and normalization alongside the existing save-state migrations in `src/saveState.ts`.
-- Persist only sparse city data (seed and placed-building state), not the generated grid, so saves remain compact.
-- Restore the same city in both 2D and 3D views; preserve construction progress without applying unbounded offline time.
-- Keep older saves valid by providing an empty-plan fallback.
-- Add round-trip, malformed-data, and legacy-save migration tests.
+- Store one active city plan per campaign as a versioned, sparse list of placed buildings; regenerate the deterministic grid from `citySeed`.
+- Restore the same city model in 2D and 3D, including IDs, construction progress, and condition.
+- Pause simulation when the player navigates away from the city plan in-app. If the app closes while the plan was active, resume unfinished construction at 1× for at most 8 hours; do not apply offline condition decay.
+- Confirm before a non-empty plan is replaced by another city seed or “Новый город”; Cancel preserves the current plan and seed.
+- Keep older saves valid by providing an empty-plan fallback; normalize malformed plan data without dropping the campaign.
+- Add pure serialization/restore, capped catch-up, round-trip, malformed-data, and legacy-save migration tests.
 
-**Acceptance:** placed buildings and in-progress construction survive navigation away from the city plan and a full reload; older saves load without migration errors.
+**Acceptance:** buildings and progress survive campaign reload and route transitions; in-app navigation pauses construction; app-close catch-up is capped and only applies if the city plan was active; older/corrupt saves load safely.
 
 ### P1 — Decouple map gestures from save writes
 

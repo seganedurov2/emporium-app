@@ -13,11 +13,15 @@ import {
   type BuildingKind,
   type CityState,
 } from '../../cityBuilder';
+import { CITY_PLAN_CHECKPOINT_MS, restoreCityPlan, serializeCityPlan, type CityPlanSave } from '../../cityPlanState';
 import { CityRenderer } from './cityView';
 import { CityScene3D } from './CityScene3D';
 
 interface CityBuilderViewProps {
   citySeed?: number;
+  savedPlan?: CityPlanSave | null;
+  onPlanChange?: (plan: CityPlanSave | null) => void;
+  onRequestNewCity?: (seed: number) => boolean;
   className?: string;
   peopleCount?: number;
 }
@@ -31,8 +35,16 @@ const SPEEDS = [
 
 const KINDS: BuildingKind[] = ['house', 'shop', 'office', 'factory', 'park'];
 
-export function CityBuilderView({ citySeed = 1101, className = '', peopleCount = 0 }: CityBuilderViewProps) {
-  const [city, setCity] = useState<CityState>(() => generateCity(citySeed));
+export function CityBuilderView({
+  citySeed = 1101,
+  savedPlan = null,
+  onPlanChange,
+  onRequestNewCity,
+  className = '',
+  peopleCount = 0,
+}: CityBuilderViewProps) {
+  const [restored] = useState(() => restoreCityPlan(savedPlan, citySeed));
+  const [city, setCity] = useState<CityState>(() => restored.city);
   const [kind, setKind] = useState<BuildingKind>('house');
   const [bulldozer, setBulldozer] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -54,6 +66,31 @@ export function CityBuilderView({ citySeed = 1101, className = '', peopleCount =
   const dragRef = useRef<{ x: number; y: number; panX: number; panY: number; moved: boolean } | null>(null);
   const lastTime = useRef<number>(0);
   const rafRef = useRef<number>(0);
+  const planRef = useRef({ city, citySeed, onPlanChange });
+
+  useEffect(() => {
+    planRef.current = { city, citySeed, onPlanChange };
+  }, [city, citySeed, onPlanChange]);
+
+  const savePlan = useCallback((wasOpenAtSave: boolean, cityOverride?: CityState, seedOverride?: number) => {
+    const current = planRef.current;
+    current.onPlanChange?.(serializeCityPlan(
+      cityOverride ?? current.city,
+      seedOverride ?? current.citySeed,
+      { savedAt: Date.now(), wasOpenAtSave },
+    ));
+  }, []);
+
+  // Save the restored/caught-up plan immediately, then checkpoint mutable ticks
+  // at a bounded cadence. The cleanup marks an in-app navigation-away as paused.
+  useEffect(() => {
+    savePlan(true);
+    const checkpoint = window.setInterval(() => savePlan(true), CITY_PLAN_CHECKPOINT_MS);
+    return () => {
+      window.clearInterval(checkpoint);
+      savePlan(false);
+    };
+  }, [savePlan]);
 
   const stats = cityStats(city);
 
@@ -165,8 +202,9 @@ export function CityBuilderView({ citySeed = 1101, className = '', peopleCount =
       }
       setCity({ ...city });
       setSelected({ x, y });
+      savePlan(true, city);
     },
-    [bulldozer, city, kind, notify],
+    [bulldozer, city, kind, notify, savePlan],
   );
 
   const onWheel = (e: React.WheelEvent) => {
@@ -176,10 +214,14 @@ export function CityBuilderView({ citySeed = 1101, className = '', peopleCount =
   };
 
   const newCity = () => {
-    setCity(generateCity(Date.now() % 100000));
+    const seed = Math.max(1, Date.now() % 100000);
+    if (onRequestNewCity && !onRequestNewCity(seed)) return;
+    const nextCity = generateCity(seed);
+    setCity(nextCity);
     setSelected(null);
     setPan({ x: 0, y: 0 });
     setZoom(1.15);
+    savePlan(true, nextCity, seed);
   };
 
   const fillDistrict = () => {
@@ -201,6 +243,7 @@ export function CityBuilderView({ citySeed = 1101, className = '', peopleCount =
       }
     }
     setCity({ ...city });
+    savePlan(true, city);
     notify(placed ? `Начато строительство: ${placed}` : 'Свободных участков нет');
   };
 

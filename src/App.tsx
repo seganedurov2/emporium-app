@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { formatMoney, formatSignedMoney, getBtcRate } from './currency';
 import { useBtcRate } from './useBtcRate';
 import { updateRegionalMarketAfterPurchase } from './marketEconomyEngine';
@@ -38,6 +38,7 @@ import {
   canStore
 } from './warehouseEngine';
 import type { MezzanineViewState } from './mezzanineViewState';
+import type { CityPlanSave } from './cityPlanState';
 import { actForWeek, advanceCampaignScript, createCampaignScript, getCampaignActMilestones, type ScriptSnapshot } from './campaignScript';
 import { CampaignScriptPanel } from './components/meta/CampaignScriptPanel';
 import {
@@ -421,6 +422,7 @@ const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
   // switching between the мезонин and the campaign never resets either side.
   const [mezzanineView, setMezzanineView] = useState<'mezzanine' | AppTab>('mezzanine');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>(() => loadSettings());
@@ -613,6 +615,13 @@ showNotify(`Кампания загружена из слота ${slotNum}!`);
       return { ...prev, mezzanine };
     });
   };
+
+  const handleCityPlanChange = useCallback((cityPlan: CityPlanSave | null) => {
+    setGameState(prev => {
+      if (JSON.stringify(prev.cityPlan) === JSON.stringify(cityPlan)) return prev;
+      return { ...prev, cityPlan };
+    });
+  }, []);
 
   const deleteSlotData = (slotNum: number) => {
     localStorage.removeItem(getSlotKey(slotNum));
@@ -4252,6 +4261,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
       )}
 
       {/* Header Bar */}
+      {!isHeaderHidden && (
       <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <button
@@ -4360,8 +4370,9 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
           </button>
         </div>
       </header>
+      )}
 
-      {/* CAMPAIGN ENDING: victory or defeat modal */}
+      {/* Header toggle */}
       {campaignEnding && (
         <CampaignEndingModal
           ending={campaignEnding}
@@ -4579,10 +4590,20 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
               currentWeek={gameState.week}
               onDismiss={dismissEmployee}
               onAssignEmployee={assignEmployeeToBuilding}
-              onRenewContract={renewEmployeeContract}
             />
           </div>
         )}
+
+      {/* Header toggle */}
+      <button
+        type="button"
+        onClick={() => setIsHeaderHidden(v => !v)}
+        aria-label={isHeaderHidden ? 'Показать верхнее меню' : 'Скрыть верхнее меню'}
+        title={isHeaderHidden ? 'Показать верхнее меню' : 'Скрыть верхнее меню'}
+        className="fixed right-3 top-3 z-50 rounded-lg border border-slate-700 bg-slate-900/90 px-2 py-1 text-xs text-slate-300 transition hover:bg-slate-800"
+      >
+        {isHeaderHidden ? '▼' : '▲'}
+      </button>
 
         {/* HIRING TAB */}
         {activeTab === 'hiring' && (
@@ -5972,6 +5993,7 @@ contracts={gameState.tradeSupplyContracts || []}
           <MezzanineTab
             gameState={gameState}
             onViewChange={handleMezzanineViewChange}
+            onCityPlanChange={handleCityPlanChange}
             onOpenTab={tab => { setActiveTab(tab); setMezzanineView(tab); setIsMobileMenuOpen(false); }}
           />
         )}

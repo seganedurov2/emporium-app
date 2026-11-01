@@ -30,6 +30,7 @@ import { formatMoney } from './currency';
 import { createDefaultMezzanineView, normalizeMezzanineViewState, type MezzanineViewState } from './mezzanineViewState';
 import { createCampaignScript, normalizeCampaignScript, type CampaignScriptState } from './campaignScript';
 import { createWarehouseState, normalizeWarehouseState, type WarehouseState } from './warehouseEngine';
+import { normalizeCityPlanSave, type CityPlanSave } from './cityPlanState';
 
 export interface ManagedCampaignState extends CampaignState {
   beautySalon: BeautySalonState;
@@ -77,6 +78,8 @@ export interface ManagedCampaignState extends CampaignState {
   marketRequest: MarketImprovementRequest | null;
   /** Last mezzanine map view, restored when the player returns to the hub. */
   mezzanine: MezzanineViewState;
+  /** One active city-builder plan for this campaign, stored sparsely. */
+  cityPlan: CityPlanSave | null;
   /** Warehouse automatic mezzanine state (levels, capacity, automation). */
   warehouse: WarehouseState;
   /** Which act of the campaign script the run is in. */
@@ -120,7 +123,7 @@ export function createInitialCampaign(options: InitialCampaignOptions = {}): Man
   if (options.ceoImage) roster[0].image = options.ceoImage;
 
   return {
-    version: 4,
+    version: 5,
     slot: 1,
     campaignName,
     week,
@@ -202,6 +205,7 @@ export function createInitialCampaign(options: InitialCampaignOptions = {}): Man
     },
     marketRequest: null,
     mezzanine: createDefaultMezzanineView(),
+    cityPlan: null,
     warehouse: createWarehouseState(),
     campaignScript: createCampaignScript(week),
     log: [
@@ -682,7 +686,7 @@ export function migrateCampaignState(raw: unknown): ManagedCampaignState {
   return {
     ...defaults,
     ...parsed,
-    version: 4,
+    version: 5,
     week: savedWeek,
     funds: Number(parsed.funds) || 0,
     reputation: Number(parsed.reputation) || 0,
@@ -754,6 +758,7 @@ export function migrateCampaignState(raw: unknown): ManagedCampaignState {
     },
     marketRequest: normalizeMarketRequest(parsed.marketRequest),
     mezzanine: normalizeMezzanineViewState(parsed.mezzanine),
+    cityPlan: normalizeCityPlanSave(parsed.cityPlan),
     warehouse: normalizeWarehouseState(parsed.warehouse),
     campaignScript: normalizeCampaignScript(parsed.campaignScript, savedWeek),
     log: Array.isArray(parsed.log) ? parsed.log.filter((entry): entry is string => typeof entry === 'string') : []

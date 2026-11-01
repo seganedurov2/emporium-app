@@ -24,6 +24,7 @@ import {
   normalizeMezzanineViewState,
   type MezzanineViewState
 } from '../../mezzanineViewState';
+import type { CityPlanSave } from '../../cityPlanState';
 
 const REGION_CITIES: Record<string, { name: string; lat: number; lon: number; seed: number }[]> = {
   brest: [
@@ -96,12 +97,14 @@ const REGIONS: { id: string; name: string; lat: number; lon: number }[] = [
 interface MezzanineTabProps {
   /** Jumps to any campaign section; the мезонин stays the home map. */
   onOpenTab?: (tab: AppTab) => void;
-  gameState?: { roster: { id: string }[]; mezzanine?: MezzanineViewState };
+  gameState?: { roster: { id: string }[]; mezzanine?: MezzanineViewState; cityPlan?: CityPlanSave | null };
   /** Persists the map view into the campaign save (0.3.7). */
   onViewChange?: (view: MezzanineViewState) => void;
+  /** Persists the active city plan into the current campaign save. */
+  onCityPlanChange?: (plan: CityPlanSave | null) => void;
 }
 
-export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTabProps) {
+export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanChange }: MezzanineTabProps) {
   const [lang] = useState<Lang>('ru');
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [grid, setGrid] = useState<Heightmap | null>(null);
@@ -176,6 +179,27 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
+  const openCityPlan = useCallback((seed: number) => {
+    const savedPlan = gameState?.cityPlan;
+    if (savedPlan?.buildings.length && savedPlan.seed !== seed) {
+      const accepted = window.confirm('План другого города будет заменён. Продолжить?');
+      if (!accepted) return false;
+      onCityPlanChange?.(null);
+    }
+    setView(prev => ({ ...prev, citySeed: seed, viewMode: 'city_plan' }));
+    return true;
+  }, [gameState?.cityPlan, onCityPlanChange]);
+
+  const requestNewCity = useCallback((seed: number) => {
+    if (gameState?.cityPlan?.buildings.length) {
+      const accepted = window.confirm('Текущий план города будет удалён. Создать новый город?');
+      if (!accepted) return false;
+    }
+    onCityPlanChange?.(null);
+    setView(prev => ({ ...prev, citySeed: seed }));
+    return true;
+  }, [gameState?.cityPlan, onCityPlanChange]);
+
   const applyShortcut = useCallback((action: MezzanineShortcutAction) => {
     switch (action.type) {
       case 'region': {
@@ -193,11 +217,11 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
         }));
         break;
       case 'viewMode':
-        setView(prev => ({
-          ...prev,
-          viewMode: action.mode,
-          citySeed: action.mode === 'city_plan' ? (prev.selectedCity?.seed ?? prev.citySeed) : prev.citySeed
-        }));
+        if (action.mode === 'city_plan') {
+          openCityPlan(selectedCity?.seed ?? citySeed);
+        } else {
+          setView(prev => ({ ...prev, viewMode: action.mode }));
+        }
         break;
       case 'sections':
         setSectionsOpen(open => !open);
@@ -209,7 +233,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
         setView(prev => ({ ...prev, gridSize: clampTile(prev.gridSize + action.delta, prev.gridSize) }));
         break;
     }
-  }, [selectRegion]);
+  }, [citySeed, openCityPlan, selectRegion, selectedCity]);
 
   // Keyboard: the key map for the world, hotkeys, Escape and the 3D view share
   // one listener, so one Escape press can never open and close the menu.
@@ -297,6 +321,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
       if (frame) cancelAnimationFrame(frame);
     };
   }, [inGame]);
+
 
   // Layout effect: the canvas is filled before the browser paints, so the hub
   // never shows an empty map frame after a mount or a view change.
@@ -510,7 +535,13 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
     return (
       <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-xl border border-slate-800">
         <Suspense fallback={<div role="status" className="flex h-full items-center justify-center text-sm text-slate-400">Загрузка плана города…</div>}>
-          <CityBuilderView citySeed={citySeed} peopleCount={gameState?.roster.length ?? 0} />
+          <CityBuilderView
+            citySeed={citySeed}
+            savedPlan={gameState?.cityPlan}
+            onPlanChange={onCityPlanChange}
+            onRequestNewCity={requestNewCity}
+            peopleCount={gameState?.roster.length ?? 0}
+          />
         </Suspense>
         <button
           onClick={() => setView(prev => ({ ...prev, viewMode: 'city' }))}
@@ -688,7 +719,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
         <button onClick={() => setGrid(gen.generate(Date.now()))} className="bg-amber-600/85 hover:bg-amber-600 text-white px-4 py-2 rounded text-sm">Новая карта</button>
         <button onClick={loadKalinkovichi} className="bg-blue-600/85 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">Калинковичи</button>
         <button
-          onClick={() => setView(prev => ({ ...prev, citySeed: selectedCity?.seed ?? 1101, viewMode: 'city_plan' }))}
+          onClick={() => openCityPlan(selectedCity?.seed ?? citySeed)}
           className="bg-fuchsia-600/85 hover:bg-fuchsia-600 text-white px-4 py-2 rounded text-sm"
           title="План города: улицы, адреса, стройка домов"
         >
