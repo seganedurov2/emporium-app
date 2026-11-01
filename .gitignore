@@ -37,3 +37,4 @@ fix.mjs
 *.njsproj
 *.sln
 *.sw?
+/Emporium-app
