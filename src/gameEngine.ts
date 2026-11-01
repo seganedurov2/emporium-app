@@ -180,6 +180,7 @@ export interface WeeklyFinanceReport {
     restZone: number;
     staffSlots: number;
     loanPayment: number;
+    warehouse: number;
   };
   netIncome: number;
   treasuryAfter: number;

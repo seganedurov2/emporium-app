@@ -32,7 +32,9 @@ export type AppTab =
   | 'correction_center'
   | 'self_development'
   | 'meta'
-  | 'mezzanine';
+  | 'mezzanine'
+  | 'warehouse_mezzanine'
+  | 'mezzanine_journal';
 
 export const APP_NAVIGATION: { id: AppTab; label: string; icon: typeof TrendingUp }[] = [
   { id: 'dashboard', label: 'Командный центр', icon: TrendingUp },
@@ -63,5 +65,7 @@ export const APP_NAVIGATION: { id: AppTab; label: string; icon: typeof TrendingU
   { id: 'finances', label: 'Финансы и займы', icon: Bitcoin },
   { id: 'regions', label: 'Глобальные регионы', icon: Building2 },
   { id: 'meta', label: 'Достижения', icon: Trophy },
+  { id: 'warehouse_mezzanine', label: 'Складской мезонин', icon: Warehouse },
+  { id: 'mezzanine_journal', label: 'Журнал «Информатика»', icon: FileText },
   { id: 'mezzanine', label: 'Мезонин', icon: Gamepad2 }
 ];

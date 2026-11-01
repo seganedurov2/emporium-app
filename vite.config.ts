@@ -8,8 +8,11 @@ export default defineConfig({
   // GitHub Pages project subpath (/<repo>/), e.g. when opened as a
   // Telegram Mini App.
   base: './',
-  // Allow localtunnel (loca.lt) hostnames to reach the preview server
-  // when testing the Telegram Mini App through a temporary tunnel.
+  // Allow localtunnel (loca.lt) hostnames to reach the dev/preview server
+  // when testing through a temporary tunnel.
+  server: {
+    allowedHosts: ['.loca.lt']
+  },
   preview: {
     allowedHosts: ['.loca.lt']
   },

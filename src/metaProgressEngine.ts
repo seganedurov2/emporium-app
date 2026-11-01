@@ -34,7 +34,10 @@ export type AchievementId =
   | 'loan_shark'
   | 'debt_free'
   | 'midwife'
-  | 'campaign_victory';
+  | 'campaign_victory'
+  | 'warehouse_1'
+  | 'warehouse_3'
+  | 'warehouse_5';
 
 export interface AchievementDef {
   id: AchievementId;
@@ -67,7 +70,10 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'loan_shark', title: 'Долговая яма', description: 'Взять 3 займа за кампанию' },
   { id: 'debt_free', title: 'Свободен от долгов', description: 'Полностью погасить заём' },
   { id: 'midwife', title: 'Поколение', description: 'Первое рождение в компании' },
-  { id: 'campaign_victory', title: 'Победа кампании', description: 'Выполнить цель кампании' }
+  { id: 'campaign_victory', title: 'Победа кампании', description: 'Выполнить цель кампании' },
+  { id: 'warehouse_1', title: 'Первый склад', description: 'Улучшить складской мезонин до уровня 1' },
+  { id: 'warehouse_3', title: 'Автоматизированный склад', description: 'Достичь уровня 3 на складском мезонине' },
+  { id: 'warehouse_5', title: 'Полный AS/RS', description: 'Достичь 5-го уровня складского мезонина с полной автоматизацией' }
 ];
 
 export const ACHIEVEMENT_BY_ID: Record<AchievementId, AchievementDef> = ACHIEVEMENTS.reduce(
@@ -94,6 +100,7 @@ export interface LifetimeStats {
   loansTaken: number;
   loansRepaid: number;
   births: number;
+  warehouseLevel: number;
 }
 
 export interface PrestigeState {
@@ -142,7 +149,8 @@ export function createEmptyLifetimeStats(): LifetimeStats {
     buildingsConstructed: 0,
     loansTaken: 0,
     loansRepaid: 0,
-    births: 0
+    births: 0,
+    warehouseLevel: 0
   };
 }
 
@@ -177,6 +185,7 @@ export interface CampaignSnapshot {
   employeeCount: number;
   buildingCount: number;
   dependentsCount: number;
+  warehouseLevel: number;
 }
 
 export function buildSnapshot(state: {
@@ -188,6 +197,7 @@ export function buildSnapshot(state: {
   employees: unknown[];
   auxiliaryBuildings: { level: number }[];
   dependents: unknown[];
+  warehouseLevel: number;
 }): CampaignSnapshot {
   return {
     week: Math.max(1, Math.floor(state.week)),
@@ -198,7 +208,8 @@ export function buildSnapshot(state: {
     slaveCount: state.roster.filter(character => character.isSlave === true).length,
     employeeCount: state.employees.length,
     buildingCount: state.auxiliaryBuildings.filter(building => building.level > 0).length,
-    dependentsCount: state.dependents.length
+    dependentsCount: state.dependents.length,
+    warehouseLevel: Math.max(0, Math.floor(state.warehouseLevel))
   };
 }
 
@@ -300,7 +311,10 @@ const ACHIEVEMENT_RULES: AchievementRule[] = [
   { id: 'loan_shark', test: (_s, stats) => stats.loansTaken >= 3 },
   { id: 'debt_free', test: (_s, stats) => stats.loansRepaid >= 1 },
   { id: 'midwife', test: (_s, stats) => stats.births >= 1 },
-  { id: 'campaign_victory', test: (_s, _stats, goalStatus) => goalStatus === 'victory' }
+  { id: 'campaign_victory', test: (_s, _stats, goalStatus) => goalStatus === 'victory' },
+  { id: 'warehouse_1', test: s => s.warehouseLevel >= 1 },
+  { id: 'warehouse_3', test: s => s.warehouseLevel >= 3 },
+  { id: 'warehouse_5', test: s => s.warehouseLevel >= 5 }
 ];
 
 /**

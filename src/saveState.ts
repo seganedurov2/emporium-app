@@ -29,6 +29,7 @@ import {
 import { formatMoney } from './currency';
 import { createDefaultMezzanineView, normalizeMezzanineViewState, type MezzanineViewState } from './mezzanineViewState';
 import { createCampaignScript, normalizeCampaignScript, type CampaignScriptState } from './campaignScript';
+import { createWarehouseState, normalizeWarehouseState, type WarehouseState } from './warehouseEngine';
 
 export interface ManagedCampaignState extends CampaignState {
   beautySalon: BeautySalonState;
@@ -76,6 +77,8 @@ export interface ManagedCampaignState extends CampaignState {
   marketRequest: MarketImprovementRequest | null;
   /** Last mezzanine map view, restored when the player returns to the hub. */
   mezzanine: MezzanineViewState;
+  /** Warehouse automatic mezzanine state (levels, capacity, automation). */
+  warehouse: WarehouseState;
   /** Which act of the campaign script the run is in. */
   campaignScript: CampaignScriptState;
 }
@@ -199,6 +202,7 @@ export function createInitialCampaign(options: InitialCampaignOptions = {}): Man
     },
     marketRequest: null,
     mezzanine: createDefaultMezzanineView(),
+    warehouse: createWarehouseState(),
     campaignScript: createCampaignScript(week),
     log: [
       `Неделя ${week}: кампания успешно запущена.`,
@@ -749,6 +753,7 @@ export function migrateCampaignState(raw: unknown): ManagedCampaignState {
     },
     marketRequest: normalizeMarketRequest(parsed.marketRequest),
     mezzanine: normalizeMezzanineViewState(parsed.mezzanine),
+    warehouse: normalizeWarehouseState(parsed.warehouse),
     campaignScript: normalizeCampaignScript(parsed.campaignScript, savedWeek),
     log: Array.isArray(parsed.log) ? parsed.log.filter((entry): entry is string => typeof entry === 'string') : []
   } as ManagedCampaignState;

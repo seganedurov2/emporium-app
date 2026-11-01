@@ -30,6 +30,13 @@ import { advanceEmployeesWeek, createEmployeeCandidates, EMPLOYEE_CANDIDATE_CAP,
 import { buildChiefDoctorReport } from './chiefDoctorEngine';
 import { calculateStaffing } from './staffingCalculator';
 import { createInitialCampaign, migrateCampaignState, readCampaignFromStorage, type ManagedCampaignState } from './saveState';
+import {
+  WAREHOUSE_MAX_LEVEL,
+  warehouseCapacityForLevel,
+  warehouseUpgradeCost,
+  upgradeWarehouse,
+  canStore
+} from './warehouseEngine';
 import type { MezzanineViewState } from './mezzanineViewState';
 import { actForWeek, advanceCampaignScript, createCampaignScript, type ScriptSnapshot } from './campaignScript';
 import { CampaignScriptPanel } from './components/meta/CampaignScriptPanel';
@@ -146,6 +153,9 @@ import { setOrientationLock } from './telegram';
 import { assetUrl } from './assetUrl';
 import { ceoPortraitFileNames } from './portraitAssets';
 import { BeautySalonTab } from './components/salon/BeautySalonTab';
+import { MezzanineWarehouseTab } from './components/warehouse/MezzanineWarehouseTab';
+import { MultiplayerPanel } from './components/multiplayer/MultiplayerPanel';
+import { MezzanineJournalTab } from './components/mezzanine/MezzanineJournalTab';
 import { VenueBanner, VENUE_APPEARANCES } from './components/venue';
 import {
   ACHIEVEMENT_BY_ID,
@@ -1358,6 +1368,57 @@ const refreshCandidates = () => {
     showNotify(`Мест в штате: ${hiringSlots}.`);
   };
 
+  /** Улучшает складской мезонин на следующий уровень, если казна позволяет. */
+  const upgradeWarehouseMezzanine = () => {
+    const nextLevel = gameState.warehouse.level + 1;
+    const cost = warehouseUpgradeCost(nextLevel as 1 | 2 | 3 | 4 | 5);
+    if (!cost || gameState.warehouse.level >= WAREHOUSE_MAX_LEVEL) {
+      showNotify('Мезонин уже на максимальном уровне.');
+      return;
+    }
+    if (gameState.funds < cost) {
+      showNotify(`Недостаточно средств для улучшения мезонина: нужно ${formatMoney(cost)}.`);
+      return;
+    }
+    const result = upgradeWarehouse(gameState.warehouse);
+    if (!result) return;
+    setGameState(prev => ({
+      ...prev,
+      funds: prev.funds - cost,
+      warehouse: result.state,
+      log: [result.log, ...prev.log].slice(0, 50)
+    }));
+    showNotify(`Складской мезонин улучшен. Вместимость теперь ${warehouseCapacityForLevel(gameState.warehouse.level + 1)} ед.`);
+  };
+
+  /** Принимает груз на складской мезонин. */
+  const storeWarehouseGoods = (amount: number) => {
+    if (!canStore(gameState.warehouse, amount)) {
+      showNotify('Недостаточно свободного места на мезонине.');
+      return;
+    }
+    setGameState(prev => ({
+      ...prev,
+      warehouse: { ...prev.warehouse, occupancy: prev.warehouse.occupancy + amount },
+      log: [`Складской мезонин: принято ${amount} ед. груза (всего ${prev.warehouse.occupancy + amount}/${prev.warehouse.capacity}).`, ...prev.log].slice(0, 50)
+    }));
+    showNotify(`Принято на склад: ${amount} ед.`);
+  };
+
+  /** Выдаёт груз со склада мезонина. */
+  const retrieveWarehouseGoods = (amount: number) => {
+    if (gameState.warehouse.occupancy < amount) {
+      showNotify('Недостаточно груза на складе.');
+      return;
+    }
+    setGameState(prev => ({
+      ...prev,
+      warehouse: { ...prev.warehouse, occupancy: prev.warehouse.occupancy - amount },
+      log: [`Складской мезонин: выдано ${amount} ед. груза (осталось ${prev.warehouse.occupancy - amount}/${prev.warehouse.capacity}).`, ...prev.log].slice(0, 50)
+    }));
+    showNotify(`Выдано со склада: ${amount} ед.`);
+  };
+
   /** Posts or unposts a hired attendant at the rest zone. */
   const toggleRestZoneAttendant = (employeeId: string) => {
     const employee = gameState.employees.find(item => item.id === employeeId);
@@ -2164,6 +2225,13 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
       }
     }
 
+    // Warehouse mezzanine weekly upkeep: scales with level and automation.
+    const warehouseUpkeep = warehouseWeeklyUpkeep(gameState.warehouse);
+    if (warehouseUpkeep > 0) {
+      currentFunds -= warehouseUpkeep;
+      newLogs.push(`Складской мезонин: обслуживание уровня ${gameState.warehouse.level} (-${formatMoney(warehouseUpkeep)}).`);
+    }
+
     let isBankrupt = gameState.isBankrupt;
     let isReceivership = gameState.isReceivership;
     if (currentFunds < 0 && !isBankrupt) {
@@ -2207,7 +2275,7 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
     // syndicate logged, kept in the save so the Finance & Loans tab can show
     // it in its notifications panel.
     const totalRevenue = venueRevenue + caravanEarnings + captureFundsDelta.total + contractEarnings + salonTreatmentRevenue;
-    const totalExpenses = employeeWeek.wagesPaid + hospitalWeek.upkeep + restZoneUpkeep + staffSlotUpkeep;
+    const totalExpenses = employeeWeek.wagesPaid + hospitalWeek.upkeep + restZoneUpkeep + staffSlotUpkeep + warehouseUpkeep;
     const weeklyReport: WeeklyFinanceReport = {
       week: gameState.week + 1,
       revenue: {
@@ -2222,7 +2290,8 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
         hospital: hospitalWeek.upkeep,
         restZone: restZoneUpkeep,
         staffSlots: staffSlotUpkeep,
-        loanPayment
+        loanPayment,
+        warehouse: warehouseUpkeep
       },
       netIncome,
       treasuryAfter: currentFunds
@@ -2240,7 +2309,8 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
       roster: rosterAfterCaptureOps,
       employees: employeeWeek.employees,
       auxiliaryBuildings: gameState.auxiliaryBuildings,
-      dependents: hospitalWeek.dependents
+      dependents: hospitalWeek.dependents,
+      warehouseLevel: gameState.warehouse.level
     });
     const prevCaravanById = new Map(gameState.caravans.map(caravan => [caravan.id, caravan]));
     const statsDelta = {
@@ -4243,7 +4313,9 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
              >
                <Settings className="w-4 h-4" />
              </button>
-              <NotificationCenter feed={activityFeed} onNavigate={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
+               <NotificationCenter feed={activityFeed} onNavigate={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
+
+              <MultiplayerPanel gameState={gameState} setGameState={setGameState} />
 
 
           <button
@@ -5853,6 +5925,23 @@ contracts={gameState.tradeSupplyContracts || []}
 
             <LeaderboardPanel records={gameRecords} leaderboard={leaderboard} />
           </div>
+        )}
+
+        {/* WAREHOUSE MEZZANINE TAB — складской автоматический мезонин */}
+        {activeTab === 'warehouse_mezzanine' && (
+          <MezzanineWarehouseTab
+            week={gameState.week}
+            funds={gameState.funds}
+            warehouse={gameState.warehouse}
+            onUpgrade={upgradeWarehouseMezzanine}
+            onStore={storeWarehouseGoods}
+            onRetrieve={retrieveWarehouseGoods}
+          />
+        )}
+
+        {/* MEZZANINE JOURNAL TAB — журнал «Информатика» */}
+        {activeTab === 'mezzanine_journal' && (
+          <MezzanineJournalTab onOpenTab={(tab) => { setActiveTab(tab as AppTab); setIsMobileMenuOpen(false); }} />
         )}
 
         {/* MEZZANINE — the hub map; the campaign tabs above live on top of it. */}

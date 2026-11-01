@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
+import { FileText } from 'lucide-react';
 import { TerrainGenerator, t, type Lang, type Heightmap } from '../../terrain';
 import { KalinkovichiGame, type MapCenter } from '../world/KalinkovichiGame';
 import { KalinkovichiMap } from './KalinkovichiMap';
@@ -593,6 +594,13 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
                   </button>
                 );
               })}
+              <button
+                onClick={() => onOpenTab('mezzanine_journal')}
+                className="flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition text-slate-300 hover:bg-slate-700 hover:text-white border-t border-slate-800 mt-1 pt-1"
+              >
+                <FileText className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span className="truncate">Журнал «Информатика»</span>
+              </button>
             </div>
           )}
           </div>
