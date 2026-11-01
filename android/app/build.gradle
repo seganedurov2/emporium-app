@@ -13,8 +13,8 @@ android {
         applicationId "com.emporium.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "0.3.1"
+        versionCode 5
+        versionName "0.3.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -35,7 +35,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (keystorePropsFile.exists()) {
                 signingConfig signingConfigs.release
             }
@@ -49,16 +49,6 @@ repositories {
     }
 }
 
-// Align Kotlin stdlib artifacts. Since Kotlin 1.8 the jdk7/jdk8 split modules were
-// merged into kotlin-stdlib, so leaving them at their old 1.6.21 versions while the
-// main stdlib resolves to 1.8.22 produces duplicate classes during the dex check.
-configurations.all {
-    resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == 'org.jetbrains.kotlin') {
-            details.useVersion '1.8.22'
-        }
-    }
-}
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')

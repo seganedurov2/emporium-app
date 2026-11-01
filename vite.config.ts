@@ -1,6 +1,9 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+
+const threeSourceEntry = fileURLToPath(new URL('./node_modules/three/src/Three.js', import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,6 +20,9 @@ export default defineConfig({
     allowedHosts: ['.loca.lt']
   },
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: [{ find: /^three$/, replacement: threeSourceEntry }],
+  },
   build: {
     chunkSizeWarningLimit: 500,
     rolldownOptions: {
@@ -30,11 +36,13 @@ export default defineConfig({
               priority: 50,
             },
             {
-              // 3D views are loaded only when opened; keep Three.js adapters and
-              // their dependency chain out of the initial chunk graph as well.
+              // Three.js exposes its per-module source graph through the alias
+              // above; cap this deferred group so its renderer stays below Vite's
+              // warning threshold without pulling it into the initial bundle.
               name: 'three-vendor',
               test: /[\\/]node_modules[\\/](three|three-stdlib|@react-three)[\\/]/,
               priority: 40,
+              maxSize: 300 * 1024,
             },
             {
               name: 'ui-vendor',

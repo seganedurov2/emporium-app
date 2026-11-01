@@ -2,10 +2,14 @@ CHANGELOG.txt
 ================================================================================
 PROJECT: Pawn Pleasure
 VERSION: 0.3.7
-LAST UPDATED: 2026-10-31
+LAST UPDATED: 2026-11-01
 ================================================================================
 
 [VERSION 0.3.7 - CURRENT RELEASE] "MEZZANINE: PERSISTENCE & PERFORMANCE"
+
+--- RELEASE PACKAGING ---
+* Android release metadata aligned to version 0.3.7 (versionCode 5).
+* Three.js 3D dependencies split into deferred chunks below Vite's 500 kB warning threshold.
 
 --- CHANGES SINCE 0.3.6 ---
 * Save state:
