@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkstationHub } from './useWorkstationHub';
 import { Wifi, WifiOff, Users } from 'lucide-react';
 
@@ -17,12 +17,17 @@ export function MultiplayerPanel({ gameState, setGameState }: { gameState: any; 
     onMessage: (msg) => {
       if (msg.type === 'state_sync' && msg.payload) {
         const payload = msg.payload as { gameState?: unknown; version?: number; updatedBy?: string };
-        if (payload.gameState && payload.updatedBy) {
+        if (
+          payload.updatedBy
+          && typeof payload.gameState === 'object'
+          && payload.gameState !== null
+        ) {
+          const remoteGameState = payload.gameState as Record<string, unknown>;
           setGameState((prev: any) => {
-            const remoteWeek = (payload.gameState as any)?.week ?? 0;
-            const localWeek = prev?.week ?? 0;
+            const remoteWeek = typeof remoteGameState.week === 'number' ? remoteGameState.week : 0;
+            const localWeek = typeof prev?.week === 'number' ? prev.week : 0;
             if (remoteWeek > localWeek) {
-              return { ...prev, ...payload.gameState };
+              return { ...prev, ...remoteGameState };
             }
             return prev;
           });

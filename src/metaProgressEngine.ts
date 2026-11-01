@@ -237,7 +237,7 @@ export function applyWeeklyStats(
 ): MetaProgressState {
   const stats = { ...meta.stats };
   stats.totalRevenue += Math.max(0, Math.floor(report.revenue.venue + report.revenue.caravans + report.revenue.captureOps + report.revenue.contracts + report.revenue.salon));
-  stats.totalExpenses += Math.max(0, Math.floor(report.expenses.wages + report.expenses.hospital + report.expenses.restZone + report.expenses.staffSlots + report.expenses.loanPayment));
+  stats.totalExpenses += Math.max(0, Math.floor(report.expenses.wages + report.expenses.hospital + report.expenses.restZone + report.expenses.staffSlots + report.expenses.loanPayment + report.expenses.warehouse));
   stats.totalNetIncome += Math.floor(report.netIncome);
   if (report.treasuryAfter > stats.peakFunds) {
     stats.peakFunds = Math.floor(report.treasuryAfter);

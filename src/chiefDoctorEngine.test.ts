@@ -6,8 +6,8 @@ import type { WeeklyFinanceReport } from './gameEngine';
 const weeklyReport: WeeklyFinanceReport = {
   week: 4,
   revenue: { venue: 10000, caravans: 2000, captureOps: 0, contracts: 0, salon: 0 },
-  expenses: { wages: 5000, hospital: 500, restZone: 0, staffSlots: 0, loanPayment: 0 },
-  netIncome: 6500,
+  expenses: { wages: 5000, hospital: 500, restZone: 0, staffSlots: 0, loanPayment: 0, warehouse: 250 },
+  netIncome: 6250,
   treasuryAfter: 100000
 };
 
@@ -42,8 +42,8 @@ describe('chief doctor engine', () => {
   it('reads income, expenses and surplus from the weekly report', () => {
     const report = buildChiefDoctorReport(baseInput);
     expect(report.assessment.income).toBe(12000);
-    expect(report.assessment.expenses).toBe(5500);
-    expect(report.assessment.netIncome).toBe(6500);
+    expect(report.assessment.expenses).toBe(5750);
+    expect(report.assessment.netIncome).toBe(6250);
     expect(report.assessment.runwayWeeks).toBeNull();
     expect(report.assessment.hospitalExpenses).toBe(2500);
   });
@@ -65,11 +65,12 @@ describe('chief doctor engine', () => {
       weeklyReport: {
         ...weeklyReport,
         revenue: { venue: 1000, caravans: 0, captureOps: 0, contracts: 0, salon: 0 },
-        expenses: { wages: 5000, hospital: 500, restZone: 0, staffSlots: 0, loanPayment: 0 }
+        expenses: { wages: 5000, hospital: 500, restZone: 0, staffSlots: 0, loanPayment: 0, warehouse: 100 }
       }
     });
-    expect(report.assessment.netIncome).toBe(-4500);
-    expect(report.assessment.runwayWeeks).toBe(Math.floor(100000 / 4500));
+    expect(report.assessment.expenses).toBe(5600);
+    expect(report.assessment.netIncome).toBe(-4600);
+    expect(report.assessment.runwayWeeks).toBe(Math.floor(100000 / 4600));
     expect(report.requests.some(request => request.id === 'req_budget_deficit' && request.priority === 'critical')).toBe(true);
   });
 

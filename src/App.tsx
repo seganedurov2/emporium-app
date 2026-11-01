@@ -32,13 +32,13 @@ import { calculateStaffing } from './staffingCalculator';
 import { createInitialCampaign, migrateCampaignState, readCampaignFromStorage, type ManagedCampaignState } from './saveState';
 import {
   WAREHOUSE_MAX_LEVEL,
-  warehouseCapacityForLevel,
   warehouseUpgradeCost,
+  warehouseWeeklyUpkeep,
   upgradeWarehouse,
   canStore
 } from './warehouseEngine';
 import type { MezzanineViewState } from './mezzanineViewState';
-import { actForWeek, advanceCampaignScript, createCampaignScript, type ScriptSnapshot } from './campaignScript';
+import { actForWeek, advanceCampaignScript, createCampaignScript, getCampaignActMilestones, type ScriptSnapshot } from './campaignScript';
 import { CampaignScriptPanel } from './components/meta/CampaignScriptPanel';
 import {
   generateVenueRequests,
@@ -1388,7 +1388,7 @@ const refreshCandidates = () => {
       warehouse: result.state,
       log: [result.log, ...prev.log].slice(0, 50)
     }));
-    showNotify(`Складской мезонин улучшен. Вместимость теперь ${warehouseCapacityForLevel(gameState.warehouse.level + 1)} ед.`);
+    showNotify(`Складской мезонин улучшен. Вместимость теперь ${result.state.capacity} ед.`);
   };
 
   /** Принимает груз на складской мезонин. */
@@ -2323,6 +2323,29 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
       births: Math.max(0, hospitalWeek.dependents.length - (gameState.dependents?.length ?? 0))
     };
     let nextMetaProgress = applyWeeklyStats(gameState.metaProgress, weeklyReport, statsDelta);
+    const nextScriptSnapshot: ScriptSnapshot = {
+      week: nextSnapshot.week,
+      funds: nextSnapshot.funds,
+      reputation: nextSnapshot.reputation,
+      activeVenues: gameState.auxiliaryBuildings.filter(building => building.level > 0).length,
+      employees: employeeWeek.employees.length + 1,
+      dealsCompleted:
+        nextMetaProgress.stats.auctionsCompleted
+        + nextMetaProgress.stats.caravansCompleted
+        + nextMetaProgress.stats.captureOpsCompleted,
+      cityHubUnlocked: Boolean(gameState.mezzanine?.selectedRegionId),
+      isBankrupt: nextSnapshot.isBankrupt
+    };
+    const actMilestones = getCampaignActMilestones(
+      gameState.campaignScript ?? createCampaignScript(gameState.week),
+      nextScriptSnapshot
+    );
+    if (actMilestones.completedAct) {
+      newLogs.push(`Акт ${actMilestones.completedAct.number} «${actMilestones.completedAct.title}» завершён: все цели выполнены.`);
+    }
+    if (actMilestones.enteredAct) {
+      newLogs.push(`Начался акт ${actMilestones.enteredAct.number} «${actMilestones.enteredAct.title}».`);
+    }
     const goalStatus = checkCampaignGoal(nextSnapshot, nextMetaProgress);
     nextMetaProgress = {
       ...nextMetaProgress,

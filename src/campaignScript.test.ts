@@ -7,6 +7,7 @@ import {
   createCampaignScript,
   evaluateScript,
   formatShortMoney,
+  getCampaignActMilestones,
   normalizeCampaignScript,
   type ScriptSnapshot,
 } from "./campaignScript";
@@ -156,6 +157,70 @@ describe("campaign script persistence", () => {
       actId: "expansion",
       enteredWeek: 31,
     });
+  });
+});
+
+describe("campaign act milestones", () => {
+  it("enters a new act and completes the previous act when its goals are met", () => {
+    const milestones = getCampaignActMilestones(createCampaignScript(30), {
+      ...base,
+      week: 31,
+      funds: 400_000,
+      employees: 8,
+      activeVenues: 3,
+    });
+
+    expect(milestones.enteredAct?.id).toBe("expansion");
+    expect(milestones.completedAct?.id).toBe("founding");
+  });
+
+  it("does not mark an unmet previous act complete", () => {
+    const milestones = getCampaignActMilestones(createCampaignScript(30), {
+      ...base,
+      week: 31,
+    });
+
+    expect(milestones.enteredAct?.id).toBe("expansion");
+    expect(milestones.completedAct).toBeNull();
+  });
+
+  it("returns no milestone while the campaign remains in the same act", () => {
+    expect(
+      getCampaignActMilestones(createCampaignScript(31), { ...base, week: 32 }),
+    ).toEqual({ enteredAct: null, completedAct: null });
+  });
+
+  it.each([
+    {
+      previousWeek: 60,
+      week: 61,
+      expectedAct: "syndicate",
+      funds: 800_000,
+      reputation: 85,
+      activeVenues: 4,
+      dealsCompleted: 30,
+      cityHubUnlocked: true,
+      completedAct: "expansion",
+    },
+    {
+      previousWeek: 85,
+      week: 86,
+      expectedAct: "reckoning",
+      funds: 1_000_000,
+      reputation: 90,
+      activeVenues: 4,
+      dealsCompleted: 30,
+      cityHubUnlocked: true,
+      completedAct: "syndicate",
+    },
+  ])("uses act definitions at weeks $week", (boundary) => {
+    const milestones = getCampaignActMilestones(
+      createCampaignScript(boundary.previousWeek),
+      { ...base, ...boundary },
+    );
+
+    expect(milestones.enteredAct?.id).toBe(boundary.expectedAct);
+    expect(milestones.completedAct?.id).toBe(boundary.completedAct);
   });
 });
 

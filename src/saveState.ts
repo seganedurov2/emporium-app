@@ -277,7 +277,7 @@ function normalizeWeeklyReport(raw: unknown): WeeklyFinanceReport | null {
     return Number.isFinite(parsed) ? parsed : 0;
   };
   const revenueSum = num(revenue.venue) + num(revenue.caravans) + num(revenue.captureOps) + num(revenue.contracts) + num(revenue.salon);
-  const expenseSum = num(expenses.wages) + num(expenses.hospital) + num(expenses.restZone) + num(expenses.staffSlots);
+  const expenseSum = num(expenses.wages) + num(expenses.hospital) + num(expenses.restZone) + num(expenses.staffSlots) + num(expenses.warehouse);
   return {
     week: Math.max(1, Math.floor(num(report.week))),
     revenue: {
@@ -292,7 +292,8 @@ function normalizeWeeklyReport(raw: unknown): WeeklyFinanceReport | null {
       hospital: num(expenses.hospital),
       restZone: num(expenses.restZone),
       staffSlots: num(expenses.staffSlots),
-      loanPayment: num(expenses.loanPayment)
+      loanPayment: num(expenses.loanPayment),
+      warehouse: num(expenses.warehouse)
     },
     netIncome: num(report.netIncome) || revenueSum - expenseSum,
     treasuryAfter: num(report.treasuryAfter)

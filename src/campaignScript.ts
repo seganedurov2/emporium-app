@@ -276,6 +276,34 @@ export function evaluateScript(
   };
 }
 
+export interface CampaignActMilestones {
+  /** The act entered at this week's boundary, or null when unchanged. */
+  enteredAct: CampaignAct | null;
+  /** The previous act, if its objectives are all met at the transition. */
+  completedAct: CampaignAct | null;
+}
+
+/**
+ * Detects the one-time milestones for a weekly act transition.
+ * Completion uses the same objective evaluation as the campaign script panel.
+ */
+export function getCampaignActMilestones(
+  previousScript: CampaignScriptState,
+  snapshot: ScriptSnapshot,
+): CampaignActMilestones {
+  const enteredAct = actForWeek(snapshot.week);
+  if (previousScript.actId === enteredAct.id) {
+    return { enteredAct: null, completedAct: null };
+  }
+
+  const previousAct = CAMPAIGN_ACT_BY_ID[previousScript.actId];
+  const completedActs = evaluateScript(snapshot, snapshot.week).completedActs;
+  return {
+    enteredAct,
+    completedAct: completedActs.includes(previousAct.id) ? previousAct : null,
+  };
+}
+
 /** Groomed one-line summary for a header badge. */
 export function describeAct(act: CampaignAct): string {
   return `Акт ${act.number} · ${act.title}`;

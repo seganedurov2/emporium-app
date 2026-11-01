@@ -46,14 +46,15 @@ const baseSnapshot = {
   slaveCount: 0,
   employeeCount: 0,
   buildingCount: 0,
-  dependentsCount: 0
+  dependentsCount: 0,
+  warehouseLevel: 0
 };
 
 const report = {
   week: 2,
   revenue: { venue: 5000, caravans: 3000, captureOps: 0, contracts: 2000, salon: 1000 },
-  expenses: { wages: 2000, hospital: 500, restZone: 300, staffSlots: 100, loanPayment: 0 },
-  netIncome: 8100,
+  expenses: { wages: 2000, hospital: 500, restZone: 300, staffSlots: 100, loanPayment: 0, warehouse: 200 },
+  netIncome: 7900,
   treasuryAfter: 9100
 };
 
@@ -87,8 +88,8 @@ describe('metaProgressEngine', () => {
       births: 1
     });
     expect(meta.stats.totalRevenue).toBe(11000);
-    expect(meta.stats.totalExpenses).toBe(2900);
-    expect(meta.stats.totalNetIncome).toBe(8100);
+    expect(meta.stats.totalExpenses).toBe(3100);
+    expect(meta.stats.totalNetIncome).toBe(7900);
     expect(meta.stats.peakFunds).toBe(9100);
     expect(meta.stats.peakWeek).toBe(2);
     expect(meta.stats.caravansCompleted).toBe(1);
@@ -159,7 +160,8 @@ describe('metaProgressEngine', () => {
       roster: [{ isSlave: true }, { isSlave: false }, { isSlave: true }],
       employees: [{}, {}],
       auxiliaryBuildings: [{ level: 0 }, { level: 2 }],
-      dependents: [{}]
+      dependents: [{}],
+      warehouseLevel: 0
     });
     expect(snapshot.week).toBe(5);
     expect(snapshot.slaveCount).toBe(2);

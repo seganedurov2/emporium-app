@@ -106,7 +106,7 @@ export function normalizeWarehouseState(raw: unknown): WarehouseState {
   if (!raw || typeof raw !== 'object') return base;
   const r = raw as Record<string, unknown>;
   const level = typeof r.level === 'number' && Number.isFinite(r.level)
-    ? Math.min(WAREHOUSE_MAX_LEVEL, Math.max(0, Math.floor(r.level)))
+    ? Math.min(WAREHOUSE_MAX_LEVEL, Math.max(0, Math.floor(r.level))) as WarehouseLevel
     : base.level;
   const capacity = typeof r.capacity === 'number' && Number.isFinite(r.capacity)
     ? Math.max(0, Math.floor(r.capacity))

@@ -24,15 +24,16 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             {
+              // Keep the React runtime separate from the optional 3D scene graph.
               name: 'react-vendor',
               test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
-              priority: 30,
+              priority: 50,
             },
             {
-              // The 3D portrait stack is lazy-loaded (Portrait3D),
-              // so three.js must not land in the main vendor chunk.
+              // 3D views are loaded only when opened; keep Three.js adapters and
+              // their dependency chain out of the initial chunk graph as well.
               name: 'three-vendor',
-              test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
+              test: /[\\/]node_modules[\\/](three|three-stdlib|@react-three)[\\/]/,
               priority: 40,
             },
             {

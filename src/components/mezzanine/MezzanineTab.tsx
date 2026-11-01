@@ -1,9 +1,15 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { FileText } from 'lucide-react';
 import { TerrainGenerator, t, type Lang, type Heightmap } from '../../terrain';
-import { KalinkovichiGame, type MapCenter } from '../world/KalinkovichiGame';
+import type { MapCenter } from '../world/KalinkovichiGame';
 import { KalinkovichiMap } from './KalinkovichiMap';
-import { CityBuilderView } from './CityBuilderView';
+
+const KalinkovichiGame = lazy(() =>
+  import('../world/KalinkovichiGame').then(module => ({ default: module.KalinkovichiGame }))
+);
+const CityBuilderView = lazy(() =>
+  import('./CityBuilderView').then(module => ({ default: module.CityBuilderView }))
+);
 import { APP_NAVIGATION, type AppTab } from '../../appNavigation';
 import { cityVisibleRect, drawBlock } from '../../mezzanineRender';
 import {
@@ -488,11 +494,13 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
   if (view3d) {
     return (
       <div className="relative h-full w-full overflow-hidden">
-        <KalinkovichiGame
-          key={mapCenter ? `${mapCenter.lat},${mapCenter.lon}` : 'default'}
-          initialCenter={mapCenter ?? undefined}
-          onExit={() => setView(prev => ({ ...prev, viewMode: 'region' }))}
-        />
+        <Suspense fallback={<div role="status" className="flex h-full items-center justify-center text-sm text-slate-400">Загрузка 3D-карты…</div>}>
+          <KalinkovichiGame
+            key={mapCenter ? `${mapCenter.lat},${mapCenter.lon}` : 'default'}
+            initialCenter={mapCenter ?? undefined}
+            onExit={() => setView(prev => ({ ...prev, viewMode: 'region' }))}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -501,7 +509,9 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange }: MezzanineTa
   if (viewCity) {
     return (
       <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-xl border border-slate-800">
-        <CityBuilderView citySeed={citySeed} peopleCount={gameState?.roster.length ?? 0} />
+        <Suspense fallback={<div role="status" className="flex h-full items-center justify-center text-sm text-slate-400">Загрузка плана города…</div>}>
+          <CityBuilderView citySeed={citySeed} peopleCount={gameState?.roster.length ?? 0} />
+        </Suspense>
         <button
           onClick={() => setView(prev => ({ ...prev, viewMode: 'city' }))}
           className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-red-600/85 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold shadow-lg"

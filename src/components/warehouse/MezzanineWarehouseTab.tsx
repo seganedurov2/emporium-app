@@ -58,7 +58,7 @@ export function MezzanineWarehouseTab({
   const { ops, state: updatedWarehouse } = calculateWeeklyAutoOps(warehouse, week);
   const nextLevel = warehouse.level + 1;
   const nextUpgrade: WarehouseUpgrade | undefined = WAREHOUSE_UPGRADES.find(u => u.level === nextLevel);
-  const canUpgrade = Boolean(nextUpgrade) && funds >= nextUpgrade.cost;
+  const canUpgrade = nextUpgrade !== undefined && funds >= nextUpgrade.cost;
   const occupancyPct = warehouseOccupancyPercent(updatedWarehouse);
 
   const handleUpgrade = () => {

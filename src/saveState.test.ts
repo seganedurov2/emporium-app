@@ -27,6 +27,7 @@ describe('saveState meta-progress migration', () => {
     expect(migrated.weeklyReports).toHaveLength(1);
     expect(migrated.weeklyReports[0].week).toBe(13);
     expect(migrated.lastWeeklyReport?.week).toBe(13);
+    expect(migrated.lastWeeklyReport?.expenses.warehouse).toBe(0);
   });
 
   it('keeps an existing report history and drops invalid entries', () => {
@@ -37,7 +38,7 @@ describe('saveState meta-progress migration', () => {
         {
           week: 1,
           revenue: { venue: 10, caravans: 0, captureOps: 0, contracts: 0, salon: 0 },
-          expenses: { wages: 5, hospital: 0, restZone: 0, staffSlots: 0, loanPayment: 0 },
+          expenses: { wages: 5, hospital: 0, restZone: 0, staffSlots: 0, loanPayment: 0, warehouse: 25 },
           netIncome: 5,
           treasuryAfter: 125005
         },
@@ -54,6 +55,8 @@ describe('saveState meta-progress migration', () => {
     const migrated = migrateCampaignState(JSON.parse(JSON.stringify(withHistory)));
     expect(migrated.weeklyReports).toHaveLength(2);
     expect(migrated.weeklyReports.map(report => report.week)).toEqual([1, 2]);
+    expect(migrated.weeklyReports[0].expenses.warehouse).toBe(25);
+    expect(migrated.weeklyReports[1].expenses.warehouse).toBe(0);
   });
 
   it('normalizes partial meta progress from older saves', () => {
