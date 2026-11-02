@@ -1,4 +1,5 @@
-import { X } from 'lucide-react';
+import { X, ChevronDown, ShieldAlert, Bell, Smartphone, Monitor, Lock, Cpu } from 'lucide-react';
+import { useState } from 'react';
 import type { AppSettings } from '../../settings';
 import type { OrientationLock } from '../../telegram';
 import { THREATS, severityRank, protectionsForThreat } from '../../threatAnalysis';
@@ -16,23 +17,71 @@ const ORIENTATION_OPTIONS: { value: OrientationLock; label: string; hint: string
   { value: 'landscape', label: 'Альбомный', hint: 'Горизонтальный режим экрана' }
 ];
 
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: 'text-red-400 border-red-500/20 bg-red-500/5',
+  high: 'text-amber-400 border-amber-500/20 bg-amber-500/5',
+  medium: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5',
+  low: 'text-slate-400 border-slate-600/20 bg-slate-600/5'
+};
+
+function Section({ children, title, Icon, hint, open: sectionOpen, onToggle }: { children: React.ReactNode; title: string; Icon: React.ElementType; hint?: string; open: boolean; onToggle: () => void }) {
+  return (
+    <section className="mt-4 space-y-2 rounded-xl border bg-slate-950/60 p-3 shadow-sm transition hover:border-slate-600">
+      <div
+        onClick={onToggle}
+        className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-2 hover:bg-slate-800/50"
+      >
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-slate-400 shrink-0" />
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</h3>
+        </div>
+        {hint && <p className="text-[10px] text-slate-500">{hint}</p>}
+        <ChevronDown className={`h-3 w-3 shrink-0 transition ${sectionOpen ? '' : '-rotate-180'}`} />
+      </div>
+      {sectionOpen && <div className="mt-2 space-y-2">{children}</div>}
+    </section>
+  );
+}
+
 export function SettingsModal({ open, settings, onChange, onClose }: SettingsModalProps) {
+  const [sections, setSections] = useState<Record<string, boolean>>({
+    screen: true,
+    notifications: false,
+    experimental: false,
+    protection: false,
+    threats: false
+  });
+
   if (!open) return null;
+
+  const toggle = (id: string) => setSections(prev => ({ ...prev, [id]: !sections[id] }));
+
+  const severityBadge = (severity: string) => {
+    const color = SEVERITY_COLOR[severity] ?? SEVERITY_COLOR.low;
+    return (
+      <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${color}`}>
+        {severity}
+      </span>
+    );
+  };
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Настройки приложения"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md"
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"
         onClick={event => event.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Настройки</h2>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0" />
+            <h2 className="text-lg font-bold text-white">Настройки</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -42,11 +91,15 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
             <X className="h-4 w-4" />
           </button>
         </div>
+        <p className="text-[10px] text-slate-500 mb-4">Emporium 0.3.8 · складской мезонин · Telegram Mini App</p>
 
-        <section className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Экран
-          </h3>
+        <Section
+          title="Экран"
+          Icon={Monitor}
+          hint="В Telegram Mini App блокировка работает в полноэкранном режиме. В APK экран поворачивается по датчику."
+          open={sections.screen}
+          onToggle={() => toggle('screen')}
+        >
           <div className="space-y-2">
             {ORIENTATION_OPTIONS.map(option => (
               <label
@@ -74,23 +127,19 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
               </label>
             ))}
           </div>
-          <p className="text-[10px] leading-relaxed text-slate-500">
-            В Telegram Mini App блокировка работает в полноэкранном режиме. В APK экран
-            поворачивается по датчику — оба режима доступны.
-          </p>
-        </section>
+        </Section>
 
-        <section className="mt-5 space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Уведомления
-          </h3>
+        <Section
+          title="Уведомления"
+          Icon={Bell}
+          hint="Баннер в правом верхнем углу о событиях игры"
+          open={sections.notifications}
+          onToggle={() => toggle('notifications')}
+        >
           <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
             <span>
               <span className="block text-sm font-semibold text-slate-100">
                 Всплывающие уведомления
-              </span>
-              <span className="block text-xs text-slate-400">
-                Баннер в правом верхнем углу о событиях игры
               </span>
             </span>
             <input
@@ -100,12 +149,15 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
               className="h-4 w-4 accent-amber-400"
             />
           </label>
-        </section>
+        </Section>
 
-        <section className="mt-5 space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Экспериментальные
-          </h3>
+        <Section
+          title="Экспериментальные"
+          Icon={Smartphone}
+          hint="glTF-модели и просмотр через камеру в дополненной реальности. WebXR."
+          open={sections.experimental}
+          onToggle={() => toggle('experimental')}
+        >
           <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
             <span>
               <span className="block text-sm font-semibold text-slate-100">
@@ -129,7 +181,7 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
                 AR-режим
               </span>
               <span className="block text-xs text-slate-400">
-                Просмотр 3D-портретов через камеру в дополненной реальности. WebXR.
+                Просмотр 3D-портретов через камеру в дополненной реальности.
               </span>
             </span>
             <input
@@ -139,12 +191,15 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
               className="h-4 w-4 accent-amber-400"
             />
           </label>
-        </section>
+        </Section>
 
-        <section className="mt-5 space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Защита данных
-          </h3>
+        <Section
+          title="Защита данных"
+          Icon={Lock}
+          hint="AES-256-GCM, TLS/WSS, журнал аудита для распределённого склада"
+          open={sections.protection}
+          onToggle={() => toggle('protection')}
+        >
           <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
             <span>
               <span className="block text-sm font-semibold text-slate-100">
@@ -168,8 +223,7 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
                 WSS для мультиплеера
               </span>
               <span className="block text-xs text-slate-400">
-                Требовать TLS (wss://) для WebSocket-соединения распределённого
-                склада. ws:// будет автоматически обновлён до wss://.
+                ws:// автоматически обновляется до wss://.
               </span>
             </span>
             <input
@@ -185,8 +239,7 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
                 Журнал аудита доступа к данным
               </span>
               <span className="block text-xs text-slate-400">
-                Фиксирует чтение/запись защищённых данных в локальный след
-                аудита (последние 500 событий).
+                Последние 500 событий чтения/записи защищённых данных.
               </span>
             </span>
             <input
@@ -196,37 +249,28 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
               className="h-4 w-4 accent-amber-400"
             />
           </label>
-        </section>
+        </Section>
 
-        <section className="mt-5 space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Анализ угроз склада
-          </h3>
-          <p className="text-[10px] leading-relaxed text-slate-500">
-            Угрозы автоматизированного складского комплекса и способы их защиты.
-            Коды угроз: T01–T10.
-          </p>
+        <Section
+          title="Анализ угроз склада"
+          Icon={Cpu}
+          hint="10 угроз (T01–T10) и способы их защиты"
+          open={sections.threats}
+          onToggle={() => toggle('threats')}
+        >
           {THREATS
             .slice()
             .sort((a, b) => severityRank(b.severity) - severityRank(a.severity))
             .map(threat => {
               const protections = protectionsForThreat(threat.id);
-              const severityColor = {
-                critical: 'text-red-400',
-                high: 'text-amber-400',
-                medium: 'text-emerald-400',
-                low: 'text-slate-400'
-              }[threat.severity];
               return (
                 <div
                   key={threat.id}
-                  className="rounded border border-slate-700 bg-slate-950 p-2.5 text-xs"
+                  className="rounded border bg-slate-950 p-2 text-xs"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className={`font-semibold text-slate-200`}>{threat.id}</span>
-                    <span className={`${severityColor} font-bold`}>
-                      {threat.severity}
-                    </span>
+                    <span className="font-semibold text-slate-200">{threat.id}</span>
+                    {severityBadge(threat.severity)}
                   </div>
                   <div className="text-sm font-medium text-slate-100 mb-0.5">
                     {threat.title}
@@ -234,10 +278,8 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
                   <div className="text-[10px] text-slate-400 mb-1">
                     {threat.description}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-slate-500 uppercase tracking-wider">
-                      Защита:
-                    </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider">Защита:</span>
                     {protections.map(p => (
                       <span
                         key={p.id}
@@ -248,16 +290,14 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
                     ))}
                   </div>
                   {threat.regulatory && (
-                    <div className="mt-0.5">
-                      <span className="text-[9px] text-slate-500 block">
-                        Норматив: {threat.regulatory}
-                      </span>
+                    <div className="mt-1">
+                      <span className="text-[9px] text-slate-500 block">Норматив: {threat.regulatory}</span>
                     </div>
                   )}
                 </div>
               );
             })}
-        </section>
+        </Section>
       </div>
     </div>
   );
