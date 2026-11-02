@@ -1,9 +1,11 @@
-import { X, ChevronDown, ShieldAlert, Bell, Smartphone, Monitor, Lock, Cpu, Activity } from 'lucide-react';
+import { X, ChevronDown, ShieldAlert, Bell, Smartphone, Monitor, Lock, Cpu, Activity, Sun, Moon, Download } from 'lucide-react';
 import { useState } from 'react';
 import type { AppSettings } from '../../settings';
 import type { OrientationLock } from '../../telegram';
 import { THREATS, severityRank, protectionsForThreat } from '../../threatAnalysis';
 import { readAuditTrail } from '../../dataProtection';
+import { exportBackup, importBackupFile, restoreBackupBundle } from '../../backup';
+import { t } from '../../i18n';
 
 interface SettingsModalProps {
   open: boolean;
@@ -54,6 +56,11 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
     audit: false
   });
   const [auditTrail, setAuditTrail] = useState<Array<{ ts: number; event: string; detail?: string }>>([]);
+  const [exportPassphrase, setExportPassphrase] = useState('');
+  const [importPassphrase, setImportPassphrase] = useState('');
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'exporting' | 'importing' | 'done' | 'error'>('idle');
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
 
   if (!open) return null;
 
@@ -348,6 +355,143 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
               })}
             </div>
           )}
+        </Section>
+
+        <Section
+          title={t('theme.light')}
+          Icon={settings.theme === 'dark' ? Moon : Sun}
+          hint="Тёмный или светлый интерфейс приложения"
+          open={false}
+          onToggle={() => {}}
+        >
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
+            <span>
+              <span className="block text-sm font-semibold text-slate-100">
+                {t('theme.light')}
+              </span>
+            </span>
+            <button
+              onClick={() => onChange({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
+              className={`relative inline-flex w-10 h-5 shrink-0 rounded-full border border-slate-700 bg-slate-800 p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50`}
+            >
+              <span
+                className={`block w-4 h-4 rounded-full bg-white shadow ring-0 transition-transform ${settings.theme === 'light' ? 'translate-x-5' : 'translate-x-1'}`}
+              />
+            </button>
+          </div>
+        </Section>
+
+        <Section
+          title={t('backup.title')}
+          Icon={Download}
+          hint={t('backup.hint')}
+          open={false}
+          onToggle={() => {}}
+        >
+          <div className="space-y-3">
+            <div className="rounded-xl border border-slate-700 bg-slate-950 p-3">
+              <div className="mb-2">
+                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1">{t('backup.password.label')}</label>
+                <input
+                  type="password"
+                  value={exportPassphrase}
+                  onChange={e => setExportPassphrase(e.target.value)}
+                  placeholder={t('backup.password.placeholder')}
+                  className="w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-xs text-slate-200 focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    setBackupStatus('exporting');
+                    setBackupError(null);
+                    try {
+                      await exportBackup(exportPassphrase || undefined);
+                      setBackupStatus('done');
+                      setBackupError(null);
+                      setTimeout(() => setBackupStatus('idle'), 2000);
+                    } catch {
+                      setBackupStatus('error');
+                      setBackupError(t('backup.error'));
+                      setTimeout(() => setBackupStatus('idle'), 2000);
+                    }
+                  }}
+                  disabled={backupStatus === 'exporting'}
+                  className="flex-1 rounded bg-amber-900/20 border border-amber-500/30 px-3 py-2 text-xs font-medium text-amber-300 hover:bg-amber-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {backupStatus === 'exporting' ? t('backup.exporting') : t('backup.export')}
+                </button>
+                {backupStatus === 'done' && (
+                  <span className="text-[10px] text-emerald-400">Сохранено как файл</span>
+                )}
+                {backupStatus === 'error' && backupError && (
+                  <span className="text-[10px] text-red-400">{backupError}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-700 bg-slate-950 p-3">
+              <div className="mb-2">
+                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1">{t('backup.import.file.label')}</label>
+                <input
+                  type="file"
+                  accept=".json,.enc"
+                  onChange={e => {
+                    const f = e.target.files?.[0] ?? null;
+                    setImportFile(f);
+                    if (f) setBackupStatus('idle');
+                  }}
+                  className="w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-xs text-slate-200 focus:border-amber-400 focus:outline-none cursor-pointer"
+                />
+              </div>
+              <div className="mb-2">
+                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1">{t('backup.import.password.label')}</label>
+                <input
+                  type="password"
+                  value={importPassphrase}
+                  onChange={e => setImportPassphrase(e.target.value)}
+                  placeholder={t('backup.import.password.placeholder')}
+                  className="w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-xs text-slate-200 focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (!importFile) return;
+                    setBackupStatus('importing');
+                    setBackupError(null);
+                    try {
+                      const bundle = await importBackupFile(importFile, importPassphrase || undefined);
+                      if (!bundle) {
+                        setBackupStatus('error');
+                        setBackupError('Не удалось расшифровать или распарсить бэкап.');
+                        setTimeout(() => setBackupStatus('idle'), 2000);
+                        return;
+                      }
+                      restoreBackupBundle(bundle);
+                      setBackupStatus('done');
+                      setImportFile(null);
+                      setTimeout(() => setBackupStatus('idle'), 2000);
+                    } catch {
+                      setBackupStatus('error');
+                      setBackupError(t('backup.error'));
+                      setTimeout(() => setBackupStatus('idle'), 2000);
+                    }
+                  }}
+                  disabled={backupStatus === 'importing' || !importFile}
+                  className="flex-1 rounded bg-slate-800 border border-slate-600 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {backupStatus === 'importing' ? t('backup.importing') : t('backup.import')}
+                </button>
+                {backupStatus === 'done' && (
+                  <span className="text-[10px] text-emerald-400">Восстановлено из файла</span>
+                )}
+                {backupStatus === 'error' && backupError && (
+                  <span className="text-[10px] text-red-400">{backupError}</span>
+                )}
+              </div>
+            </div>
+          </div>
         </Section>
       </div>
     </div>

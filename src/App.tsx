@@ -147,6 +147,7 @@ import { buildActivityFeed } from './components/header/notificationFeed';
 import { NotificationCenter } from './components/header/NotificationCenter';
 import { AuthScreen } from './components/auth/AuthScreen';
 import { FileUpload } from './components/ui/FileUpload';
+import { PhoneWidget } from './components/ui/PhoneWidget';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { setPortrait3dEnabled } from './portrait3dFlag';
@@ -534,6 +535,13 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
   useEffect(() => {
     setOrientationLock(appSettings.orientation);
   }, [appSettings.orientation]);
+
+  // Applies the UI theme (dark/light) to the document root.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', appSettings.theme);
+    document.documentElement.classList.toggle('dark', appSettings.theme === 'dark');
+    document.documentElement.classList.toggle('light', appSettings.theme === 'light');
+  }, [appSettings.theme]);
 
   // When launched from a Telegram bot link such as
   // t.me/<bot>?start=game or t.me/<bot>/app?startapp=game, enter the game
@@ -4326,7 +4334,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
 
       {/* Top Notification Toast */}
       {notification && (
-        <div className="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-4 py-3 rounded-lg shadow-xl flex items-center gap-2 border border-amber-300 animate-bounce">
+        <div className="fixed top-5 right-5 z-[70] bg-amber-500 text-slate-950 font-bold px-4 py-3 rounded-lg shadow-xl flex items-center gap-2 border border-amber-300 animate-bounce">
           <AlertCircle className="w-5 h-5" />
           <span>{notification}</span>
         </div>
@@ -4334,7 +4342,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
 
       {/* Clinic admission notices: an employee escorting a mother to a ward. */}
       {hospitalNotices.length > 0 && (
-        <div className="pointer-events-none fixed right-5 z-50 flex flex-col gap-2" style={{ top: notification ? '5rem' : '1.25rem' }}>
+        <div className="pointer-events-none fixed right-5 z-[70] flex flex-col gap-2" style={{ top: notification ? '5rem' : '1.25rem' }}>
           {hospitalNotices.map(notice => (
             <div
               key={notice.id}
@@ -6131,6 +6139,8 @@ contracts={gameState.tradeSupplyContracts || []}
       <footer className="bg-slate-900 border-t border-slate-800 px-6 py-4 text-center text-xs text-slate-500">
         Emporium Web Edition v0.3.7 • Симулятор стратегии и управления • Все права защищены.
       </footer>
+
+      <PhoneWidget />
     </div>
   );
 }

@@ -1,0 +1,21 @@
+{
+  "name": "Эмпориум",
+  "short_name": "Emporium",
+  "description": "Складской мезонин — автоматизированное управление складом (Telegram Mini App)",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "id": "/",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "simulation"],
+  "lang": "ru"
+}

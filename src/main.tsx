@@ -19,6 +19,13 @@ import {
 initTelegramApp()
 startErrorCapture()
 
+// Register service worker for PWA offline support
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => { /* SW registration failed silently */ });
+  });
+}
+
 if (isTelegramMiniApp()) {
   const button = document.createElement('button')
   button.textContent = 'Logs'

@@ -12,6 +12,7 @@ const CityBuilderView = lazy(() =>
 );
 import { APP_NAVIGATION, type AppTab } from '../../appNavigation';
 import { cityVisibleRect, drawBlock } from '../../mezzanineRender';
+import { generateMezzanineReport } from './MezzanineReport';
 import {
   MEZZANINE_KEYMAP_ROWS,
   MEZZANINE_REGION_SHORTCUTS,
@@ -849,6 +850,30 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
           />
           <span>Негорючие материалы</span>
         </label>
+        <button
+          onClick={() => {
+            const { compliant, issues, recommendations, stuRequired } = computeMezzanineResult();
+            const region = REGIONS.find(r => r.id === selectedRegion);
+            generateMezzanineReport({
+              region: region?.name || selectedRegion || '—',
+              city: selectedCity?.name || '—',
+              loadCapacity: mezzLoad,
+              fireResistance: mezzFireClass,
+              ceilingHeight: mezzHeight,
+              tiers: mezzTiers,
+              aupPerTier: mezzAupPerTier,
+              nonCombustible: mezzNonCombustible,
+              compliant,
+              issues,
+              recommendations,
+              stuRequired,
+              generatedAt: new Date().toLocaleString('ru-RU')
+            });
+          }}
+          className="rounded bg-amber-900/20 border border-amber-500/30 px-2 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-900/40 flex items-center gap-1 transition"
+        >
+          <FileText className="h-3 w-3" /> PDF отчёт
+        </button>
         <div className="pt-1">
           {(() => {
             const { compliant, issues, recommendations, stuRequired } = computeMezzanineResult();

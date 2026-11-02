@@ -29,6 +29,8 @@
     "clsx": "^2.1.1",
     "deno": "^2.9.6",
     "gzip": "^0.1.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "linux": "^4.2.1",
     "lucide-react": "^1.46.0",
     "node-fetch": "^3.3.2",

@@ -18,6 +18,8 @@ export interface AppSettings {
   ar_mode: boolean;
   /** Data protection settings for distributed warehouse deployments. */
   data_protection: DataProtectionSettings;
+  /** UI theme: 'dark' (default) or 'light'. */
+  theme: 'dark' | 'light';
 }
 
 const STORAGE_KEY = 'emporium_settings';
@@ -31,7 +33,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     encryption_at_rest: false,
     tls_wss: false,
     audit_log: false
-  }
+  },
+  theme: 'dark'
 };
 
 export function loadSettings(): AppSettings {
@@ -69,7 +72,11 @@ export function loadSettings(): AppSettings {
           typeof parsed.data_protection?.audit_log === 'boolean'
             ? parsed.data_protection.audit_log
             : DEFAULT_SETTINGS.data_protection.audit_log
-      }
+      },
+      theme:
+        parsed.theme === 'light' || parsed.theme === 'dark'
+          ? parsed.theme
+          : DEFAULT_SETTINGS.theme
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
