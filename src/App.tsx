@@ -10,7 +10,7 @@ import {
 
   ArrowRight, Play, AlertCircle, Truck, Sparkles, CreditCard, Maximize2, X, HeartPulse,
   FolderOpen, PlusCircle, Trash2, Save, ArrowLeft, Shield, Warehouse, ArrowUpDown,
-  Menu, ChevronLeft, ChevronRight, Target, Trophy, Crown, Gavel, Settings, Bell
+  Menu, ChevronLeft, ChevronRight, Target, Trophy, Crown, Gavel, Settings, Bell, Lock, Key
 } from 'lucide-react';
 import type { Character, Caravan, LoanApplication, WeeklyFinanceReport } from './gameEngine';
 import { createGoodsLot, getAuctionHouseStaff, sellAuctionLot as sellAuctionLotEngine, createCharacterLot, buildValuationAnnouncements, valuationMismatch, requestCharacterSaleConsent, cancelCharacterSaleConsent, hasPendingSaleConsent, AUCTION_HOUSE_ADMINISTRATOR } from './auctionHouseEngine';
@@ -151,7 +151,8 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { setPortrait3dEnabled } from './portrait3dFlag';
 import { setOrientationLock, getTelegramStartParam } from './telegram';
-import { hasSessionKey, encrypt, decryptAsync, loadDataProtection, audit } from './dataProtection';
+import { hasSessionKey, clearSessionKey, encrypt, decryptAsync, loadDataProtection, audit } from './dataProtection';
+import { SessionPasswordDialog } from './components/security/SessionPasswordDialog';
 import { assetUrl } from './assetUrl';
 import { ceoPortraitFileNames } from './portraitAssets';
 import { BeautySalonTab } from './components/salon/BeautySalonTab';
@@ -433,6 +434,8 @@ const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
   const [tickerItems, setTickerItems] = useState<string[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>(() => loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [sessionLockOpen, setSessionLockOpen] = useState(false);
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false);
 const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null>(null);
   // Ambushes are frequent, so several can land in the same week. The head of the
   // queue is the one shown; resolving it promotes the next.
@@ -541,6 +544,16 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
       setCurrentScreen('playing');
     }
   }, [currentScreen]);
+
+  // Prompt for the session passphrase when encryption at rest is enabled
+  // but no session key exists yet.
+  useEffect(() => {
+    const dp = loadDataProtection();
+    setEncryptionEnabled(dp.encryption_at_rest);
+    if (dp.encryption_at_rest && !hasSessionKey()) {
+      setSessionLockOpen(true);
+    }
+  }, []);
 
   // Mirrors the emporium_3d feature flag into the global store
   // consumed by the portrait renderers.
@@ -3965,6 +3978,21 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
     <div className="tg-app-shell relative overflow-x-hidden bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* Deep-space backdrop for the whole shell (see .nasa-starfield). */}
       <div className="nasa-starfield" aria-hidden="true" />
+
+      {/* Session password dialog (encryption at rest). */}
+      {sessionLockOpen && (
+        <SessionPasswordDialog
+          open={true}
+          onUnlock={() => setSessionLockOpen(false)}
+          onCancel={() => {
+            if (encryptionEnabled && !hasSessionKey()) {
+              setSessionLockOpen(true);
+            } else {
+              setSessionLockOpen(false);
+            }
+          }}
+        />
+      )}
       {/* IN-GAME MENU / SAVE MODAL */}
       {showInGameMenu && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -4351,6 +4379,28 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
           >
             {isMobileMenuOpen ? <X aria-hidden="true" className="h-5 w-5" /> : <Menu aria-hidden="true" className="h-5 w-5" />}
           </button>
+          {(() => {
+            if (!encryptionEnabled) return null;
+            const locked = !hasSessionKey();
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  if (locked) {
+                    setSessionLockOpen(true);
+                  } else {
+                    clearSessionKey();
+                    setSessionLockOpen(false);
+                    showNotify('Сессия заблокирована.');
+                  }
+                }}
+                title={locked ? 'Разблокировать шифрование' : 'Заблокировать сессию'}
+                className={`rounded-lg border border-slate-700 p-2 text-xs font-bold transition hover:bg-slate-700 ${locked ? 'text-red-400 border-red-500/30 bg-red-500/5' : 'text-emerald-400 border-emerald-500/30 bg-emerald-500/5'}`}
+              >
+                {locked ? <Lock className="w-4 h-4" /> : <Key className="w-4 h-4" />}
+              </button>
+            );
+          })()}
           <div className="bg-gradient-to-tr from-pink-600 to-amber-400 p-2.5 rounded-xl shadow-inner text-slate-950">
             <Sparkles className="w-6 h-6 font-bold" />
           </div>
