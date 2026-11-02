@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { setOrientationLock, type OrientationLock } from './telegram';
+import type { DataProtectionSettings } from './dataProtection';
 
 export interface AppSettings {
   /** Screen orientation: follow the sensor or lock to one mode. */
@@ -15,6 +16,8 @@ export interface AppSettings {
   emporium_3d: boolean;
   /** WebXR AR mode for viewing 3D portraits in augmented reality. */
   ar_mode: boolean;
+  /** Data protection settings for distributed warehouse deployments. */
+  data_protection: DataProtectionSettings;
 }
 
 const STORAGE_KEY = 'emporium_settings';
@@ -23,7 +26,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   orientation: 'auto',
   notifications: true,
   emporium_3d: false,
-  ar_mode: false
+  ar_mode: false,
+  data_protection: {
+    encryption_at_rest: false,
+    tls_wss: false,
+    audit_log: false
+  }
 };
 
 export function loadSettings(): AppSettings {
@@ -47,7 +55,21 @@ export function loadSettings(): AppSettings {
       ar_mode:
         typeof parsed.ar_mode === 'boolean'
           ? parsed.ar_mode
-          : DEFAULT_SETTINGS.ar_mode
+          : DEFAULT_SETTINGS.ar_mode,
+      data_protection: {
+        encryption_at_rest:
+          typeof parsed.data_protection?.encryption_at_rest === 'boolean'
+            ? parsed.data_protection.encryption_at_rest
+            : DEFAULT_SETTINGS.data_protection.encryption_at_rest,
+        tls_wss:
+          typeof parsed.data_protection?.tls_wss === 'boolean'
+            ? parsed.data_protection.tls_wss
+            : DEFAULT_SETTINGS.data_protection.tls_wss,
+        audit_log:
+          typeof parsed.data_protection?.audit_log === 'boolean'
+            ? parsed.data_protection.audit_log
+            : DEFAULT_SETTINGS.data_protection.audit_log
+      }
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

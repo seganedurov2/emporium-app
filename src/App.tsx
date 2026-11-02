@@ -151,6 +151,7 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { setPortrait3dEnabled } from './portrait3dFlag';
 import { setOrientationLock } from './telegram';
+import { hasSessionKey, encrypt, decryptAsync, loadDataProtection, audit } from './dataProtection';
 import { assetUrl } from './assetUrl';
 import { ceoPortraitFileNames } from './portraitAssets';
 import { BeautySalonTab } from './components/salon/BeautySalonTab';
@@ -511,11 +512,18 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
 
   useEffect(() => {
     if (currentScreen === 'playing') {
-      const saveData = {
-        ...gameState,
-        timestamp: new Date().toLocaleString()
-      };
-      localStorage.setItem(`emporium_save_slot_${gameState.slot || 1}`, JSON.stringify(saveData));
+      (async () => {
+        const dp = loadDataProtection();
+        const saveData = {
+          ...gameState,
+          timestamp: new Date().toLocaleString()
+        };
+        const serialized = dp.encryption_at_rest && hasSessionKey()
+          ? await encrypt(JSON.stringify(saveData))
+          : JSON.stringify(saveData);
+        localStorage.setItem(`emporium_save_slot_${gameState.slot || 1}`, serialized);
+        audit('campaign_auto_save', `slot ${gameState.slot || 1}`);
+      })();
     }
   }, [gameState, currentScreen]);
 
@@ -584,23 +592,39 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
     });
   };
 
-  const saveGameToSlot = (slotNum: number) => {
+  const saveGameToSlot = async (slotNum: number) => {
     const updatedState = { ...gameState, slot: slotNum, timestamp: new Date().toLocaleString() };
     setGameState(updatedState);
-    localStorage.setItem(getSlotKey(slotNum), JSON.stringify(updatedState));
+    const dp = loadDataProtection();
+    const serialized = dp.encryption_at_rest && hasSessionKey()
+      ? await encrypt(JSON.stringify(updatedState))
+      : JSON.stringify(updatedState);
+    localStorage.setItem(getSlotKey(slotNum), serialized);
     showNotify(`Игра успешно сохранена в слот ${slotNum}!`);
+    audit('campaign_save_slot', String(slotNum));
   };
 
-  const loadGameFromSlot = (slotNum: number) => {
-    const data = localStorage.getItem(getSlotKey(slotNum)) || (slotNum === 1 ? localStorage.getItem('emporium_save_06') : null);
-    if (!data) {
+  const loadGameFromSlot = async (slotNum: number) => {
+    const dp = loadDataProtection();
+    const raw = localStorage.getItem(getSlotKey(slotNum)) || (slotNum === 1 ? localStorage.getItem('emporium_save_06') : null);
+    if (!raw) {
       showNotify(`Слот ${slotNum} пуст.`);
       return;
     }
     try {
+      let data = raw;
+      if (dp.encryption_at_rest && hasSessionKey()) {
+        const decrypted = await decryptAsync(raw);
+        if (decrypted !== raw) data = decrypted;
+        else {
+          showNotify(`Не удалось расшифровать слот ${slotNum}: ключ сессии не подходит.`);
+          return;
+        }
+      }
       setGameState(migrateCampaignState(JSON.parse(data)));
       setCurrentScreen('playing');
-showNotify(`Кампания загружена из слота ${slotNum}!`);
+      showNotify(`Кампания загружена из слота ${slotNum}!`);
+      audit('campaign_load_slot', String(slotNum));
     } catch {
       showNotify(`Не удалось загрузить слот ${slotNum}.`);
     }

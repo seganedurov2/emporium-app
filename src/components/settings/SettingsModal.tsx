@@ -139,6 +139,63 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
             />
           </label>
         </section>
+
+        <section className="mt-5 space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Защита данных
+          </h3>
+          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
+            <span>
+              <span className="block text-sm font-semibold text-slate-100">
+                Шифрование при хранении
+              </span>
+              <span className="block text-xs text-slate-400">
+                AES-256-GCM для сохранений и настроек в локальном хранилище.
+                Требует пароля сессии при запуске.
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.data_protection.encryption_at_rest}
+              onChange={event => onChange({ data_protection: { ...settings.data_protection, encryption_at_rest: event.target.checked } })}
+              className="h-4 w-4 accent-amber-400"
+            />
+          </label>
+          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
+            <span>
+              <span className="block text-sm font-semibold text-slate-100">
+                WSS для мультиплеера
+              </span>
+              <span className="block text-xs text-slate-400">
+                Требовать TLS (wss://) для WebSocket-соединения распределённого
+                склада. ws:// будет автоматически обновлён до wss://.
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.data_protection.tls_wss}
+              onChange={event => onChange({ data_protection: { ...settings.data_protection, tls_wss: event.target.checked } })}
+              className="h-4 w-4 accent-amber-400"
+            />
+          </label>
+          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
+            <span>
+              <span className="block text-sm font-semibold text-slate-100">
+                Журнал аудита доступа к данным
+              </span>
+              <span className="block text-xs text-slate-400">
+                Фиксирует чтение/запись защищённых данных в локальный след
+                аудита (последние 500 событий).
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.data_protection.audit_log}
+              onChange={event => onChange({ data_protection: { ...settings.data_protection, audit_log: event.target.checked } })}
+              className="h-4 w-4 accent-amber-400"
+            />
+          </label>
+        </section>
       </div>
     </div>
   );
