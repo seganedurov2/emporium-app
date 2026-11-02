@@ -150,7 +150,7 @@ import { FileUpload } from './components/ui/FileUpload';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { setPortrait3dEnabled } from './portrait3dFlag';
-import { setOrientationLock } from './telegram';
+import { setOrientationLock, getTelegramStartParam } from './telegram';
 import { hasSessionKey, encrypt, decryptAsync, loadDataProtection, audit } from './dataProtection';
 import { assetUrl } from './assetUrl';
 import { ceoPortraitFileNames } from './portraitAssets';
@@ -531,6 +531,16 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
   useEffect(() => {
     setOrientationLock(appSettings.orientation);
   }, [appSettings.orientation]);
+
+  // When launched from a Telegram bot link such as
+  // t.me/<bot>?start=game or t.me/<bot>/app?startapp=game, enter the game
+  // directly instead of showing the main menu.
+  useEffect(() => {
+    const param = getTelegramStartParam();
+    if (param === 'game' && currentScreen === 'main_menu') {
+      setCurrentScreen('playing');
+    }
+  }, [currentScreen]);
 
   // Mirrors the emporium_3d feature flag into the global store
   // consumed by the portrait renderers.

@@ -105,6 +105,13 @@ export const isTelegramMiniApp = (): boolean => getTelegramWebApp() !== null;
 export const getTelegramUser = (): TelegramUser | undefined =>
   getTelegramWebApp()?.initDataUnsafe.user;
 
+/** The `start` / `startapp` parameter passed when the Mini App was launched
+ * from a Telegram bot link, e.g. `t.me/<bot>?start=game` or
+ * `t.me/<bot>/app?startapp=game`. Returns null outside Telegram or when
+ * no parameter was provided. */
+export const getTelegramStartParam = (): string | null =>
+  getTelegramWebApp()?.initDataUnsafe.start_param ?? null;
+
 const THEME_VAR_MAP: Record<string, string> = {
   bg_color: '--tg-bg-color',
   text_color: '--tg-text-color',
