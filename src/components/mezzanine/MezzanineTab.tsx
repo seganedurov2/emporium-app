@@ -119,6 +119,73 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
     normalizeMezzanineViewState(gameState?.mezzanine)
   );
   const [mapCenter, setMapCenter] = useState<MapCenter | null>(null);
+
+  // Mezzanine technical calculation (automated warehouse mezzanine design,
+  // per 123-ФЗ art. 78 / МЧС М-АМ-136): load capacity, fire resistance,
+  // materials, ceiling height, fire suppression and СТУ requirement.
+  const [mezzLoad, setMezzLoad] = useState(5);
+  const [mezzFireClass, setMezzFireClass] = useState<'R15' | 'R30' | 'R60' | 'R90' | 'R120' | 'R150' | 'R180' | 'R240'>('R15');
+  const [mezzHeight, setMezzHeight] = useState(6);
+  const [mezzTiers, setMezzTiers] = useState(2);
+  const [mezzAupPerTier, setMezzAupPerTier] = useState(false);
+  const [mezzNonCombustible, setMezzNonCombustible] = useState(true);
+
+  const FIRE_CLASSES: { value: 'R15' | 'R30' | 'R60' | 'R90' | 'R120' | 'R150' | 'R180' | 'R240'; label: string }[] = [
+    { value: 'R15', label: 'R15' },
+    { value: 'R30', label: 'R30' },
+    { value: 'R60', label: 'R60' },
+    { value: 'R90', label: 'R90' },
+    { value: 'R120', label: 'R120' },
+    { value: 'R150', label: 'R150' },
+    { value: 'R180', label: 'R180' },
+    { value: 'R240', label: 'R240' }
+  ];
+
+  function computeMezzanineResult() {
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+    let compliant = true;
+
+    // Load capacity: 3–8 t/m^2 per warehouse design norms.
+    if (mezzLoad < 3 || mezzLoad > 8) {
+      compliant = false;
+      issues.push(`Несущая способность пола ${mezzLoad} т/м² вне нормы 3–8 т/м²`);
+      recommendations.push('Приведите несущую способность пола к диапазону 3–8 т/м²');
+    }
+
+    // Fire resistance of load-bearing structures: minimum R15.
+    const fireOrder: Record<string, number> = { R15: 15, R30: 30, R60: 60, R90: 90, R120: 120, R150: 150, R180: 180, R240: 240 };
+    if (fireOrder[mezzFireClass] < 15) {
+      compliant = false;
+      issues.push(`Предел огнестойкости несущих конструкций ниже R15`);
+      recommendations.push('Убедитесь, что несущие конструкции имеют предел огнестойкости не менее R15');
+    }
+
+    // Ceiling height: 4–14 m for mezzanine warehouses.
+    if (mezzHeight < 4 || mezzHeight > 14) {
+      compliant = false;
+      issues.push(`Высота потолка ${mezzHeight} м вне диапазона 4–14 м`);
+      recommendations.push('Высота потолка склада с мезонином должна быть 4–14 м');
+    }
+
+    // Non-combustible materials required.
+    if (!mezzNonCombustible) {
+      compliant = false;
+      issues.push('Конструкции мезонина должны быть из негорючих материалов');
+      recommendations.push('Используйте негорючие материалы для конструкций мезонина');
+    }
+
+    // Fire suppression: warehouses with mezzanines require AUP.
+    recommendations.push('Оборудуйте склад автоматической установкой пожаротушения (АУП)');
+    if (mezzTiers > 1 && !mezzAupPerTier) {
+      recommendations.push('Рекомендуется АУП каждого яруса мезонина либо один ярус под потолком');
+    }
+
+    // СТУ required per 123-ФЗ art. 78 for warehouses with mezzanines.
+    const stuRequired = true;
+
+    return { compliant, issues, recommendations, stuRequired };
+  }
   const [centerPick, setCenterPick] = useState<MapCenter | null>(null);
   const last = useRef({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -718,6 +785,101 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
         <span className="text-[10px] uppercase tracking-widest text-slate-400">Зум</span>
         <button onClick={() => setView(prev => ({ ...prev, gridSize: clampTile(prev.gridSize - 8, prev.gridSize) }))} className="bg-black/60 hover:bg-black/80 text-white px-3 py-1 rounded">−</button>
         <button onClick={() => setView(prev => ({ ...prev, gridSize: clampTile(prev.gridSize + 8, prev.gridSize) }))} className="bg-black/60 hover:bg-black/80 text-white px-3 py-1 rounded">+</button>
+      </div>
+      {/* Mezzanine technical calculation panel (automated warehouse mezzanine design). */}
+      <div className="bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg">
+        <div className="text-xs text-amber-400 font-bold mb-1">Технический расчёт мезонина</div>
+        <label className="flex items-center gap-2 text-xs text-slate-200">
+          <span className="shrink-0">Несущая способность пола, т/м²</span>
+          <input
+            type="number"
+            value={mezzLoad}
+            onChange={e => setMezzLoad(Math.max(1, Math.min(20, Number(e.target.value) || 5)))}
+            className="w-12 bg-black/60 border border-slate-700 rounded px-1 py-0.5 text-white text-xs focus:border-amber-400 outline-none"
+            min="1" max="20"
+          />
+        </label>
+        <label className="flex items-center gap-2 text-xs text-slate-200">
+          <span className="shrink-0">Огнестойкость конструкций</span>
+          <select
+            value={mezzFireClass}
+            onChange={e => setMezzFireClass(e.target.value as 'R15' | 'R30' | 'R60' | 'R90' | 'R120' | 'R150' | 'R180' | 'R240')}
+            className="bg-black/60 border border-slate-700 rounded px-1 py-0.5 text-white text-xs focus:border-amber-400 outline-none"
+          >
+            {FIRE_CLASSES.map(fc => (
+              <option key={fc.value} value={fc.value}>{fc.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-xs text-slate-200">
+          <span className="shrink-0">Высота потолка, м</span>
+          <input
+            type="number"
+            value={mezzHeight}
+            onChange={e => setMezzHeight(Math.max(1, Math.min(30, Number(e.target.value) || 6)))}
+            className="w-12 bg-black/60 border border-slate-700 rounded px-1 py-0.5 text-white text-xs focus:border-amber-400 outline-none"
+            min="1" max="30"
+          />
+        </label>
+        <label className="flex items-center gap-2 text-xs text-slate-200">
+          <span className="shrink-0">Ярусов</span>
+          <input
+            type="number"
+            value={mezzTiers}
+            onChange={e => setMezzTiers(Math.max(1, Math.min(10, Number(e.target.value) || 2)))}
+            className="w-12 bg-black/60 border border-slate-700 rounded px-1 py-0.5 text-white text-xs focus:border-amber-400 outline-none"
+            min="1" max="10"
+          />
+        </label>
+        <label className="flex items-center gap-2 text-xs text-slate-200 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={mezzAupPerTier}
+            onChange={e => setMezzAupPerTier(e.target.checked)}
+            className="h-3 w-3 accent-amber-400 shrink-0"
+          />
+          <span>AУП каждого яруса</span>
+        </label>
+        <label className="flex items-center gap-2 text-xs text-slate-200 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={mezzNonCombustible}
+            onChange={e => setMezzNonCombustible(e.target.checked)}
+            className="h-3 w-3 accent-amber-400 shrink-0"
+          />
+          <span>Негорючие материалы</span>
+        </label>
+        <div className="pt-1">
+          {(() => {
+            const { compliant, issues, recommendations, stuRequired } = computeMezzanineResult();
+            return (
+              <div className={`rounded border p-2 text-xs ${
+                compliant ? 'border-green-500/30 bg-green-500/5 text-green-300' : 'border-amber-500/30 bg-amber-500/5 text-amber-300'
+              }`}>
+                <div className="flex items-center gap-1 mb-1">
+                  <span className={`text-[10px] font-bold ${compliant ? 'text-green-400' : 'text-amber-400'}`}>
+                    {compliant ? 'Соответствует нормативам' : 'Нарушения'}
+                  </span>
+                  {stuRequired && (
+                    <span className="text-[10px] text-slate-400">· СТУ требуется (123-ФЗ ст. 78)</span>
+                  )}
+                </div>
+                {issues.length > 0 && (
+                  <ul className="list-disc list-inside space-y-0.5 mb-1">
+                    {issues.map((issue, i) => (
+                      <li key={i} className="text-amber-200">{issue}</li>
+                    ))}
+                  </ul>
+                )}
+                <ul className="list-disc list-inside space-y-0.5">
+                  {recommendations.map((rec, i) => (
+                    <li key={i} className="text-slate-300">{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
+        </div>
       </div>
       </div>
       {/* Bottom toolbar: one row inside the hub. The previous buttons were
