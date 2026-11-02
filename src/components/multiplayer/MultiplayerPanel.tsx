@@ -2,8 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkstationHub } from './useWorkstationHub';
 import { Wifi, WifiOff, Users } from 'lucide-react';
 
-export function MultiplayerPanel({ gameState, setGameState }: { gameState: any; setGameState: any }) {
-  const [localRoom, setLocalRoom] = useState('default');
+export function MultiplayerPanel({
+  gameState,
+  setGameState,
+  initialRoom = 'default'
+}: { gameState: any; setGameState: any; initialRoom?: string }) {
+  const [localRoom, setLocalRoom] = useState(initialRoom);
   const {
     connected,
     send,

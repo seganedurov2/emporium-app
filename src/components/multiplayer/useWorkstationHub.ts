@@ -18,7 +18,7 @@ export interface UseWorkstationHubOptions {
 }
 
 export function useWorkstationHub({
-  url = import.meta.env.VITE_WS_URL || 'ws://localhost:5175/ws',
+  url = import.meta.env.VITE_WS_URL ?? null,
   room: initialRoom,
   onMessage,
   onConnect,
@@ -62,6 +62,7 @@ export function useWorkstationHub({
   }, [send]);
 
   const connectImpl = useCallback(() => {
+    if (!url) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
     wsRef.current = new WebSocket(url);
 
@@ -87,15 +88,15 @@ export function useWorkstationHub({
       setConnected(false);
       wsRef.current = null;
       onDisconnect?.();
-      if (autoConnectRef.current) {
+      if (url && autoConnectRef.current) {
         reconnectRef.current = setTimeout(() => {
           connectRef.current?.();
         }, 2000);
       }
     };
 
-    wsRef.current.onerror = (err) => {
-      console.error('WebSocket error:', err);
+    wsRef.current.onerror = () => {
+      setConnected(false);
     };
   }, [url, send, onConnect, onDisconnect]);
 
@@ -113,13 +114,13 @@ export function useWorkstationHub({
   }, []);
 
   useEffect(() => {
-    if (autoConnectRef.current) {
+    if (autoConnectRef.current && url) {
       connectRef.current?.();
     }
     return () => {
       disconnect();
     };
-  }, [connectRef, disconnect]);
+  }, [connectRef, disconnect, url]);
 
   return {
     connected,

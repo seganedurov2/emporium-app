@@ -1,9 +1,6 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-
-const threeSourceEntry = fileURLToPath(new URL('./node_modules/three/src/Three.js', import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -20,9 +17,6 @@ export default defineConfig({
     allowedHosts: ['.loca.lt']
   },
   plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: [{ find: /^three$/, replacement: threeSourceEntry }],
-  },
   build: {
     chunkSizeWarningLimit: 500,
     rolldownOptions: {
@@ -36,19 +30,9 @@ export default defineConfig({
               priority: 50,
             },
             {
-              // Three.js exposes its per-module source graph through the alias
-              // above; cap this deferred group so its renderer stays below Vite's
-              // warning threshold without pulling it into the initial bundle.
-              // three-stdlib is deliberately absent: it imports `three`, and an
-              // export graph that crosses the three-vendor/app boundary leaves a
-              // class undefined at load ("a is not a constructor" from the
-              // three scene at runtime). Keep it in its own chunk.
-              name: 'three-vendor',
-              test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
-              priority: 40,
-              maxSize: 300 * 1024,
-            },
-            {
+              // three-stdlib imports `three`; keep it in its own chunk so the
+              // Three.js core stays intact in the vendor chunk and does not split
+              // across boundaries (which caused "a is not a constructor" at runtime).
               name: 'three-stdlib',
               test: /[\\/]node_modules[\\/]three-stdlib[\\/]/,
               priority: 30,

@@ -1,10 +1,14 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { Maximize2 } from 'lucide-react';
+import { Maximize2, Smartphone } from 'lucide-react';
 import { currentPortraitRenderMode } from '../portrait3dSupport';
 import { usePortrait3dEnabled } from '../portrait3dFlag';
+import { useAppSettings } from '../settings';
 
 const Portrait3DCanvas = lazy(() =>
   import('./Portrait3DCanvas').then(module => ({ default: module.Portrait3DCanvas }))
+);
+const Portrait3DARCanvas = lazy(() =>
+  import('./Portrait3DARCanvas').then(module => ({ default: module.Portrait3DARCanvas }))
 );
 
 /**
@@ -51,11 +55,31 @@ interface Portrait3DProps {
 
 export function Portrait3D({ model, poster, alt, className, onPreviewImage }: Portrait3DProps) {
   const flag = usePortrait3dEnabled();
+  const settings = useAppSettings();
   const [inView, setInView] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [arOpen, setArOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const use3d = model !== undefined && !failed && currentPortraitRenderMode(flag) === '3d';
+  const showAr = settings.ar_mode && use3d && !!model && !arOpen;
+
+  const arButton = showAr ? (
+    <button
+      type="button"
+      onClick={() => setArOpen(true)}
+      className="absolute top-2 right-2 z-20 rounded-full border border-amber-500/50 bg-slate-900/80 px-2.5 py-1.5 text-xs text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition backdrop-blur"
+      aria-label="Открыть в AR"
+    >
+      <Smartphone className="h-3 w-3 shrink-0" /> AR
+    </button>
+  ) : null;
+
+  const arModal = arOpen && model ? (
+    <Suspense fallback={null}>
+      <Portrait3DARCanvas model={model} onClose={() => setArOpen(false)} />
+    </Suspense>
+  ) : null;
 
   useEffect(() => {
     if (!use3d || !HAS_INTERSECTION_OBSERVER) return;
@@ -86,6 +110,8 @@ export function Portrait3D({ model, poster, alt, className, onPreviewImage }: Po
     return (
       <div ref={wrapRef} className="absolute inset-0 overflow-hidden">
         {media}
+        {arButton}
+        {arModal}
       </div>
     );
   }
@@ -99,7 +125,9 @@ export function Portrait3D({ model, poster, alt, className, onPreviewImage }: Po
     >
       <div ref={wrapRef} className="absolute inset-0 overflow-hidden">
         {media}
+        {arButton}
       </div>
+      {arModal}
       <span
         aria-hidden="true"
         className="absolute inset-0 flex items-center justify-center bg-black/45 text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100"

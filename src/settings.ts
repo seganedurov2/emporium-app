@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { setOrientationLock, type OrientationLock } from './telegram';
 
 export interface AppSettings {
@@ -12,6 +13,8 @@ export interface AppSettings {
    * `prefers-reduced-data` always fall back to the 2D WebP path.
    */
   emporium_3d: boolean;
+  /** WebXR AR mode for viewing 3D portraits in augmented reality. */
+  ar_mode: boolean;
 }
 
 const STORAGE_KEY = 'emporium_settings';
@@ -19,7 +22,8 @@ const STORAGE_KEY = 'emporium_settings';
 export const DEFAULT_SETTINGS: AppSettings = {
   orientation: 'auto',
   notifications: true,
-  emporium_3d: false
+  emporium_3d: false,
+  ar_mode: false
 };
 
 export function loadSettings(): AppSettings {
@@ -39,7 +43,11 @@ export function loadSettings(): AppSettings {
       emporium_3d:
         typeof parsed.emporium_3d === 'boolean'
           ? parsed.emporium_3d
-          : DEFAULT_SETTINGS.emporium_3d
+          : DEFAULT_SETTINGS.emporium_3d,
+      ar_mode:
+        typeof parsed.ar_mode === 'boolean'
+          ? parsed.ar_mode
+          : DEFAULT_SETTINGS.ar_mode
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -52,4 +60,9 @@ export function saveSettings(settings: AppSettings): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch { /* storage unavailable */ }
   setOrientationLock(settings.orientation);
+}
+
+export function useAppSettings(): AppSettings {
+  const [settings] = useState<AppSettings>(() => loadSettings());
+  return settings;
 }

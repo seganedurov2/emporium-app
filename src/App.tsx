@@ -10,7 +10,7 @@ import {
 
   ArrowRight, Play, AlertCircle, Truck, Sparkles, CreditCard, Maximize2, X, HeartPulse,
   FolderOpen, PlusCircle, Trash2, Save, ArrowLeft, Shield, Warehouse, ArrowUpDown,
-  Menu, ChevronLeft, ChevronRight, Target, Trophy, Crown, Gavel, Settings
+  Menu, ChevronLeft, ChevronRight, Target, Trophy, Crown, Gavel, Settings, Bell
 } from 'lucide-react';
 import type { Character, Caravan, LoanApplication, WeeklyFinanceReport } from './gameEngine';
 import { createGoodsLot, getAuctionHouseStaff, sellAuctionLot as sellAuctionLotEngine, createCharacterLot, buildValuationAnnouncements, valuationMismatch, requestCharacterSaleConsent, cancelCharacterSaleConsent, hasPendingSaleConsent, AUCTION_HOUSE_ADMINISTRATOR } from './auctionHouseEngine';
@@ -400,6 +400,10 @@ export default function App() {
   const [newStartingFunds, setNewStartingFunds] = useState(125000);
   const [mapCoords] = useState<{ lat: number; lon: number } | null>(null);
 
+  // Multiplayer room creation state
+  const [multiplayerRoom, setMultiplayerRoom] = useState<string>('default');
+  const [showMultiplayerCreate, setShowMultiplayerCreate] = useState(false);
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [gameState, setGameState] = useState<ManagedCampaignState>(() => {
@@ -425,6 +429,7 @@ const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [tickerItems, setTickerItems] = useState<string[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>(() => loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null>(null);
@@ -565,6 +570,10 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
     if (!appSettings.notifications) return;
     setNotification(msg);
     setTimeout(() => setNotification(null), 3500);
+    setTickerItems(prev => {
+      const next = [...prev, msg];
+      return next.slice(-80);
+    });
   };
 
   const updateSettings = (patch: Partial<AppSettings>) => {
@@ -3442,6 +3451,41 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
                Новая игра
             </button>
 
+            {showMultiplayerCreate ? (
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Название комнаты</label>
+                <input
+                  value={multiplayerRoom}
+                  onChange={e => setMultiplayerRoom(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:border-pink-500 outline-none"
+                  placeholder="комната-1"
+                />
+                <button
+                  onClick={() => {
+                    setCurrentScreen('playing');
+                  }}
+                  className="w-full bg-pink-600 hover:bg-pink-500 text-white font-semibold py-3 px-6 rounded-xl border border-pink-500/50 transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Users className="w-4 h-4" />
+                   Создать комнату
+                </button>
+                <button
+                  onClick={() => setShowMultiplayerCreate(false)}
+                  className="w-full text-xs text-slate-400 hover:text-slate-200 py-1.5 transition cursor-pointer"
+                >
+                  Отмена
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowMultiplayerCreate(true)}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Users className="w-4 h-4 text-pink-400" />
+                 Создать комнату (мультиплеер)
+              </button>
+            )}
+
             <button
               onClick={() => setCurrentScreen('load_game')}
               className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
@@ -4242,6 +4286,23 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         </div>
       )}
 
+      {/* Running notification ticker at the top of the page */}
+      {tickerItems.length > 0 && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-slate-800 border-b border-slate-700 px-4 py-1.5 overflow-hidden">
+          <div className="flex items-center gap-6 animate-[marquee_20s_linear_infinite] hover:animation-paused">
+            {[...tickerItems, ...tickerItems].map((msg, i) => (
+              <span
+                key={i}
+                className="text-xs text-amber-200 whitespace-nowrap flex items-center gap-2 select-text"
+              >
+                <Bell className="h-3 w-3 shrink-0 text-amber-400" aria-hidden="true" />
+                {msg}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Header Bar */}
       {!isHeaderHidden && (
       <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between shadow-md">
@@ -4330,7 +4391,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
              </button>
                <NotificationCenter feed={activityFeed} onNavigate={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
 
-              <MultiplayerPanel gameState={gameState} setGameState={setGameState} />
+              <MultiplayerPanel gameState={gameState} setGameState={setGameState} initialRoom={multiplayerRoom} />
 
 
           <button

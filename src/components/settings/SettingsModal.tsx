@@ -122,6 +122,22 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
               className="h-4 w-4 accent-amber-400"
             />
           </label>
+          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-slate-600">
+            <span>
+              <span className="block text-sm font-semibold text-slate-100">
+                AR-режим
+              </span>
+              <span className="block text-xs text-slate-400">
+                Просмотр 3D-портретов через камеру в дополненной реальности. WebXR.
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.ar_mode}
+              onChange={event => onChange({ ar_mode: event.target.checked })}
+              className="h-4 w-4 accent-amber-400"
+            />
+          </label>
         </section>
       </div>
     </div>

@@ -1,5 +1,5 @@
 export default async function run(page) {
-  return page.evaluate(() => {
+    return await page.evaluate(() => {
     // Reproduce the loop exactly, on a fresh canvas, independent of React.
     const canvas = document.createElement("canvas");
     canvas.width = 992;

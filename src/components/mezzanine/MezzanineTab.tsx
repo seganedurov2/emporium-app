@@ -22,7 +22,8 @@ import {
 import {
   clampTile,
   normalizeMezzanineViewState,
-  type MezzanineViewState
+  type MezzanineViewState,
+  type MezzanineViewMode
 } from '../../mezzanineViewState';
 import type { CityPlanSave } from '../../cityPlanState';
 
@@ -653,9 +654,14 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
       <div className="bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg">
         <div className="text-xs text-amber-400 font-bold mb-1">Режим вида</div>
         <select
-          value={cityView ? 'city' : 'region'}
+          value={viewMode}
           onChange={(e) => {
-            if (e.target.value === 'city') {
+            const mode = e.target.value as MezzanineViewMode;
+            if (mode === 'city_plan') {
+              openCityPlan(selectedCity?.seed ?? citySeed);
+            } else if (mode === '3d') {
+              setView(prev => ({ ...prev, viewMode: '3d', offset: { x: 0, y: 0 } }));
+            } else if (mode === 'city') {
               if (selectedCity) {
                 setView(prev => ({ ...prev, viewMode: 'city', gridSize: 48, offset: { x: 0, y: 0 } }));
                 setGrid(gen.generate(selectedCity.seed));
@@ -673,6 +679,8 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
         >
           <option value="region">Карта области</option>
           <option value="city">Карта города</option>
+          <option value="city_plan">План города</option>
+          <option value="3d">3D-карта</option>
         </select>
       </div>
       <div className="bg-black/70 backdrop-blur border border-amber-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg">
