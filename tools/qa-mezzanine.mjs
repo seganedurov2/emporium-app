@@ -54,8 +54,8 @@ async function sampleVisibleCanvas(page) {
     const dpr = canvas.width / Math.max(1, box.width);
     const x = Math.max(0, -box.left) * dpr;
     const y = Math.max(0, -box.top) * dpr;
-    const w = Math.min(canvas.width - x, window.innerWidth * dpr);
-    const h = Math.min(canvas.height - y, window.innerHeight * dpr);
+    const w = Math.min(canvas.width - x, globalThis.innerWidth * dpr);
+    const h = Math.min(canvas.height - y, globalThis.innerHeight * dpr);
     if (w <= 0 || h <= 0) return 0;
     const data = canvas.getContext('2d').getImageData(x, y, Math.floor(w), Math.floor(h)).data;
     let painted = 0;
