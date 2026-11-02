@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { AppSettings } from '../../settings';
 import type { OrientationLock } from '../../telegram';
+import { THREATS, severityRank, protectionsForThreat } from '../../threatAnalysis';
 
 interface SettingsModalProps {
   open: boolean;
@@ -195,6 +196,67 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
               className="h-4 w-4 accent-amber-400"
             />
           </label>
+        </section>
+
+        <section className="mt-5 space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Анализ угроз склада
+          </h3>
+          <p className="text-[10px] leading-relaxed text-slate-500">
+            Угрозы автоматизированного складского комплекса и способы их защиты.
+            Коды угроз: T01–T10.
+          </p>
+          {THREATS
+            .slice()
+            .sort((a, b) => severityRank(b.severity) - severityRank(a.severity))
+            .map(threat => {
+              const protections = protectionsForThreat(threat.id);
+              const severityColor = {
+                critical: 'text-red-400',
+                high: 'text-amber-400',
+                medium: 'text-emerald-400',
+                low: 'text-slate-400'
+              }[threat.severity];
+              return (
+                <div
+                  key={threat.id}
+                  className="rounded border border-slate-700 bg-slate-950 p-2.5 text-xs"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`font-semibold text-slate-200`}>{threat.id}</span>
+                    <span className={`${severityColor} font-bold`}>
+                      {threat.severity}
+                    </span>
+                  </div>
+                  <div className="text-sm font-medium text-slate-100 mb-0.5">
+                    {threat.title}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mb-1">
+                    {threat.description}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider">
+                      Защита:
+                    </span>
+                    {protections.map(p => (
+                      <span
+                        key={p.id}
+                        className="rounded bg-slate-800 border border-slate-700 px-1.5 py-0.5 text-[9px] text-amber-300"
+                      >
+                        {p.name}
+                      </span>
+                    ))}
+                  </div>
+                  {threat.regulatory && (
+                    <div className="mt-0.5">
+                      <span className="text-[9px] text-slate-500 block">
+                        Норматив: {threat.regulatory}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </section>
       </div>
     </div>
