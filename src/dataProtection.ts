@@ -86,6 +86,18 @@ export function audit(event: string, detail?: string): void {
   } catch { /* storage unavailable */ }
 }
 
+/** Read the audit trail (newest first), limited to `limit` entries. */
+export function readAuditTrail(limit: number = 50): Array<{ ts: number; event: string; detail?: string }> {
+  try {
+    const trail = JSON.parse(localStorage.getItem('emporium_audit_trail') || '[]') as Array<{
+      ts: number; event: string; detail?: string;
+    }>;
+    return trail.slice(-limit).reverse();
+  } catch {
+    return [];
+  }
+}
+
 /** Derive an AES-GCM key from a passphrase using PBKDF2. */
 async function deriveKey(passphrase: string, salt: ArrayBuffer): Promise<CryptoKey> {
   const imported = await crypto.subtle.importKey(

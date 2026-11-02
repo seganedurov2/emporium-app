@@ -1,8 +1,9 @@
-import { X, ChevronDown, ShieldAlert, Bell, Smartphone, Monitor, Lock, Cpu } from 'lucide-react';
+import { X, ChevronDown, ShieldAlert, Bell, Smartphone, Monitor, Lock, Cpu, Activity } from 'lucide-react';
 import { useState } from 'react';
 import type { AppSettings } from '../../settings';
 import type { OrientationLock } from '../../telegram';
 import { THREATS, severityRank, protectionsForThreat } from '../../threatAnalysis';
+import { readAuditTrail } from '../../dataProtection';
 
 interface SettingsModalProps {
   open: boolean;
@@ -49,8 +50,10 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
     notifications: false,
     experimental: false,
     protection: false,
-    threats: false
+    threats: false,
+    audit: false
   });
+  const [auditTrail, setAuditTrail] = useState<Array<{ ts: number; event: string; detail?: string }>>([]);
 
   if (!open) return null;
 
@@ -297,6 +300,54 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
                 </div>
               );
             })}
+        </Section>
+
+        <Section
+          title="Журнал аудита"
+          Icon={Activity}
+          hint="Последние события чтения и записи защищённых данных"
+          open={sections.audit}
+          onToggle={() => {
+            toggle('audit');
+            if (sections.audit === false) {
+              setAuditTrail(readAuditTrail(50));
+            }
+          }}
+        >
+          {auditTrail.length === 0 && (
+            <div className="rounded bg-slate-950 p-3 text-[10px] text-slate-500 text-center">
+              Записей нет. Включите «Журнал аудита» в разделе «Защита данных» и выполните какое-либо действие с сохранениями или настройками.
+            </div>
+          )}
+          {auditTrail.length > 0 && (
+            <div className="space-y-1 max-h-[40vh] overflow-y-auto pr-1">
+              {auditTrail.map((entry, i) => {
+                const time = new Date(entry.ts).toLocaleString('ru-RU', {
+                  hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+                return (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2 rounded bg-slate-950/50 border border-slate-800/50 p-2 text-xs"
+                  >
+                    <span className="shrink-0 text-[10px] text-slate-500 font-mono">
+                      {time}
+                    </span>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-slate-200 truncate">
+                        {entry.event}
+                      </div>
+                      {entry.detail && (
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {entry.detail}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Section>
       </div>
     </div>
