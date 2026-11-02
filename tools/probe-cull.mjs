@@ -31,7 +31,7 @@ export default async function run(page, ui) {
 
   // Read what the effect computes by replaying its geometry with the live
   // canvas size, then check a few tiles against the canvas box.
-  return page.evaluate(() => {
+  return await page.evaluate(() => {
     const canvas = document.querySelector("canvas");
     const w = canvas.width / devicePixelRatio;
     const h = canvas.height / devicePixelRatio;

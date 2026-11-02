@@ -47,7 +47,7 @@ async function seedAccount(page) {
 }
 
 async function sampleVisibleCanvas(page) {
-  return page.evaluate(() => {
+  return await page.evaluate(() => {
     const canvas = document.querySelector('canvas');
     if (!canvas) return 0;
     const box = canvas.getBoundingClientRect();
