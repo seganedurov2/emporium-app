@@ -26,7 +26,7 @@ import { getRandomEventWithAuction } from './eventsEngine';
 import type { BuildingId, EmployeeSpecialty, ExpansionEvent, ExpansionEventChoice } from './expansionTypes';
 import { chooseExpansionEvent, applyExpansionEventChoice } from './expansionEventsEngine';
 import { applyClinicRecovery, calculateBuildingWeeklyEffects, getBuildingActionCost, getBuildingDefinition, healthFromExact, specialtiesForSlot, totalPostCount } from './buildingsEngine';
-import { advanceEmployeesWeek, createEmployeeCandidates, EMPLOYEE_CANDIDATE_CAP, ensureEmployeeCandidatesForVacancies, hiringSlotUpkeep, makeHiredEmployee, quoteHiringSlot, refreshEmployeeCandidates, rerollEmployeeCandidates, getVacantSpecialties, fitsSpecialty, requiredGenderForSpecialty, specialtyDefinitionOf, CONTRACT_RENEWAL_WEEKS } from './employeesEngine';
+import { advanceEmployeesWeek, createEmployeeCandidates, EMPLOYEE_CANDIDATE_CAP, ensureEmployeeCandidatesForVacancies, hiringSlotUpkeep, makeHiredEmployee, quoteHiringSlot, refreshEmployeeCandidates, rerollEmployeeCandidates, getVacantSpecialties, fitsSpecialty, requiredGenderForSpecialty, specialtyDefinitionOf } from './employeesEngine';
 import { buildChiefDoctorReport } from './chiefDoctorEngine';
 import { calculateStaffing } from './staffingCalculator';
 import { createInitialCampaign, migrateCampaignState, readCampaignFromStorage, type ManagedCampaignState } from './saveState';
@@ -967,24 +967,6 @@ setGameState(prev => {
     }));
     showNotify(`${employee.name} уволен(а); назначение здания снято.`);
   };
-
-/**
- * Manually extends an employee's contract for the default renewal term.
- * Used by the «Продлить по лояльности» action in the staff table; the
- * automatic end-of-week renewal lives in advanceEmployeesWeek.
- */
-const renewEmployeeContract = (employeeId: string) => {
-  const employee = gameState.employees.find(item => item.id === employeeId);
-  if (!employee) return;
-  setGameState(prev => ({
-    ...prev,
-    employees: prev.employees.map(item => item.id === employeeId
-      ? { ...item, contractEndWeek: prev.week + CONTRACT_RENEWAL_WEEKS, goodWeeksStreak: Math.max(item.goodWeeksStreak ?? 0, 1) }
-      : item),
-    log: [`Контракт ${employee.name} продлён до недели ${prev.week + CONTRACT_RENEWAL_WEEKS} по лояльности.`, ...prev.log].slice(0, 50)
-  }));
-  showNotify(`Контракт ${employee.name} продлён на ${CONTRACT_RENEWAL_WEEKS} недель.`);
-};
 
 const refreshCandidates = () => {
   setGameState(prev => ({

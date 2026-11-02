@@ -39,10 +39,19 @@ export default defineConfig({
               // Three.js exposes its per-module source graph through the alias
               // above; cap this deferred group so its renderer stays below Vite's
               // warning threshold without pulling it into the initial bundle.
+              // three-stdlib is deliberately absent: it imports `three`, and an
+              // export graph that crosses the three-vendor/app boundary leaves a
+              // class undefined at load ("a is not a constructor" from the
+              // three scene at runtime). Keep it in its own chunk.
               name: 'three-vendor',
-              test: /[\\/]node_modules[\\/](three|three-stdlib|@react-three)[\\/]/,
+              test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
               priority: 40,
               maxSize: 300 * 1024,
+            },
+            {
+              name: 'three-stdlib',
+              test: /[\\/]node_modules[\\/]three-stdlib[\\/]/,
+              priority: 30,
             },
             {
               name: 'ui-vendor',
