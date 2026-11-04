@@ -155,6 +155,15 @@ Character dossiers are generated using a local LLM via Ollama.
 
 ---
 
+## 🚀 Publishing (GitHub Pages + Telegram)
+
+See **`DEPLOYMENT.md`**. Short version: `.github/workflows/deploy-pages.yml` publishes
+`dist/` to `https://seganedurov2.github.io/emporium-app/` on every push to `FZ-LLC`
+(one-time: Settings → Pages → Source = GitHub Actions). The same URL is the Telegram
+Mini App URL — set it with @BotFather via `/setmenubutton`.
+
+---
+
 ## 🌐 Multiplayer hub (optional)
 
 Multiplayer is a separate WebSocket service (`server/websocket-server.mjs`, port 5175).

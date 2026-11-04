@@ -64,6 +64,13 @@ export interface TelegramWebApp {
   openLink(url: string): void;
   openTelegramLink(url: string): void;
   sendData(data: string): void;
+  /** Bot API 8.0+: send a prepared message (must contain the app link). */
+  shareMessage?(
+    msgId: string,
+    callback?: ((sent: boolean) => void) | null,
+    waitForConfirmation?: boolean,
+  ): void;
+  shareToStory?(mediaUrl: string, params?: Record<string, unknown>): void;
   MainButton: {
     text: string;
     color: string;
@@ -216,6 +223,51 @@ export function sendDataToBot(data: unknown): boolean {
     tg.sendData(payload);
     return true;
   } catch {
+    return false;
+  }
+}
+
+export interface ShareMessageOptions {
+  /** Sent to the bot as the message's `message_id`; lets the bot answer. */
+  messageId?: string;
+  /** Wait for the user to confirm before Telegram closes the Mini App. */
+  waitForConfirmation?: boolean;
+  callback?: (sent: boolean) => void;
+  /** Called instead when the current Bot API is older than 8.0. */
+  fallback?: () => void;
+}
+
+/**
+ * Shares the app link as a Telegram message from the Mini App (Bot API 8.0+).
+ *
+ * This is the only way a Mini App opened from an inline `web_app` button or a
+ * menu button can message the bot: those launch modes have no `sendData`. The
+ * chat is chosen by the user in Telegram's own picker, so the bot must be a
+ * member of any target chat.
+ *
+ * Returns false outside Telegram, when the API is older than 8.0, or when the
+ * user cancels - callers then fall back to `shareToBot()`.
+ */
+export function shareAsTelegramMessage(options: ShareMessageOptions): boolean {
+  const tg = getTelegramWebApp();
+  if (!tg || typeof tg.shareMessage !== 'function' || !tg.isVersionAtLeast('8.0')) {
+    options.fallback?.();
+    return false;
+  }
+  try {
+    // The prepared message (bot side) must contain the app link itself, so the
+    // bot builds it from the same URL this app is served from.
+    tg.shareMessage(
+      options.messageId ?? '',
+      sent => {
+        options.callback?.(sent);
+        if (!sent) options.fallback?.();
+      },
+      options.waitForConfirmation === true
+    );
+    return true;
+  } catch {
+    options.fallback?.();
     return false;
   }
 }
