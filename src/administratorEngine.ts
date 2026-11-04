@@ -180,7 +180,8 @@ export function venueFinanceSnapshot(report: WeeklyFinanceReport | null): VenueF
     + report.expenses.hospital
     + report.expenses.restZone
     + report.expenses.staffSlots
-    + (report.expenses.loanPayment ?? 0);
+    + (report.expenses.loanPayment ?? 0)
+    + (report.expenses.city ?? 0);
   return {
     weeklyIncome,
     weeklyExpenses,

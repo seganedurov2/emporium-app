@@ -14,6 +14,8 @@ import {
   type CityState,
 } from '../../cityBuilder';
 import { CITY_PLAN_CHECKPOINT_MS, restoreCityPlan, serializeCityPlan, type CityPlanSave } from '../../cityPlanState';
+import type { CityEconomyState } from '../../cityEconomyState';
+import { KIND_LABELS } from '../../cityEconomyEngine';
 import { CityRenderer } from './cityView';
 import { CityScene3D } from './CityScene3D';
 
@@ -24,6 +26,8 @@ interface CityBuilderViewProps {
   onRequestNewCity?: (seed: number) => boolean;
   className?: string;
   peopleCount?: number;
+  /** Result of the last weekly city economy pass, when one has run. */
+  cityEconomy?: CityEconomyState | null;
 }
 
 const SPEEDS = [
@@ -42,6 +46,7 @@ export function CityBuilderView({
   onRequestNewCity,
   className = '',
   peopleCount = 0,
+  cityEconomy = null,
 }: CityBuilderViewProps) {
   const [restored] = useState(() => restoreCityPlan(savedPlan, citySeed));
   const [city, setCity] = useState<CityState>(() => restored.city);
@@ -249,6 +254,7 @@ export function CityBuilderView({
 
   const selectedInfo = selected ? describeCell(city, selected.x, selected.y) : null;
   const streets = listStreets(city);
+  const cityReport = cityEconomy?.lastReport ?? null;
   const underConstruction = listBuildings(city).filter(b => b.building.progress < 1);
 
   return (
@@ -319,6 +325,29 @@ export function CityBuilderView({
           <span className="text-slate-400">Улиц</span>
           <span className="font-mono text-right">{streets.length}</span>
         </div>
+        {cityReport && (
+          <div className="mt-2 border-t border-amber-500/20 pt-2 space-y-0.5">
+            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-200/80">
+              Итог недели {cityReport.week}
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+              <span className="text-slate-400">Доход</span>
+              <span className="font-mono text-right text-emerald-400">+{cityReport.income.employmentTax + cityReport.income.parks}</span>
+              <span className="text-slate-400">Расход</span>
+              <span className="font-mono text-right text-rose-400">-{cityReport.expenses.upkeep + cityReport.expenses.unemployment + cityReport.constructionSpend}</span>
+              <span className="text-slate-400">Сальдо</span>
+              <span className={`font-mono text-right ${cityReport.surplus >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                {cityReport.surplus >= 0 ? '+' : ''}{cityReport.surplus}
+              </span>
+              {cityReport.started.length > 0 && (
+                <>
+                  <span className="text-slate-400">Новая стройка</span>
+                  <span className="text-right text-amber-300">{cityReport.started.map(k => KIND_LABELS[k]).join(', ')}</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top-right: palette + tools */}

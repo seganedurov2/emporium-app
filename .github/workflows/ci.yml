@@ -21,8 +21,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # `npx tsc --noEmit` without a project checks an empty program and passes on
+      # every type error; `tsc -b` follows the project references (app + node).
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npx tsc -b
 
       - name: Lint
         run: npx oxlint
@@ -31,4 +33,45 @@ jobs:
         run: npm test
 
       - name: Build
-        run: npm run build
+        run: npm run build:web
+
+  # Browser smoke test on a production build. Kept separate so a flaky headless
+  # Chrome never blocks the fast type/lint/test job.
+  qa:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build:web
+
+      # Pulls in the Playwright-bundled Chromium that tools/cdp-lib.mjs discovers.
+      - name: Install Chromium for the smoke test
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test (preview + CDP)
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:4173/ > /dev/null && break
+            sleep 1
+          done
+          node tools/cdp-smoke.mjs http://localhost:4173/ smoke.png
+
+      - name: Upload smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshot
+          path: smoke.png
+          if-no-files-found: ignore

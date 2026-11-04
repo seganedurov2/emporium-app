@@ -1,11 +1,45 @@
 CHANGELOG.txt
 ================================================================================
 PROJECT: Pawn Pleasure
-VERSION: 0.4.0
+VERSION: 0.4.1
 LAST UPDATED: 2026-11-04
 ===============================================================================
 
-[VERSION 0.4.0 - CURRENT RELEASE] "CORE: Architecture & City Economy"
+[VERSION 0.4.1 - CURRENT RELEASE] "CITY: Municipal Economy on the Weekly Cycle"
+
+  CITY ECONOMY
+  * New engine src/cityEconomyEngine.ts (pure, React-free): every week the city plan
+    pays municipal tax on employed residents and filled jobs, a park subsidy, with
+    income scaled by building condition; it bills upkeep for finished buildings and
+    unemployment benefits for residents with no local job. Unfinished construction
+    neither pays nor bills. A healthy town (>=60% jobs filled, positive surplus)
+    breaks ground on new lots funded from the surplus; a poor or unstaffed town
+    stagnates and says so in the log.
+  * advanceWeek applies the report once per week, writes it to lastWeeklyReport
+    (revenue.city / expenses.city, including new construction) and into the
+    campaign log. Finance tab, history chart and chief-doctor report include the
+    city line; the city-plan panel shows last week's income, expenses, surplus and
+    any new construction.
+  * Save: new versioned cityEconomy block, with round-trip, corrupt and pre-0.4.1
+    migration tests; the city plan produced by town growth is written back.
+
+  MULTIPLAYER
+  * The hub is optional again: with no VITE_WS_URL the client no longer dials
+    ws://localhost:5175/ws from deployed pages (it used to retry every 2 s and
+    flood the console with WebSocket errors). src/multiplayerConfig.ts resolves
+    the URL once: absolute VITE_WS_URL or relative /ws against the page origin
+    (ws/wss by page scheme); localhost-only default for development.
+  * The hook probes the hub once before connecting and reconnects with a backoff
+    (2 s -> 30 s); the panel reports "не настроен" when no hub is configured.
+  * npm run dev:full starts Vite and the hub together; npm run dev:hub runs the
+    hub alone.
+
+  CAMPAIGN SCRIPT
+  * "Мезонин открыт" now records the first hub opening (cityHubOpenedAt) instead of
+    reading the current map tab, so the act-3 objective stays satisfied once reached.
+    Saves that already used the hub are backfilled with their current week.
+
+[VERSION 0.4.0 - PREVIOUS RELEASE] "CORE: Architecture & City Economy"
 
 --- CORE ARCHITECTURE ---
 * App.tsx refactoring groundwork: modular structure prepared for incremental migration

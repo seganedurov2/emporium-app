@@ -165,11 +165,12 @@ export function buildChiefDoctorReport(input: ChiefDoctorInput): ChiefDoctorRepo
   const report = input.weeklyReport;
   const income = report
     ? report.revenue.venue + report.revenue.caravans + report.revenue.captureOps
-      + report.revenue.contracts + report.revenue.salon
+      + report.revenue.contracts + report.revenue.salon + (report.revenue.city ?? 0)
     : 0;
   const expenses = report
     ? report.expenses.wages + report.expenses.hospital + report.expenses.restZone
       + report.expenses.staffSlots + report.expenses.loanPayment + report.expenses.warehouse
+      + (report.expenses.city ?? 0)
     : 0;
   const netIncome = income - expenses;
   const hospitalExpenses = weeklyUpkeep(input.hospital) + input.medicalWages;

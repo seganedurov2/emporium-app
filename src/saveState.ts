@@ -31,6 +31,12 @@ import { createDefaultMezzanineView, normalizeMezzanineViewState, type Mezzanine
 import { createCampaignScript, normalizeCampaignScript, type CampaignScriptState } from './campaignScript';
 import { createWarehouseState, normalizeWarehouseState, type WarehouseState } from './warehouseEngine';
 import { normalizeCityPlanSave, type CityPlanSave } from './cityPlanState';
+import {
+  createCityEconomyState,
+  normalizeCityEconomyState,
+  normalizeCityHubOpenedAt,
+  type CityEconomyState
+} from './cityEconomyState';
 
 export interface ManagedCampaignState extends CampaignState {
   beautySalon: BeautySalonState;
@@ -80,6 +86,10 @@ export interface ManagedCampaignState extends CampaignState {
   mezzanine: MezzanineViewState;
   /** One active city-builder plan for this campaign, stored sparsely. */
   cityPlan: CityPlanSave | null;
+  /** Last applied weekly report of the city economy. */
+  cityEconomy: CityEconomyState;
+  /** Week the mezzanine hub was first opened; null until then. */
+  cityHubOpenedAt: number | null;
   /** Warehouse automatic mezzanine state (levels, capacity, automation). */
   warehouse: WarehouseState;
   /** Which act of the campaign script the run is in. */
@@ -206,6 +216,8 @@ export function createInitialCampaign(options: InitialCampaignOptions = {}): Man
     marketRequest: null,
     mezzanine: createDefaultMezzanineView(),
     cityPlan: null,
+    cityEconomy: createCityEconomyState(),
+    cityHubOpenedAt: null,
     warehouse: createWarehouseState(),
     campaignScript: createCampaignScript(week),
     log: [
@@ -280,8 +292,8 @@ function normalizeWeeklyReport(raw: unknown): WeeklyFinanceReport | null {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
   };
-  const revenueSum = num(revenue.venue) + num(revenue.caravans) + num(revenue.captureOps) + num(revenue.contracts) + num(revenue.salon);
-  const expenseSum = num(expenses.wages) + num(expenses.hospital) + num(expenses.restZone) + num(expenses.staffSlots) + num(expenses.warehouse);
+  const revenueSum = num(revenue.venue) + num(revenue.caravans) + num(revenue.captureOps) + num(revenue.contracts) + num(revenue.salon) + num(revenue.city);
+  const expenseSum = num(expenses.wages) + num(expenses.hospital) + num(expenses.restZone) + num(expenses.staffSlots) + num(expenses.warehouse) + num(expenses.city);
   return {
     week: Math.max(1, Math.floor(num(report.week))),
     revenue: {
@@ -289,7 +301,8 @@ function normalizeWeeklyReport(raw: unknown): WeeklyFinanceReport | null {
       caravans: num(revenue.caravans),
       captureOps: num(revenue.captureOps),
       contracts: num(revenue.contracts),
-      salon: num(revenue.salon)
+      salon: num(revenue.salon),
+      city: num(revenue.city)
     },
     expenses: {
       wages: num(expenses.wages),
@@ -297,7 +310,8 @@ function normalizeWeeklyReport(raw: unknown): WeeklyFinanceReport | null {
       restZone: num(expenses.restZone),
       staffSlots: num(expenses.staffSlots),
       loanPayment: num(expenses.loanPayment),
-      warehouse: num(expenses.warehouse)
+      warehouse: num(expenses.warehouse),
+      city: num(expenses.city)
     },
     netIncome: num(report.netIncome) || revenueSum - expenseSum,
     treasuryAfter: num(report.treasuryAfter)
@@ -759,6 +773,12 @@ export function migrateCampaignState(raw: unknown): ManagedCampaignState {
     marketRequest: normalizeMarketRequest(parsed.marketRequest),
     mezzanine: normalizeMezzanineViewState(parsed.mezzanine),
     cityPlan: normalizeCityPlanSave(parsed.cityPlan),
+    cityEconomy: normalizeCityEconomyState(parsed.cityEconomy),
+    cityHubOpenedAt: normalizeCityHubOpenedAt(
+      parsed.cityHubOpenedAt,
+      normalizeMezzanineViewState(parsed.mezzanine).selectedRegionId,
+      savedWeek
+    ),
     warehouse: normalizeWarehouseState(parsed.warehouse),
     campaignScript: normalizeCampaignScript(parsed.campaignScript, savedWeek),
     log: Array.isArray(parsed.log) ? parsed.log.filter((entry): entry is string => typeof entry === 'string') : []

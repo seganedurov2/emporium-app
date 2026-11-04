@@ -155,8 +155,24 @@ Character dossiers are generated using a local LLM via Ollama.
 
 ---
 
+## 🌐 Multiplayer hub (optional)
+
+Multiplayer is a separate WebSocket service (`server/websocket-server.mjs`, port 5175).
+It is optional: without it the game runs single-player and stays silent.
+
+- **Dev with the hub:** `npm run dev:full` (Vite + hub; `-- 5174` changes the Vite port)
+- **Hub only:** `npm run dev:hub`
+- **Custom/deployed hub:** set `VITE_WS_URL` (e.g. `wss://hub.example.com/ws`, or a
+  relative `/ws` resolved against the page origin). An empty value disables
+  multiplayer entirely.
+- Which URL is dialled is decided in `src/multiplayerConfig.ts`; with no
+  `VITE_WS_URL`, only pages served from `localhost`/`127.0.0.1` try the local hub.
+  The client probes the hub once before connecting and reconnects with a backoff.
+
+---
+
 ## 🚀 Build & Deployment
-- **Development:** `npm run dev`
+- **Development:** `npm run dev` (use `npm run dev:full` when testing multiplayer)
 - **Build:** `npm run build`
 - **Android:** Use Capacitor to sync and open in Android Studio:
   `npx cap sync android` $\rightarrow$ `npx cap open android`

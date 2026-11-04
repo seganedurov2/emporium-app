@@ -39,6 +39,9 @@ import {
 } from './warehouseEngine';
 import type { MezzanineViewState } from './mezzanineViewState';
 import type { CityPlanSave } from './cityPlanState';
+import { resolveEscape } from './escapeStack';
+import { advanceCityEconomy } from './cityEconomyEngine';
+import { withCityEconomyReport } from './cityEconomyState';
 import { actForWeek, advanceCampaignScript, createCampaignScript, getCampaignActMilestones, type ScriptSnapshot } from './campaignScript';
 import { CampaignScriptPanel } from './components/meta/CampaignScriptPanel';
 import {
@@ -570,17 +573,27 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
   }, [appSettings.emporium_3d]);
 
   // Closes the in-game menu and mobile navigation on Escape.
+  // The hub's own overlays (keymap, city plan, 3D, pause menu) are above the
+  // shell in `escapeStack`; when one of them owns the press this listener
+  // stands down, so a single press never closes two things at once.
   useEffect(() => {
     if (!showInGameMenu && !isMobileMenuOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
+      const action = resolveEscape({
+        inMezzanine: activeTab === 'mezzanine',
+        appMenuOpen: showInGameMenu,
+        mobileMenuOpen: isMobileMenuOpen
+      });
+      if (action !== 'close_mobile_menu' && action !== 'close_app_menu') return;
       event.preventDefault();
-      if (showInGameMenu) setShowInGameMenu(false);
-      if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+      event.stopPropagation();
+      if (action === 'close_mobile_menu') setIsMobileMenuOpen(false);
+      else setShowInGameMenu(false);
     };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [showInGameMenu, isMobileMenuOpen]);
+    document.addEventListener('keydown', handleEscape, true);
+    return () => document.removeEventListener('keydown', handleEscape, true);
+  }, [showInGameMenu, isMobileMenuOpen, activeTab]);
 
   const renderNavigationItems = (collapsed = false, mobile = false) => APP_NAVIGATION.map(tab => {
     const Icon = tab.icon;
@@ -676,7 +689,8 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
         && current.citySeed === mezzanine.citySeed) {
         return prev;
       }
-      return { ...prev, mezzanine };
+      const openedNow = !mezzanine.selectedRegionId ? prev.cityHubOpenedAt : (prev.cityHubOpenedAt ?? prev.week);
+      return { ...prev, mezzanine, cityHubOpenedAt: openedNow };
     });
   };
 
@@ -1610,7 +1624,7 @@ log: [`Партия ${lotId} ${wasReserved ? 'снята с брони' : 'за�
       (gameState.metaProgress?.stats.auctionsCompleted ?? 0)
       + (gameState.metaProgress?.stats.caravansCompleted ?? 0)
       + (gameState.metaProgress?.stats.captureOpsCompleted ?? 0),
-    cityHubUnlocked: Boolean(gameState.mezzanine?.selectedRegionId),
+    cityHubUnlocked: gameState.cityHubOpenedAt != null,
     isBankrupt: gameState.isBankrupt
   }), [
     gameState.week,
@@ -1619,7 +1633,7 @@ log: [`Партия ${lotId} ${wasReserved ? 'снята с брони' : 'за�
     gameState.auxiliaryBuildings,
     gameState.employees.length,
     gameState.metaProgress?.stats,
-    gameState.mezzanine?.selectedRegionId,
+    gameState.cityHubOpenedAt,
     gameState.isBankrupt
   ]);
 
@@ -2280,6 +2294,22 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
       }
     }
 
+    // City economy: the city plan pays municipal taxes and bills upkeep once a
+    // week. Unfinished buildings neither pay nor bill, and an empty city is a
+    // no-op.
+    const cityEconomy = advanceCityEconomy({
+      plan: gameState.cityPlan,
+      week: gameState.week + 1,
+      random: Math.random
+    });
+    const cityIncome = cityEconomy.report.income.employmentTax + cityEconomy.report.income.parks;
+    const cityExpenses = cityEconomy.report.expenses.upkeep + cityEconomy.report.expenses.unemployment;
+    const cityConstructionSpend = cityEconomy.report.constructionSpend;
+    if (cityEconomy.report.built > 0) {
+      currentFunds += cityIncome - cityExpenses - cityConstructionSpend;
+      newLogs.push(...cityEconomy.report.log);
+    }
+
     // Warehouse mezzanine weekly upkeep: scales with level and automation.
     const warehouseUpkeep = warehouseWeeklyUpkeep(gameState.warehouse);
     if (warehouseUpkeep > 0) {
@@ -2329,8 +2359,8 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
     // Full financial report for the week: every income and expense line the
     // syndicate logged, kept in the save so the Finance & Loans tab can show
     // it in its notifications panel.
-    const totalRevenue = venueRevenue + caravanEarnings + captureFundsDelta.total + contractEarnings + salonTreatmentRevenue;
-    const totalExpenses = employeeWeek.wagesPaid + hospitalWeek.upkeep + restZoneUpkeep + staffSlotUpkeep + warehouseUpkeep;
+    const totalRevenue = venueRevenue + caravanEarnings + captureFundsDelta.total + contractEarnings + salonTreatmentRevenue + cityIncome;
+    const totalExpenses = employeeWeek.wagesPaid + hospitalWeek.upkeep + restZoneUpkeep + staffSlotUpkeep + warehouseUpkeep + cityExpenses + cityConstructionSpend;
     const weeklyReport: WeeklyFinanceReport = {
       week: gameState.week + 1,
       revenue: {
@@ -2338,7 +2368,8 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
         caravans: caravanEarnings,
         captureOps: captureFundsDelta.total,
         contracts: contractEarnings,
-        salon: salonTreatmentRevenue
+        salon: salonTreatmentRevenue,
+        city: cityIncome
       },
       expenses: {
         wages: employeeWeek.wagesPaid,
@@ -2346,7 +2377,8 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
         restZone: restZoneUpkeep,
         staffSlots: staffSlotUpkeep,
         loanPayment,
-        warehouse: warehouseUpkeep
+        warehouse: warehouseUpkeep,
+        city: cityExpenses + cityConstructionSpend
       },
       netIncome,
       treasuryAfter: currentFunds
@@ -2388,7 +2420,7 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
         nextMetaProgress.stats.auctionsCompleted
         + nextMetaProgress.stats.caravansCompleted
         + nextMetaProgress.stats.captureOpsCompleted,
-      cityHubUnlocked: Boolean(gameState.mezzanine?.selectedRegionId),
+      cityHubUnlocked: gameState.cityHubOpenedAt != null,
       isBankrupt: nextSnapshot.isBankrupt
     };
     const actMilestones = getCampaignActMilestones(
@@ -2440,6 +2472,10 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
       activeLoan: updatedLoan,
       lastWeeklyReport: weeklyReport,
       weeklyReports: [...(prev.weeklyReports || []), weeklyReport].slice(-104),
+      // The city plan may have grown (the town started its own construction),
+      // and the report feeds the city-plan panel.
+      cityPlan: cityEconomy.plan ?? prev.cityPlan,
+      cityEconomy: withCityEconomyReport(cityEconomy.report),
       metaProgress: nextMetaProgress,
       reputation: nextReputation,
       roster: rosterAfterCaptureOps,
@@ -6017,7 +6053,8 @@ contracts={gameState.tradeSupplyContracts || []}
                       <div className="flex justify-between gap-2"><span className="text-slate-400">Операции захвата</span><strong className="text-emerald-400">{formatSignedMoney(weeklyReport.revenue.captureOps)}</strong></div>
                       <div className="flex justify-between gap-2"><span className="text-slate-400">VIP-контракты</span><strong className="text-emerald-400">{formatSignedMoney(weeklyReport.revenue.contracts)}</strong></div>
                       <div className="flex justify-between gap-2"><span className="text-slate-400">Процедуры салона</span><strong className="text-emerald-400">{formatSignedMoney(weeklyReport.revenue.salon)}</strong></div>
-                      <div className="flex justify-between gap-2 border-t border-slate-800 pt-2"><span className="text-slate-300 font-bold">Итого доходов</span><strong className="text-emerald-300">{formatSignedMoney(weeklyReport.revenue.venue + weeklyReport.revenue.caravans + weeklyReport.revenue.captureOps + weeklyReport.revenue.contracts + weeklyReport.revenue.salon)}</strong></div>
+                      <div className="flex justify-between gap-2"><span className="text-slate-400">Городская экономика</span><strong className="text-emerald-400">{formatSignedMoney(weeklyReport.revenue.city ?? 0)}</strong></div>
+                      <div className="flex justify-between gap-2 border-t border-slate-800 pt-2"><span className="text-slate-300 font-bold">Итого доходов</span><strong className="text-emerald-300">{formatSignedMoney(weeklyReport.revenue.venue + weeklyReport.revenue.caravans + weeklyReport.revenue.captureOps + weeklyReport.revenue.contracts + weeklyReport.revenue.salon + (weeklyReport.revenue.city ?? 0))}</strong></div>
                     </div>
                   </div>
                   <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
@@ -6028,7 +6065,8 @@ contracts={gameState.tradeSupplyContracts || []}
                       <div className="flex justify-between gap-2"><span className="text-slate-400">Зона отдыха</span><strong className="text-rose-400">-{formatMoney(weeklyReport.expenses.restZone)}</strong></div>
                       <div className="flex justify-between gap-2"><span className="text-slate-400">Дополнительные места в штате</span><strong className="text-rose-400">-{formatMoney(weeklyReport.expenses.staffSlots)}</strong></div>
                       <div className="flex justify-between gap-2"><span className="text-slate-400">Платёж по кредиту</span><strong className="text-rose-400">-{formatMoney(weeklyReport.expenses.loanPayment)}</strong></div>
-                      <div className="flex justify-between gap-2 border-t border-slate-800 pt-2"><span className="text-slate-300 font-bold">Итого расходов</span><strong className="text-rose-300">-{formatMoney((weeklyReport.expenses.wages + weeklyReport.expenses.hospital + weeklyReport.expenses.restZone + weeklyReport.expenses.staffSlots + weeklyReport.expenses.loanPayment))}</strong></div>
+                      <div className="flex justify-between gap-2"><span className="text-slate-400">Город: обслуживание и пособия</span><strong className="text-rose-400">-{formatMoney(weeklyReport.expenses.city ?? 0)}</strong></div>
+                      <div className="flex justify-between gap-2 border-t border-slate-800 pt-2"><span className="text-slate-300 font-bold">Итого расходов</span><strong className="text-rose-300">-{formatMoney((weeklyReport.expenses.wages + weeklyReport.expenses.hospital + weeklyReport.expenses.restZone + weeklyReport.expenses.staffSlots + weeklyReport.expenses.loanPayment + (weeklyReport.expenses.city ?? 0)))}</strong></div>
                     </div>
                   </div>
                   <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">

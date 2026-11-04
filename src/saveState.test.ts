@@ -179,6 +179,80 @@ describe('saveState meta-progress migration', () => {
     expect(migrated.roster).toHaveLength(campaign.roster.length);
   });
 
+  it('starts a new campaign with an empty city economy and a closed hub', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    expect(campaign.cityEconomy).toEqual({ schemaVersion: 1, lastReport: null });
+    expect(campaign.cityHubOpenedAt).toBeNull();
+  });
+
+  it('round-trips the last city economy report', () => {
+    const campaign = createInitialCampaign({ fresh: true, week: 20 });
+    const report = {
+      week: 20,
+      residents: 16,
+      jobs: 60,
+      filledJobs: 16,
+      occupancy: 16 / 60,
+      built: 3,
+      parks: 0,
+      unemployed: 0,
+      income: { employmentTax: 96, parks: 0 },
+      expenses: { upkeep: 54, unemployment: 0 },
+      surplus: 42,
+      started: ['house' as const],
+      constructionSpend: 120,
+      log: ['Город принёс 96 AX муниципального дохода.'],
+    };
+    const migrated = migrateCampaignState({
+      ...JSON.parse(JSON.stringify(campaign)),
+      cityEconomy: { schemaVersion: 1, lastReport: report },
+    });
+
+    expect(migrated.cityEconomy.lastReport).toEqual(report);
+  });
+
+  it('drops a corrupt city economy block without losing the campaign', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const migrated = migrateCampaignState({
+      ...JSON.parse(JSON.stringify(campaign)),
+      cityEconomy: { schemaVersion: 1, lastReport: { week: 3, income: 'x', expenses: null, occupancy: 7, surplus: 'NaN' } },
+    });
+
+    const report = migrated.cityEconomy.lastReport;
+    expect(report).not.toBeNull();
+    expect(report?.occupancy).toBe(1);
+    expect(report?.surplus).toBe(0);
+    expect(report?.income).toEqual({ employmentTax: 0, parks: 0 });
+    expect(report?.expenses).toEqual({ upkeep: 0, unemployment: 0 });
+    expect(migrated.funds).toBe(campaign.funds);
+  });
+
+  it('loads pre-0.4.1 saves without a city economy block', () => {
+    const campaign = createInitialCampaign({ fresh: true });
+    const { cityEconomy: _cityEconomy, cityHubOpenedAt: _opened, ...legacy } = campaign;
+    const migrated = migrateCampaignState(JSON.parse(JSON.stringify(legacy)));
+
+    expect(migrated.cityEconomy).toEqual({ schemaVersion: 1, lastReport: null });
+    expect(migrated.cityHubOpenedAt).toBeNull();
+  });
+
+  it('backfills the hub opening week for saves that already used the mezzanine', () => {
+    const campaign = createInitialCampaign({ fresh: true, week: 44 });
+    const { cityHubOpenedAt: _opened, ...legacy } = campaign;
+    const migrated = migrateCampaignState({
+      ...JSON.parse(JSON.stringify(legacy)),
+      mezzanine: { ...createDefaultMezzanineView(), selectedRegionId: 'gomel' },
+    });
+
+    expect(migrated.cityHubOpenedAt).toBe(44);
+  });
+
+  it('keeps an explicit hub opening week', () => {
+    const campaign = createInitialCampaign({ fresh: true, week: 44 });
+    const migrated = migrateCampaignState({ ...JSON.parse(JSON.stringify(campaign)), cityHubOpenedAt: 12 });
+    expect(migrated.cityHubOpenedAt).toBe(12);
+  });
+
   it('starts every campaign in the act its week belongs to', () => {
     expect(createInitialCampaign({ fresh: true, week: 12 }).campaignScript)
       .toEqual({ actId: 'founding', enteredWeek: 1 });

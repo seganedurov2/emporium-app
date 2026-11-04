@@ -27,6 +27,8 @@ import {
   type MezzanineViewMode
 } from '../../mezzanineViewState';
 import type { CityPlanSave } from '../../cityPlanState';
+import type { CityEconomyState } from '../../cityEconomyState';
+import { resolveEscape } from '../../escapeStack';
 
 const REGION_CITIES: Record<string, { name: string; lat: number; lon: number; seed: number }[]> = {
   brest: [
@@ -99,7 +101,12 @@ const REGIONS: { id: string; name: string; lat: number; lon: number }[] = [
 interface MezzanineTabProps {
   /** Jumps to any campaign section; the мезонин stays the home map. */
   onOpenTab?: (tab: AppTab) => void;
-  gameState?: { roster: { id: string }[]; mezzanine?: MezzanineViewState; cityPlan?: CityPlanSave | null };
+  gameState?: {
+    roster: { id: string }[];
+    mezzanine?: MezzanineViewState;
+    cityPlan?: CityPlanSave | null;
+    cityEconomy?: CityEconomyState | null;
+  };
   /** Persists the map view into the campaign save (0.3.7). */
   onViewChange?: (view: MezzanineViewState) => void;
   /** Persists the active city plan into the current campaign save. */
@@ -323,17 +330,34 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
       const overlayOpen = pauseMenu || keymapOpen || viewCity;
 
       if (e.key === 'Escape') {
+        // One owner for Escape (src/escapeStack.ts): the same resolver runs in
+        // the app shell, so a press here never also closes the shell menu.
+        const action = resolveEscape({
+          inMezzanine: true,
+          keymapOpen,
+          cityPlanOpen: viewCity,
+          mapModeOpen: view3d,
+          pauseMenuOpen: pauseMenu
+        });
         e.preventDefault();
-        if (view3d) {
-          setView(prev => ({ ...prev, viewMode: 'region' }));
-        } else if (keymapOpen) {
-          setKeymapOpen(false);
-        } else if (viewCity) {
-          setView(prev => ({ ...prev, viewMode: 'city' }));
-        } else if (pauseMenu) {
-          setPauseMenu(false);
-        } else {
-          setPauseMenu(true);
+        switch (action) {
+          case 'close_keymap':
+            setKeymapOpen(false);
+            break;
+          case 'close_city_plan':
+            setView(prev => ({ ...prev, viewMode: 'city' }));
+            break;
+          case 'exit_map_mode':
+            setView(prev => ({ ...prev, viewMode: 'region' }));
+            break;
+          case 'close_pause_menu':
+            setPauseMenu(false);
+            break;
+          case 'open_pause_menu':
+            setPauseMenu(true);
+            break;
+          default:
+            break;
         }
         return;
       }
@@ -610,6 +634,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
             onPlanChange={onCityPlanChange}
             onRequestNewCity={requestNewCity}
             peopleCount={gameState?.roster.length ?? 0}
+            cityEconomy={gameState?.cityEconomy}
           />
         </Suspense>
         <button

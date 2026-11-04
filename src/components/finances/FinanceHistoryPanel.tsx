@@ -25,9 +25,9 @@ export function FinanceHistoryPanel({ reports }: FinanceHistoryPanelProps) {
   }
 
   const totalRevenue = (report: WeeklyFinanceReport) =>
-    report.revenue.venue + report.revenue.caravans + report.revenue.captureOps + report.revenue.contracts + report.revenue.salon;
+    report.revenue.venue + report.revenue.caravans + report.revenue.captureOps + report.revenue.contracts + report.revenue.salon + (report.revenue.city ?? 0);
   const totalExpenses = (report: WeeklyFinanceReport) =>
-    report.expenses.wages + report.expenses.hospital + report.expenses.restZone + report.expenses.staffSlots + report.expenses.loanPayment;
+    report.expenses.wages + report.expenses.hospital + report.expenses.restZone + report.expenses.staffSlots + report.expenses.loanPayment + (report.expenses.city ?? 0);
 
   const maxValue = Math.max(1, ...reports.map(report => Math.max(totalRevenue(report), totalExpenses(report))));
   const maxAbsNet = Math.max(1, ...reports.map(report => Math.abs(report.netIncome)));

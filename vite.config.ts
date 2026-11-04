@@ -1,9 +1,19 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+// Agent worktrees (.kilo/worktrees/<name>) are full checkouts of this app. A
+// plain `npm test` from the root used to pick their tests up as well and fail on
+// half-finished work sitting there. Always avoid them; a worktree can still run
+// its own suites explicitly with `npx vitest run src/foo.test.ts`.
+const WORKTREE_GLOBS = ['**/.kilo/**', '**/node_modules/**', '**/dist/**']
+
 // https://vite.dev/config/
 export default defineConfig({
+  test: {
+    exclude: WORKTREE_GLOBS
+  },
   // Relative base so the build works both at the domain root and under a
   // GitHub Pages project subpath (/<repo>/), e.g. when opened as a
   // Telegram Mini App.
@@ -11,7 +21,8 @@ export default defineConfig({
   // Allow localtunnel (loca.lt) hostnames to reach the dev/preview server
   // when testing through a temporary tunnel.
   server: {
-    allowedHosts: ['.loca.lt']
+    allowedHosts: ['.loca.lt'],
+    watch: { ignored: WORKTREE_GLOBS }
   },
   preview: {
     allowedHosts: ['.loca.lt']

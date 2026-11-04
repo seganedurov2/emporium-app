@@ -1,7 +1,7 @@
 {
   "name": "app",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,13 +10,16 @@
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview",
+    "dev:hub": "node server/websocket-server.mjs",
+    "dev:full": "node scripts/dev-with-hub.mjs",
     "gen:portraits": "node tools/generate-portraits.mjs",
     "verify:portraits": "node tools/generate-portraits.mjs --verify",
     "convert:portraits-3d": "node tools/convert-portraits-3d.mjs",
     "verify:portraits-3d": "node tools/convert-portraits-3d.mjs --verify",
     "r2:setup": "node tools/r2-setup.mjs",
     "r2:sync": "node tools/r2-sync.mjs",
-    "qa:mezzanine": "node ../.codegpt/skills/browser-automation/browser.mjs http://localhost:4178/ --script ./tools/qa-mezzanine.mjs"
+    "qa:mezzanine": "node tools/cdp-smoke.mjs http://localhost:4178/ tools/qa-mezzanine.png",
+    "qa:smoke": "node tools/cdp-smoke.mjs http://localhost:4173/"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

@@ -173,6 +173,8 @@ export interface WeeklyFinanceReport {
     captureOps: number;
     contracts: number;
     salon: number;
+    /** Municipal income of the city plan (absent in pre-0.4.1 saves). */
+    city?: number;
   };
   expenses: {
     wages: number;
@@ -181,6 +183,8 @@ export interface WeeklyFinanceReport {
     staffSlots: number;
     loanPayment: number;
     warehouse: number;
+    /** City upkeep, unemployment benefits and new construction (pre-0.4.1 saves have none). */
+    city?: number;
   };
   netIncome: number;
   treasuryAfter: number;

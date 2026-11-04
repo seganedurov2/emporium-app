@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkstationHub } from './useWorkstationHub';
+import { MULTIPLAYER_HUB_URL } from '../../multiplayerConfig';
 import { Wifi, WifiOff, Users } from 'lucide-react';
 
 export function MultiplayerPanel({
@@ -77,7 +78,7 @@ export function MultiplayerPanel({
             <WifiOff className="w-4 h-4 text-red-400" />
           )}
           <span className="font-bold text-white text-sm">
-            {connected ? 'Мультиплеер подключён' : 'Мультиплеер отключён'}
+            {connected ? 'Мультиплеер подключён' : MULTIPLAYER_HUB_URL ? 'Мультиплеер отключён' : 'Мультиплеер не настроен'}
           </span>
         </div>
         <div className="text-xs font-mono text-slate-400">
@@ -122,7 +123,11 @@ export function MultiplayerPanel({
 
       <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
         <Users className="w-4 h-4 text-slate-400" />
-        <span className="text-xs text-slate-400">Раздельная сессия через WebSocket</span>
+        <span className="text-xs text-slate-400">
+          {MULTIPLAYER_HUB_URL
+            ? 'Раздельная сессия через WebSocket'
+            : 'Хаб недоступен: задайте VITE_WS_URL (например, ws://localhost:5175/ws)'}
+        </span>
         <button
           onClick={disconnect}
           className="ml-auto text-xs text-red-400 hover:text-red-300 transition"
