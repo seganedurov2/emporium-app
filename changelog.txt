@@ -1,11 +1,23 @@
 CHANGELOG.txt
 ================================================================================
 PROJECT: Pawn Pleasure
-VERSION: 0.3.7
-LAST UPDATED: 2026-11-01
-================================================================================
+VERSION: 0.4.0
+LAST UPDATED: 2026-11-04
+===============================================================================
 
-[VERSION 0.3.7 - CURRENT RELEASE] "MEZZANINE: PERSISTENCE & PERFORMANCE"
+[VERSION 0.4.0 - CURRENT RELEASE] "CORE: Architecture & City Economy"
+
+--- CORE ARCHITECTURE ---
+* App.tsx refactoring groundwork: modular structure prepared for incremental migration
+* Error boundaries added for improved stability (especially for Telegram Mini App)
+* Theme toggle support integrated
+* Infrastructure improvements for future modularization
+
+--- CITY ECONOMY ---
+* City Builder plan persistence groundwork
+* City economy systems prepared for weekly cycle integration
+
+[VERSION 0.3.7 - PREVIOUS RELEASE] "MEZZANINE: PERSISTENCE & PERFORMANCE"
 
 --- RELEASE PACKAGING ---
 * Android release metadata aligned to version 0.3.7 (versionCode 5).
