@@ -1,6 +1,6 @@
 import {
   BedDouble, Brain, Building2, Bitcoin, FileText, Gavel, GraduationCap, Handshake, HeartPulse, Landmark, MessageSquare, Scissors, ShieldAlert, ShoppingCart,
-  Target, TrendingUp, Truck, UserPlus, Warehouse, Users, UserCog, UserRound, Music, Trophy, ShieldCheck, Zap, Gamepad2
+  Target, TrendingUp, Truck, UserPlus, Warehouse, Users, UserCog, UserRound, Music, Trophy, ShieldCheck, Zap, Gamepad2, AlertTriangle
 } from 'lucide-react';
 
 export type AppTab =
@@ -34,7 +34,8 @@ export type AppTab =
   | 'meta'
   | 'mezzanine'
   | 'warehouse_mezzanine'
-  | 'mezzanine_journal';
+  | 'mezzanine_journal'
+  | 'wasteland';
 
 export const APP_NAVIGATION: { id: AppTab; label: string; icon: typeof TrendingUp }[] = [
   { id: 'dashboard', label: 'Командный центр', icon: TrendingUp },
@@ -67,5 +68,6 @@ export const APP_NAVIGATION: { id: AppTab; label: string; icon: typeof TrendingU
   { id: 'meta', label: 'Достижения', icon: Trophy },
   { id: 'warehouse_mezzanine', label: 'Складской мезонин', icon: Warehouse },
   { id: 'mezzanine_journal', label: 'Журнал «Информатика»', icon: FileText },
-  { id: 'mezzanine', label: 'Мезонин', icon: Gamepad2 }
+  { id: 'mezzanine', label: 'Мезонин', icon: Gamepad2 },
+  { id: 'wasteland', label: 'Пустошь', icon: AlertTriangle }
 ];

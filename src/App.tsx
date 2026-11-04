@@ -163,6 +163,7 @@ import { BeautySalonTab } from './components/salon/BeautySalonTab';
 import { MezzanineWarehouseTab } from './components/warehouse/MezzanineWarehouseTab';
 import { MultiplayerPanel } from './components/multiplayer/MultiplayerPanel';
 import { MezzanineJournalTab } from './components/mezzanine/MezzanineJournalTab';
+import { WastelandTab } from './components/wasteland/WastelandTab';
 import { VenueBanner, VENUE_APPEARANCES } from './components/venue';
 import {
   ACHIEVEMENT_BY_ID,
@@ -6159,6 +6160,11 @@ contracts={gameState.tradeSupplyContracts || []}
         {/* MEZZANINE JOURNAL TAB — журнал «Информатика» */}
         {activeTab === 'mezzanine_journal' && (
           <MezzanineJournalTab onOpenTab={(tab) => { setActiveTab(tab as AppTab); setIsMobileMenuOpen(false); }} />
+        )}
+
+        {/* WASTELAND TAB — вылазки в заражённые зоны пустоши */}
+        {activeTab === 'wasteland' && (
+          <WastelandTab gameState={gameState} />
         )}
 
         {/* MEZZANINE — the hub map; the campaign tabs above live on top of it. */}
