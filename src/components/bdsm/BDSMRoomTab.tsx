@@ -278,6 +278,31 @@ export const BDSMRoomTab: React.FC<BDSMRoomTabProps> = ({ state, platform, onAcc
              </div>
           )}
         </div>
+      {/* Video archive — BDSM room footage */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 shadow-xl">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertCircle className="w-4 h-4 text-purple-400" />
+          <h3 className="font-bold text-white">Видеоархив — тег «BDSM комната»</h3>
+        </div>
+        <div className="rounded-lg border border-slate-700 bg-black overflow-hidden aspect-video relative group">
+          <video
+            className="w-full h-full object-cover"
+            controls
+            poster="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/1280px-Big_buck_bunny_poster_big.jpg"
+          >
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4" />
+            Ваш браузер не поддерживает воспроизведение видео.
+          </video>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/0 transition">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 text-white text-xs font-medium backdrop-blur-sm border border-white/20">
+              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+              BDSM комната • Эксплуатация
+            </div>
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-500 mt-2">
+          Запись сессии из исправительного центра. Доступно для просмотра после завершения сессии дисциплины.
+        </p>
       </div>
     </div>
   );
