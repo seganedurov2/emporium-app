@@ -17,7 +17,7 @@ and publishes `dist/` with `actions/deploy-pages`.
 **One-time setup (repository owner):**
 
 1. **Settings → Pages → Build and deployment → Source: “GitHub Actions”.**
-   Without this the `deploy` job fails with *“Get Pages site failed”*.
+   Without this the `deploy` job fails with _“Get Pages site failed”_.
 2. First push to `FZ-LLC` (or **Actions → Deploy to GitHub Pages → Run workflow**).
 3. The job summary shows the URL; it is
    `https://seganedurov2.github.io/emporium-app/`
@@ -48,10 +48,10 @@ and publishes `dist/` with `actions/deploy-pages`.
 
 ### Launch modes and what works
 
-| Launched from | `sendData` (Logs / reports to bot) | `shareMessage` |
-| --- | --- | --- |
-| Reply-keyboard `web_app` button | yes | Bot API 8.0+ |
-| Menu button / inline `web_app` | **no** | Bot API 8.0+ |
+| Launched from                   | `sendData` (Logs / reports to bot) | `shareMessage` |
+| ------------------------------- | ---------------------------------- | -------------- |
+| Reply-keyboard `web_app` button | yes                                | Bot API 8.0+   |
+| Menu button / inline `web_app`  | **no**                             | Bot API 8.0+   |
 
 `sendData` is only available when the user taps a reply-keyboard button; everywhere
 else the Mini App must use `shareMessage` (see `shareAsTelegramMessage` in

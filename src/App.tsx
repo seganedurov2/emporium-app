@@ -597,7 +597,7 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
 
   const renderNavigationItems = (collapsed = false, mobile = false) => APP_NAVIGATION.map(tab => {
     const Icon = tab.icon;
-    const isActive = activeTab === tab.id && mezzanineView === tab.id;
+    const isActive = activeTab === tab.id;
     return (
       <button
         key={tab.id}
@@ -6165,6 +6165,7 @@ contracts={gameState.tradeSupplyContracts || []}
         {mezzanineView === 'mezzanine' && (
           <MezzanineTab
             gameState={gameState}
+            activeTab={activeTab}
             onViewChange={handleMezzanineViewChange}
             onCityPlanChange={handleCityPlanChange}
             onOpenTab={tab => { setActiveTab(tab); setMezzanineView(tab); setIsMobileMenuOpen(false); }}

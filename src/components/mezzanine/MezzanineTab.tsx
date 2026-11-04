@@ -101,6 +101,8 @@ const REGIONS: { id: string; name: string; lat: number; lon: number }[] = [
 interface MezzanineTabProps {
   /** Jumps to any campaign section; the мезонин stays the home map. */
   onOpenTab?: (tab: AppTab) => void;
+  /** Currently active main navigation tab, for highlighting in the internal menu. */
+  activeTab?: AppTab;
   gameState?: {
     roster: { id: string }[];
     mezzanine?: MezzanineViewState;
@@ -113,7 +115,7 @@ interface MezzanineTabProps {
   onCityPlanChange?: (plan: CityPlanSave | null) => void;
 }
 
-export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanChange }: MezzanineTabProps) {
+export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanChange, activeTab }: MezzanineTabProps) {
   const [lang] = useState<Lang>('ru');
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [grid, setGrid] = useState<Heightmap | null>(null);
@@ -717,14 +719,15 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
             <div className="mt-1 flex max-h-[40vh] flex-col gap-0.5 overflow-y-auto rounded-lg border border-amber-500/30 bg-black/85 p-1 backdrop-blur">
               {APP_NAVIGATION.map(tab => {
                 const Icon = tab.icon;
+                const isInternalActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => onOpenTab(tab.id)}
                     disabled={tab.id === 'mezzanine'}
-                    className={`flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition ${tab.id === 'mezzanine' ? 'cursor-default bg-amber-500/10 text-amber-300' : 'text-slate-300 hover:bg-slate-700/80 hover:text-white'}`}
+                    className={`flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition ${tab.id === 'mezzanine' ? 'cursor-default bg-amber-500/10 text-amber-300' : isInternalActive ? 'bg-amber-500/20 text-amber-300' : 'text-slate-300 hover:bg-slate-700/80 hover:text-white'}`}
                   >
-                    <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    <Icon aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 ${isInternalActive ? 'text-amber-300' : 'text-slate-500'}`} />
                     <span className="truncate">{tab.label}</span>
                   </button>
                 );
@@ -1014,6 +1017,7 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
                 {APP_NAVIGATION.map(tab => {
                   const Icon = tab.icon;
                   const isMezzanine = tab.id === 'mezzanine';
+                  const isInternalActive = activeTab === tab.id;
                   return (
                     <button
                       key={tab.id}
@@ -1023,9 +1027,9 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
                         setPauseMenu(false);
                         onOpenTab(tab.id);
                       }}
-                      className={`group flex items-center gap-3 px-6 py-2.5 text-left transition ${isMezzanine ? 'text-amber-400/70 cursor-default' : 'text-slate-200 hover:bg-amber-500/10 hover:text-amber-200'}`}
+                      className={`group flex items-center gap-3 px-6 py-2.5 text-left transition ${isMezzanine ? 'text-amber-400/70 cursor-default' : isInternalActive ? 'bg-amber-500/15 text-amber-300' : 'text-slate-200 hover:bg-amber-500/10 hover:text-amber-200'}`}
                     >
-                      <Icon aria-hidden="true" className={`h-4 w-4 ${isMezzanine ? 'text-amber-400/70' : 'text-amber-400/70 group-hover:text-amber-300'}`} />
+                      <Icon aria-hidden="true" className={`h-4 w-4 ${isMezzanine ? 'text-amber-400/70' : isInternalActive ? 'text-amber-300' : 'text-amber-400/70 group-hover:text-amber-300'}`} />
                       <span className="text-sm tracking-wide">{tab.label}</span>
                     </button>
                   );
