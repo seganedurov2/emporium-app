@@ -2,6 +2,38 @@ import type { Caravan, Character } from './gameEngine';
 import type { AuxiliaryBuildingState, Employee } from './expansionTypes';
 import { formatMoney } from './currency';
 
+export type LotAuthenticity = 'genuine' | 'counterfeit';
+export type InspectionVerdict = 'genuine' | 'suspicious' | 'counterfeit' | 'unknown';
+export type AuctionSaleChannel = 'auction' | 'junkyard';
+export type AuctionPersonaId = 'talia';
+
+export interface AuctioneerPersona {
+  id: AuctionPersonaId;
+  name: string;
+  title: string;
+  tagline: string;
+}
+
+export const DEFAULT_AUCTIONEER_PERSONA: AuctioneerPersona = {
+  id: 'talia',
+  name: 'Талия',
+  title: 'Аукционист',
+  tagline: 'Ведёт торги после закрытия лавки и объявляет цену дома.'
+};
+
+export const AUCTION_INSPECTION_BALANCE = {
+  freeChargesPerWeek: 2,
+  baseConfidence: 35,
+  appraiserConfidenceBonus: 35,
+  counterfeitChance: 0.06,
+  riskyCounterfeitChance: 0.16,
+  counterfeitSalePenaltyPct: 0.5,
+  undisclosedScandalReputation: 4,
+  undisclosedScandalFundsPct: 0.1,
+  junkyardBulkRate: 0.3,
+  junkyardUnlockCount: 3
+} as const;
+
 export interface AuctionGoodsLot {
   id: string;
   productName: string;
@@ -13,6 +45,9 @@ export interface AuctionGoodsLot {
   appraisedBy: string;
   /** Automatic appraisal fixed on delivery; it is never re-rolled on render. */
   appraisedValue: number;
+  /** Authenticity is hidden until an inspection reveals it. */
+  authenticity?: LotAuthenticity;
+  revealedAuthenticity?: boolean;
 }
 
 export interface AuctionCharacterLot {
@@ -25,6 +60,8 @@ export interface AuctionCharacterLot {
   isSlave: boolean;
   appraisedBy: string;
   appraisedValue: number;
+  authenticity?: LotAuthenticity;
+  revealedAuthenticity?: boolean;
 }
 
 export type AuctionLot = AuctionGoodsLot | AuctionCharacterLot;
@@ -37,6 +74,8 @@ export interface SaleMeta {
   winningNpcBidder?: string;
   /** The winning NPC's bid amount, for display in the sale history. */
   npcWinningBid?: number;
+  saleChannel?: AuctionSaleChannel;
+  revealedCounterfeit?: boolean;
 }
 
 export type LotInterest = 'goods' | 'characters' | 'all';
@@ -98,11 +137,23 @@ export const NPC_AUCTION_BIDDERS: NpcBidder[] = [
 
 export type AuctionSale = (AuctionGoodsLot & SaleMeta) | (AuctionCharacterLot & SaleMeta);
 
+export interface LotInspection {
+  lotId: string;
+  week: number;
+  inspectorName: string;
+  verdict: InspectionVerdict;
+  confidence: number;
+  revealedCounterfeit: boolean;
+}
+
 export interface AuctionHouseState {
   pendingLots: AuctionLot[];
   recentSales: AuctionSale[];
   /** Запросы администратора на продажу персонала, ожидающие согласия игрока. */
   pendingSaleConsents: SaleConsentRequest[];
+  inspections: LotInspection[];
+  inspectWeek: number;
+  inspectChargesUsed: number;
 }
 
 export interface GoodsSaleQuote {
@@ -131,7 +182,14 @@ const GOODS_CATALOG = [
 export const AUCTION_SALES_HISTORY_LIMIT = 12;
 
 export function createEmptyAuctionHouse(): AuctionHouseState {
-  return { pendingLots: [], recentSales: [], pendingSaleConsents: [] };
+  return {
+    pendingLots: [],
+    recentSales: [],
+    pendingSaleConsents: [],
+    inspections: [],
+    inspectWeek: 1,
+    inspectChargesUsed: 0
+  };
 }
 
 /** Creates one persistable goods lot from cargo already valued by the caravan route. */
@@ -139,10 +197,12 @@ export function createGoodsLot(
   caravan: Caravan,
   arrivalWeek: number,
   random: () => number = Math.random,
-  appraiser: Employee | null = null
+  appraiser: Employee | null = null,
+  counterfeitChance: number = AUCTION_INSPECTION_BALANCE.counterfeitChance
 ): AuctionGoodsLot {
   const catalogIndex = Math.min(GOODS_CATALOG.length - 1, Math.floor(random() * GOODS_CATALOG.length));
   const product = GOODS_CATALOG[catalogIndex];
+  const authenticity: LotAuthenticity = random() < Math.max(0, Math.min(1, counterfeitChance)) ? 'counterfeit' : 'genuine';
   return {
     id: `goods_${caravan.id}_${arrivalWeek}`,
     productName: product.productName,
@@ -152,7 +212,9 @@ export function createGoodsLot(
     caravanName: caravan.name,
     arrivalWeek: Math.max(1, Math.floor(arrivalWeek)),
     appraisedBy: appraiser?.status === 'active' && appraiser.specialty === 'appraiser' ? appraiser.name : 'Автоматическая оценка',
-    appraisedValue: Math.max(0, Math.round(Number(caravan.potentialProfit) || 0))
+    appraisedValue: Math.max(0, Math.round(Number(caravan.potentialProfit) || 0)),
+    authenticity,
+    revealedAuthenticity: false
   };
 }
 
@@ -245,7 +307,12 @@ export interface ValuationAnnouncement {
 }
 
 const AUTO_APPRAISER_NAME = 'Автоматическая оценка';
-const AUTO_AUCTIONEER_NAME = 'Автоматический аукционист';
+
+export function auctioneerDisplayName(auctioneer: Employee | null): string {
+  return auctioneer?.status === 'active' && auctioneer.specialty === 'auctioneer'
+    ? auctioneer.name
+    : DEFAULT_AUCTIONEER_PERSONA.name;
+}
 
 /**
  * The messages the appraiser and the auctioneer post when the market
@@ -267,9 +334,7 @@ export function buildValuationAnnouncements(
   const appraiserName = appraiser?.status === 'active' && appraiser.specialty === 'appraiser'
     ? appraiser.name
     : AUTO_APPRAISER_NAME;
-  const auctioneerName = auctioneer?.status === 'active' && auctioneer.specialty === 'auctioneer'
-    ? auctioneer.name
-    : AUTO_AUCTIONEER_NAME;
+  const auctioneerName = auctioneerDisplayName(auctioneer);
   const market = Math.max(0, Math.round(marketValue));
   const auctioneerClosing = saleConfirmed ? 'Продажа подтверждена.' : 'Лот выставлен.';
   return [
@@ -283,22 +348,70 @@ export function buildValuationAnnouncements(
       speaker: 'auctioneer',
       name: auctioneerName,
       price: quote.saleProceeds,
-      text: `Аукционист ${auctioneerName}: моя цена продажи лота «${lot.productName}» — ${formatMoney(quote.saleProceeds)}${quote.auctioneerBonusPercent ? ` (бонус аукциониста +${quote.auctioneerBonusPercent}%)` : ''}. ${auctioneerClosing}`
+      text: `Аукционист ${auctioneerName}: прямая/рыночная цена ${formatMoney(market)}, моя цена аукциона за «${lot.productName}» — ${formatMoney(quote.saleProceeds)}${quote.auctioneerBonusPercent ? ` (бонус аукциониста +${quote.auctioneerBonusPercent}%)` : ''}. ${auctioneerClosing}`
     }
   ];
 }
 
-/**
- * Simulates NPC buyers competing for a lot. NPC bidders interested in the lot
- * type each have a participation chance influenced by the auction-house level
- * and the syndicate's reputation. Participating bidders submit a bid above the
- * base appraised value scaled by their personal aggression. The highest NPC
- * bid wins; if it exceeds the base proceeds the lot sells at the NPC price,
- * otherwise the syndicate falls back to the standard appraisal+auctioneer bonus.
- *
- * The building level also acts as a "prominence" multiplier: a level-3 auction
- * house draws more aggressive bidding than a freshly built one.
- */
+export function inspectAuctionLot(
+  state: AuctionHouseState,
+  lotId: string,
+  week: number,
+  staff: AuctionHouseStaff,
+  random: () => number = Math.random
+): { state: AuctionHouseState; inspection: LotInspection | null; reason?: string } {
+  const lot = state.pendingLots.find(item => item.id === lotId);
+  if (!lot) return { state, inspection: null, reason: 'Лот не найден.' };
+
+  const currentWeek = Math.max(1, Math.floor(week));
+  const chargesUsed = state.inspectWeek === currentWeek ? state.inspectChargesUsed : 0;
+  const hasAppraiser = Boolean(staff.appraiser && staff.appraiser.status === 'active' && staff.appraiser.specialty === 'appraiser');
+  if (!hasAppraiser && chargesUsed >= AUCTION_INSPECTION_BALANCE.freeChargesPerWeek) {
+    return { state: { ...state, inspectWeek: currentWeek, inspectChargesUsed: chargesUsed }, inspection: null, reason: 'Лимит бесплатных осмотров на неделю исчерпан. Назначьте оценщика в «Отделе кадров».' };
+  }
+
+  const isCounterfeit = (lot.authenticity ?? 'genuine') === 'counterfeit';
+  const confidenceBase = AUCTION_INSPECTION_BALANCE.baseConfidence + Math.floor(random() * 25) + (hasAppraiser ? AUCTION_INSPECTION_BALANCE.appraiserConfidenceBonus : 0);
+  const confidence = Math.min(100, Math.max(0, confidenceBase));
+  let verdict: InspectionVerdict = 'unknown';
+  if (isCounterfeit) {
+    verdict = confidence >= 70 ? 'counterfeit' : confidence >= 45 ? 'suspicious' : 'unknown';
+  } else {
+    verdict = confidence >= 60 ? 'genuine' : 'unknown';
+  }
+  const revealedCounterfeit = verdict === 'counterfeit';
+  const inspection: LotInspection = {
+    lotId,
+    week: currentWeek,
+    inspectorName: hasAppraiser ? staff.appraiser!.name : 'Полевой осмотр',
+    verdict,
+    confidence,
+    revealedCounterfeit
+  };
+
+  const pendingLots = state.pendingLots.map(item =>
+    item.id === lotId ? { ...item, revealedAuthenticity: revealedCounterfeit ? true : (item.revealedAuthenticity ?? false) } : item
+  );
+  const inspections = [inspection, ...state.inspections.filter(entry => entry.lotId !== lotId)].slice(0, 200);
+  return {
+    state: {
+      ...state,
+      pendingLots,
+      inspections,
+      inspectWeek: currentWeek,
+      inspectChargesUsed: hasAppraiser ? chargesUsed : chargesUsed + 1
+    },
+    inspection
+  };
+}
+
+export function countCounterfeitLots(state: AuctionHouseState): number {
+  return state.pendingLots.filter(lot => (lot.authenticity ?? 'genuine') === 'counterfeit').length;
+}
+
+export function getLotInspection(state: AuctionHouseState, lotId: string): LotInspection | null {
+  return state.inspections.find(entry => entry.lotId === lotId) ?? null;
+}
 export function simulateNpcBidding(
   lot: AuctionLot,
   baseProceeds: number,
@@ -313,7 +426,7 @@ export function simulateNpcBidding(
     bidder => bidder.interest === lotType || bidder.interest === 'all'
   );
 
-  if (auctionHouseLevel <= 0) {
+  if (auctionHouseLevel <= 0 || (lot.authenticity === 'counterfeit' && lot.revealedAuthenticity)) {
     return { finalProceeds: baseProceeds, npcBidCount: 0, npcInterest: interestedBidders.map(b => b.name) };
   }
 
@@ -355,10 +468,19 @@ export function simulateNpcBidding(
   };
 }
 
+export interface AuctionSaleResult {
+  state: AuctionHouseState;
+  sale: AuctionSale | null;
+  reputationDelta?: number;
+  fundsDelta?: number;
+  scandal?: string;
+}
+
 /**
  * Removes a lot once and stores the realized sale. NPC bidders compete for the
  * lot; if an NPC bid exceeds the base appraisal + auctioneer bonus the lot sells
- * at the NPC price. Stale IDs are a no-op.
+ * at the NPC price. Revealed counterfeits are penalized and draw no NPC bids.
+ * Undisclosed counterfeits can trigger a post-sale scandal. Stale IDs are a no-op.
  */
 export function sellAuctionLot(
   state: AuctionHouseState,
@@ -369,26 +491,79 @@ export function sellAuctionLot(
   auctionHouseLevel = 0,
   reputation = 0,
   random: () => number = Math.random
-): { state: AuctionHouseState; sale: AuctionSale | null } {
+): AuctionSaleResult {
   const lot = state.pendingLots.find(item => item.id === lotId);
   if (!lot) return { state, sale: null };
   const quote = quoteAuctionLot(lot, auctioneer, auctioneerSaleBonus);
-  const npcResult = simulateNpcBidding(lot, quote.saleProceeds, auctionHouseLevel, reputation, random);
+  const revealedCounterfeit = lot.authenticity === 'counterfeit' && lot.revealedAuthenticity === true;
+  const undisclosedCounterfeit = lot.authenticity === 'counterfeit' && !lot.revealedAuthenticity;
+  const baseProceeds = revealedCounterfeit
+    ? Math.round(quote.saleProceeds * AUCTION_INSPECTION_BALANCE.counterfeitSalePenaltyPct)
+    : quote.saleProceeds;
+  const npcResult = revealedCounterfeit
+    ? { finalProceeds: baseProceeds, npcBidCount: 0, npcInterest: getLotNpcInterest(lot) }
+    : simulateNpcBidding(lot, baseProceeds, auctionHouseLevel, reputation, random);
+  const proceeds = npcResult.finalProceeds;
+  let reputationDelta = 0;
+  let fundsDelta = 0;
+  let scandal: string | undefined;
+  if (undisclosedCounterfeit) {
+    reputationDelta = -AUCTION_INSPECTION_BALANCE.undisclosedScandalReputation;
+    fundsDelta = -Math.round(proceeds * AUCTION_INSPECTION_BALANCE.undisclosedScandalFundsPct);
+    scandal = `Покупатель обнаружил подделку в лоте «${lot.productName}». Репутация ${reputationDelta}, компенсация ${formatMoney(Math.abs(fundsDelta))}.`;
+  }
   const sale = {
     ...lot,
     soldWeek: Math.max(1, Math.floor(week)),
-    saleProceeds: npcResult.finalProceeds,
+    saleProceeds: proceeds,
     auctioneerBonusPercent: quote.auctioneerBonusPercent,
     winningNpcBidder: npcResult.winningNpcBidder,
-    npcWinningBid: npcResult.npcWinningBid
+    npcWinningBid: npcResult.npcWinningBid,
+    saleChannel: 'auction' as const,
+    revealedCounterfeit
   } as AuctionSale;
   return {
     state: {
+      ...state,
       pendingLots: state.pendingLots.filter(item => item.id !== lotId),
       pendingSaleConsents: state.pendingSaleConsents.filter(request => request.lotId !== lotId),
+      inspections: state.inspections.filter(entry => entry.lotId !== lotId),
       recentSales: [sale, ...state.recentSales].slice(0, AUCTION_SALES_HISTORY_LIMIT)
     },
-    sale
+    sale,
+    reputationDelta,
+    fundsDelta,
+    scandal
+  };
+}
+
+export function sellCounterfeitsBulk(
+  state: AuctionHouseState,
+  week: number
+): { state: AuctionHouseState; proceeds: number; count: number } {
+  const counterfeits = state.pendingLots.filter(lot => (lot.authenticity ?? 'genuine') === 'counterfeit');
+  if (counterfeits.length < AUCTION_INSPECTION_BALANCE.junkyardUnlockCount) return { state, proceeds: 0, count: 0 };
+  const soldWeek = Math.max(1, Math.floor(week));
+  const sales: AuctionSale[] = counterfeits.map(lot => ({
+    ...lot,
+    soldWeek,
+    saleProceeds: Math.round(Math.max(0, lot.appraisedValue) * AUCTION_INSPECTION_BALANCE.junkyardBulkRate),
+    auctioneerBonusPercent: 0,
+    saleChannel: 'junkyard' as const,
+    revealedCounterfeit: lot.revealedAuthenticity === true
+  })) as AuctionSale[];
+  const proceeds = sales.reduce((sum, sale) => sum + sale.saleProceeds, 0);
+  const removed = new Set(counterfeits.map(lot => lot.id));
+  return {
+    state: {
+      ...state,
+      pendingLots: state.pendingLots.filter(lot => !removed.has(lot.id)),
+      pendingSaleConsents: state.pendingSaleConsents.filter(request => !removed.has(request.lotId)),
+      inspections: state.inspections.filter(entry => !removed.has(entry.lotId)),
+      recentSales: [...sales, ...state.recentSales].slice(0, AUCTION_SALES_HISTORY_LIMIT)
+    },
+    proceeds,
+    count: sales.length
   };
 }
 
@@ -464,6 +639,8 @@ const positiveInteger = (value: unknown, fallback = 0): number => {
 
 function normalizeLot(value: unknown): AuctionLot | null {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.productName !== 'string') return null;
+  const authenticity: LotAuthenticity = value.authenticity === 'counterfeit' ? 'counterfeit' : 'genuine';
+  const revealedAuthenticity = value.revealedAuthenticity === true;
   if (typeof value.characterId === 'string') {
     const category = (value.category === 'Сотрудник' || value.category === 'Раб') ? value.category : 'Сотрудник';
     const gender = (value.gender === 'women' || value.gender === 'men' || value.gender === 'trans') ? value.gender : 'women';
@@ -476,7 +653,9 @@ function normalizeLot(value: unknown): AuctionLot | null {
       assignedVenue: typeof value.assignedVenue === 'string' ? value.assignedVenue : 'unassigned',
       isSlave: value.isSlave === true,
       appraisedBy: typeof value.appraisedBy === 'string' ? value.appraisedBy : 'Автоматическая оценка',
-      appraisedValue: positiveInteger(value.appraisedValue)
+      appraisedValue: positiveInteger(value.appraisedValue),
+      authenticity,
+      revealedAuthenticity
     } as AuctionCharacterLot;
   }
   if (typeof value.caravanId !== 'string' || typeof value.caravanName !== 'string' || typeof value.category !== 'string') return null;
@@ -489,8 +668,25 @@ function normalizeLot(value: unknown): AuctionLot | null {
     caravanName: value.caravanName,
     arrivalWeek: Math.max(1, positiveInteger(value.arrivalWeek, 1)),
     appraisedBy: typeof value.appraisedBy === 'string' ? value.appraisedBy : 'Автоматическая оценка',
-    appraisedValue: positiveInteger(value.appraisedValue)
+    appraisedValue: positiveInteger(value.appraisedValue),
+    authenticity,
+    revealedAuthenticity
   } as AuctionGoodsLot;
+}
+
+function normalizeInspection(value: unknown): LotInspection | null {
+  if (!isRecord(value) || typeof value.lotId !== 'string') return null;
+  const verdict: InspectionVerdict =
+    value.verdict === 'counterfeit' || value.verdict === 'suspicious' || value.verdict === 'genuine' || value.verdict === 'unknown'
+      ? value.verdict : 'unknown';
+  return {
+    lotId: value.lotId,
+    week: Math.max(1, positiveInteger(value.week, 1)),
+    inspectorName: typeof value.inspectorName === 'string' ? value.inspectorName : 'Осмотр',
+    verdict,
+    confidence: Math.min(100, positiveInteger(value.confidence)),
+    revealedCounterfeit: value.revealedCounterfeit === true
+  };
 }
 
 function normalizeSale(value: unknown): AuctionSale | null {
@@ -502,7 +698,9 @@ function normalizeSale(value: unknown): AuctionSale | null {
     saleProceeds: positiveInteger(value.saleProceeds),
     auctioneerBonusPercent: Math.min(20, positiveInteger(value.auctioneerBonusPercent)),
     winningNpcBidder: typeof value.winningNpcBidder === 'string' ? value.winningNpcBidder : undefined,
-    npcWinningBid: typeof value.npcWinningBid === 'number' && Number.isFinite(value.npcWinningBid) ? positiveInteger(value.npcWinningBid) : undefined
+    npcWinningBid: typeof value.npcWinningBid === 'number' && Number.isFinite(value.npcWinningBid) ? positiveInteger(value.npcWinningBid) : undefined,
+    saleChannel: value.saleChannel === 'junkyard' ? 'junkyard' : 'auction',
+    revealedCounterfeit: value.revealedCounterfeit === true
   } as AuctionSale;
 }
 
@@ -533,5 +731,15 @@ export function normalizeAuctionHouseState(value: unknown): AuctionHouseState {
   const pendingSaleConsents = Array.isArray(value.pendingSaleConsents)
     ? value.pendingSaleConsents.map(normalizeSaleConsent).filter((request): request is SaleConsentRequest => request !== null).slice(0, AUCTION_SALE_CONSENT_LIMIT)
     : [];
-  return { pendingLots, recentSales, pendingSaleConsents };
+  const inspections = Array.isArray(value.inspections)
+    ? value.inspections.map(normalizeInspection).filter((entry): entry is LotInspection => entry !== null).slice(0, 200)
+    : [];
+  return {
+    pendingLots,
+    recentSales,
+    pendingSaleConsents,
+    inspections,
+    inspectWeek: Math.max(1, positiveInteger(value.inspectWeek, 1)),
+    inspectChargesUsed: positiveInteger(value.inspectChargesUsed)
+  };
 }

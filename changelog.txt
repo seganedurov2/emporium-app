@@ -1,11 +1,41 @@
 CHANGELOG.txt
 ================================================================================
 PROJECT: Pawn Pleasure
-VERSION: 0.4.1
-LAST UPDATED: 2026-11-04
+VERSION: 0.4.2
+LAST UPDATED: 2026-11-05
 ===============================================================================
 
-[VERSION 0.4.1 - CURRENT RELEASE] "CITY: Municipal Economy on the Weekly Cycle"
+[VERSION 0.4.2 - CURRENT RELEASE] "INPUT: Pointer Map, Leaner App.tsx"
+
+  MEZZANINE MAP
+  * The region map now pans with mouse, pen and finger and zooms with a pinch.
+    The old mouse-only handlers are replaced by pointer events; one pointer
+    pans, two pinch (zoom follows the change in distance between them, the pan
+    follows their midpoint so the map stays under the fingers), a third finger
+    is ignored until one of the first two lifts.
+  * Touch on the map no longer scrolls or zooms the page (touch-action: none).
+  * Pinch zoom is clamped to the same 8..200 tile range as the wheel and the
+    +/- buttons. src/mapGestures.ts is the React-free gesture math.
+
+  ARCHITECTURE
+  * The weekly cycle left App.tsx: advanceCampaignWeek (src/campaignWeek.ts)
+    turns the campaign state plus the numbers App owns (raid queue, hospital
+    staff, records) into the next state, the week's logs, the event of the
+    week, the achievement toast, the ending and the records to store. The handler in App now only feeds it and writes the result back.
+  * The pure meta-progress half of that cycle lives in
+    src/campaignGoalAdvance.ts (lifetime stats, campaign goal, leaderboard).
+  * Slot persistence moved to src/campaignPersistence.ts: same slot keys, same
+    legacy emporium_save_06 fallback for slot 1, same plain or encrypted body
+    and the same audit entries, so existing saves load unchanged.
+  * The exhaustion/health labels and the off-duty recovery constant moved to
+    src/campaignWeekConstants.ts; App imports them.
+
+  BACKGROUND
+  * The weekly cycle keeps its order and arithmetic; the save format is
+    untouched (no new fields, no changed ones). The 0.4.1 city-economy weekly
+    report is still written exactly as before.
+
+[VERSION 0.4.1 - PREVIOUS RELEASE] "CITY: Municipal Economy on the Weekly Cycle"
 
   CITY ECONOMY
   * New engine src/cityEconomyEngine.ts (pure, React-free): every week the city plan

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { formatMoney } from '../../currency';
-import { ArrowRight, ArrowUpDown, Package, PackageCheck, Truck, User, Users } from 'lucide-react';
-import type { AuctionLot, AuctionSale, AuctionCharacterLot, SaleConsentRequest } from '../../auctionHouseEngine';
-import { quoteAuctionLot, getLotNpcInterest, NPC_AUCTION_BIDDERS } from '../../auctionHouseEngine';
+import { ArrowRight, ArrowUpDown, Package, PackageCheck, SearchCheck, Trash2, Truck, User, Users } from 'lucide-react';
+import type { AuctionLot, AuctionSale, AuctionCharacterLot, LotInspection, SaleConsentRequest } from '../../auctionHouseEngine';
+import { AUCTION_INSPECTION_BALANCE, DEFAULT_AUCTIONEER_PERSONA, countCounterfeitLots, getLotNpcInterest, NPC_AUCTION_BIDDERS, quoteAuctionLot } from '../../auctionHouseEngine';
 import type { Character } from '../../gameEngine';
 import { calculateAttractiveness } from '../../gameEngine';
 import type { Employee } from '../../expansionTypes';
@@ -14,6 +14,18 @@ import { Portrait3D } from '../Portrait3D';
 import { VenueAdministratorPanel } from '../venue/VenueAdministratorPanel';
 import { VenueBanner, VenueToolbar, VENUE_APPEARANCES } from '../venue';
 
+const inspectionBadge = (inspection?: LotInspection) => {
+  if (!inspection) return null;
+  const styles: Record<string, string> = {
+    counterfeit: 'border-rose-500/40 bg-rose-500/10 text-rose-200',
+    suspicious: 'border-amber-500/40 bg-amber-500/10 text-amber-200',
+    genuine: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200',
+    unknown: 'border-slate-600 bg-slate-800/60 text-slate-300'
+  };
+  const labels: Record<string, string> = { counterfeit: 'ПОДДЕЛКА', suspicious: 'ПОДОЗРИТЕЛЬНО', genuine: 'ПОДЛИННИК', unknown: 'НЕТ ДАННЫХ' };
+  return <span className={`rounded border px-1 py-0.5 text-[8px] font-bold ${styles[inspection.verdict]}`}>{labels[inspection.verdict]}</span>;
+};
+
 export type AuctionLotSortField = 'productName' | 'category' | 'gender' | 'source' | 'arrivalWeek' | 'appraisedValue' | 'auctioneerBonusPercent' | 'npcInterest' | 'saleProceeds';
 
 interface AuctionHouseTabProps {
@@ -21,17 +33,22 @@ interface AuctionHouseTabProps {
   funds: number;
   pendingLots: AuctionLot[];
   recentSales: AuctionSale[];
+  inspections?: LotInspection[];
   auctioneer: Employee | null;
   appraiser: Employee | null;
   auctioneerSaleBonus: number;
   /** Активный запрос администратора аукционного дома. */
   administratorRequest: VenueAdministratorRequest | null;
+  inspectWeek?: number;
+  inspectChargesUsed?: number;
   onAcceptRequest: (venue: RequestVenueId) => void;
   onSellLot: (lotId: string) => void;
   /** Запросы администратора на продажу персонала, ожидающие согласия игрока. */
   saleConsents: SaleConsentRequest[];
   onConfirmSale: (lotId: string) => void;
   onCancelSaleConsent: (lotId: string) => void;
+  onInspectLot?: (lotId: string) => void;
+  onSellJunkyard?: () => void;
   onOpenCaravans: () => void;
   pleasureHouseCharacters: Character[];
   onAddCharacterLot: (char: Character) => void;
@@ -184,15 +201,20 @@ export function AuctionHouseTab({
   funds,
   pendingLots,
   recentSales,
+  inspections = [],
   auctioneer,
   appraiser,
   auctioneerSaleBonus,
   administratorRequest,
+  inspectWeek = 1,
+  inspectChargesUsed = 0,
   onAcceptRequest,
   onSellLot,
   saleConsents,
   onConfirmSale,
   onCancelSaleConsent,
+  onInspectLot,
+  onSellJunkyard,
   onOpenCaravans,
   pleasureHouseCharacters,
   onAddCharacterLot,
@@ -204,6 +226,13 @@ export function AuctionHouseTab({
     0
   );
   const totalNpcInterest = new Set(pendingLots.flatMap(lot => getLotNpcInterest(lot))).size;
+  void totalNpcInterest;
+  const persona = DEFAULT_AUCTIONEER_PERSONA;
+  const freeInspectLeft = appraiser
+    ? '∞'
+    : Math.max(0, AUCTION_INSPECTION_BALANCE.freeChargesPerWeek - (inspectWeek === week ? inspectChargesUsed : 0));
+  const counterfeitCount = countCounterfeitLots({ pendingLots, recentSales, pendingSaleConsents: saleConsents, inspections, inspectWeek, inspectChargesUsed });
+  const inspectionByLot = useMemo(() => new Map(inspections.map(entry => [entry.lotId, entry])), [inspections]);
 
   const characterById = useMemo(
     () => new Map(pleasureHouseCharacters.map(char => [char.id, char])),
@@ -251,7 +280,7 @@ export function AuctionHouseTab({
     <div className="space-y-3">
       <VenueBanner
         title="Аукционный дом"
-        description="Торговая площадка синдиката: товарные лоты караванов и персонал, выставленный на торги. NPC-покупатели могут перебить цену выше оценки."
+        description={`Торговая площадка синдиката. Ведущая: ${persona.name}, ${persona.tagline} Осмотр: ${String(freeInspectLeft)} ${appraiser ? '' : `бесплатн. (лимит ${AUCTION_INSPECTION_BALANCE.freeChargesPerWeek}/нед.)`}`}
         imageSrc={VENUE_APPEARANCES.auctionHouse.imageSrc}
         imageAlt={VENUE_APPEARANCES.auctionHouse.imageAlt}
         accentClassName="text-amber-300"
@@ -261,16 +290,23 @@ export function AuctionHouseTab({
             <span>Оценка <strong className="font-mono text-amber-300">{money(totalAppraisal)}</strong></span>
             <span>Выручка <strong className="font-mono text-emerald-300">{money(totalExpected)}</strong></span>
             <span>
-              Аукционист{' '}
+              {persona.name}{' '}
               <strong className={auctioneer ? 'text-slate-100' : 'text-slate-400'}>
-                {auctioneer ? `${auctioneer.name} · +${auctioneerSaleBonus}%` : 'не назначен'}
+                {auctioneer ? `${auctioneer.name} · +${auctioneerSaleBonus}%` : 'без бонуса'}
               </strong>
             </span>
-            <span>Покупателей <strong className="font-mono text-cyan-300">{totalNpcInterest}</strong></span>
+            <span>Осмотр <strong className="font-mono text-cyan-300">{String(freeInspectLeft)}</strong></span>
             <span className="font-mono text-slate-500">Неделя {week}</span>
           </>
         )}
       />
+
+      {counterfeitCount >= AUCTION_INSPECTION_BALANCE.junkyardUnlockCount && onSellJunkyard && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3">
+          <p className="text-xs text-rose-100"><Trash2 className="mr-1 inline h-4 w-4" />Свалка доступна: найдено {counterfeitCount} подозрительных/поддельных лотов. Оптовая продажа — ~{Math.round(AUCTION_INSPECTION_BALANCE.junkyardBulkRate * 100)}% от оценки, без скандала.</p>
+          <button type="button" onClick={onSellJunkyard} className="min-h-8 rounded-md border border-rose-400/60 bg-slate-950 px-3 text-xs font-bold text-rose-100 hover:bg-rose-500/20">Продать оптом на свалке</button>
+        </div>
+      )}
 
       <VenueAdministratorPanel
         venue="auction_house"
@@ -389,6 +425,7 @@ export function AuctionHouseTab({
             const character = characterLot ? characterById.get(lot.characterId) : undefined;
             const portrait = character?.image;
             const consent = characterLot ? saleConsents.find(request => request.lotId === lot.id) : undefined;
+            const inspection = inspectionByLot.get(lot.id);
             return (
               <article key={lot.id} className="flex min-w-0 gap-2 rounded-lg border border-slate-700 bg-slate-950 p-2 text-left transition hover:border-slate-500 border-l-2 border-l-amber-500/60">
                 <div className="relative h-32 w-20 shrink-0 overflow-hidden rounded-md border border-slate-700 bg-slate-900 sm:h-36 sm:w-24">
@@ -419,6 +456,7 @@ export function AuctionHouseTab({
                     <span className="shrink-0 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-0.5 text-[8px] font-bold text-amber-200">
                       {characterLot ? 'ПЕРСОНАЛ' : 'ТОВАР'}
                     </span>
+                    {inspectionBadge(inspection)}
                   </div>
                   <dl className="mt-2 grid grid-cols-3 gap-x-1.5 gap-y-1 border-y border-slate-800 py-1.5">
                     <div className="min-w-0 text-center">
@@ -468,14 +506,26 @@ export function AuctionHouseTab({
                         </div>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => onSellLot(lot.id)}
-                        aria-label={`Продать ${lot.productName} за ${money(quote.saleProceeds)}`}
-                        className="min-h-8 w-full rounded-md bg-amber-500 px-2 text-[11px] font-bold text-slate-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
-                      >
-                        {characterLot ? `Запросить продажу · ${money(quote.saleProceeds)}` : `Продать · ${money(quote.saleProceeds)}`}
-                      </button>
+                      <div className="space-y-1.5">
+                        {onInspectLot && (
+                          <button
+                            type="button"
+                            onClick={() => onInspectLot(lot.id)}
+                            aria-label={`Осмотреть ${lot.productName}`}
+                            className="min-h-8 w-full rounded-md border border-slate-600 bg-slate-900 px-2 text-[11px] font-bold text-slate-200 transition hover:border-cyan-400/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+                          >
+                            <SearchCheck aria-hidden="true" className="mr-1 inline h-3.5 w-3.5 text-cyan-300" />Осмотреть{inspection ? ` · ${inspection.confidence}%` : ''}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onSellLot(lot.id)}
+                          aria-label={`Продать ${lot.productName} за ${money(quote.saleProceeds)}`}
+                          className="min-h-8 w-full rounded-md bg-amber-500 px-2 text-[11px] font-bold text-slate-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                        >
+                          {characterLot ? `Запросить продажу · ${money(quote.saleProceeds)}` : `Продать · ${money(quote.saleProceeds)}`}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

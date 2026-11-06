@@ -14,19 +14,21 @@
 
 export type EscapeAction =
   /** Close the mezzanine pause menu. */
-  | 'close_pause_menu'
+  | "close_pause_menu"
   /** Close the keymap overlay. */
-  | 'close_keymap'
+  | "close_keymap"
   /** Down one level from the 3D map. */
-  | 'exit_map_mode'
+  | "exit_map_mode"
   /** Leave the city plan back to the city map. */
-  | 'close_city_plan'
+  | "close_city_plan"
   /** Close the app shell in-game menu. */
-  | 'close_app_menu'
+  | "close_app_menu"
   /** Close the app shell mobile navigation drawer. */
-  | 'close_mobile_menu'
+  | "close_mobile_menu"
+  /** Close the notification dropdown. */
+  | "close_notifications"
   /** Nothing was open; the mezzanine opens its pause menu. */
-  | 'open_pause_menu';
+  | "open_pause_menu";
 
 export interface EscapeStackState {
   /** Inside the mezzanine hub tab. */
@@ -43,6 +45,8 @@ export interface EscapeStackState {
   appMenuOpen?: boolean;
   /** App shell mobile navigation drawer. */
   mobileMenuOpen?: boolean;
+  /** Notification dropdown. */
+  notificationsOpen?: boolean;
 }
 
 /**
@@ -52,23 +56,24 @@ export interface EscapeStackState {
  * then the pause menu, and a press with nothing open opens the pause menu.
  */
 export function resolveEscape(state: EscapeStackState): EscapeAction | null {
+  // The notification dropdown sits above every other overlay, so it closes first.
+  if (state.notificationsOpen) return "close_notifications";
   if (state.inMezzanine) {
-    if (state.keymapOpen) return 'close_keymap';
-    if (state.cityPlanOpen) return 'close_city_plan';
-    if (state.mapModeOpen) return 'exit_map_mode';
-    if (state.pauseMenuOpen) return 'close_pause_menu';
+    if (state.keymapOpen) return "close_keymap";
+    if (state.cityPlanOpen) return "close_city_plan";
+    if (state.mapModeOpen) return "exit_map_mode";
+    if (state.pauseMenuOpen) return "close_pause_menu";
     // The shell drawer may still be open over the hub; it wins over "open menu".
-    if (state.mobileMenuOpen) return 'close_mobile_menu';
+    if (state.mobileMenuOpen) return "close_mobile_menu";
     // An app-menu overlay above the hub closes before the hub opens its menu.
-    if (state.appMenuOpen) return 'close_app_menu';
-    return 'open_pause_menu';
+    if (state.appMenuOpen) return "close_app_menu";
+    return "open_pause_menu";
   }
 
-  // Hub-only overlays do not exist in the shell; ignore stale flags from a
-  // previous tab so the resolver stays a single source of truth.
+  // Outside the hub the hub-only flags are stale and never close.
   // One press closes only the most recently opened shell surface.
-  if (state.mobileMenuOpen) return 'close_mobile_menu';
-  if (state.appMenuOpen) return 'close_app_menu';
+  if (state.mobileMenuOpen) return "close_mobile_menu";
+  if (state.appMenuOpen) return "close_app_menu";
   return null;
 }
 
@@ -78,9 +83,11 @@ export function resolveEscape(state: EscapeStackState): EscapeAction | null {
  * menu together.
  */
 export function isMezzanineEscapeAction(action: EscapeAction | null): boolean {
-  return action === 'close_keymap'
-    || action === 'close_city_plan'
-    || action === 'exit_map_mode'
-    || action === 'close_pause_menu'
-    || action === 'open_pause_menu';
+  return (
+    action === "close_keymap" ||
+    action === "close_city_plan" ||
+    action === "exit_map_mode" ||
+    action === "close_pause_menu" ||
+    action === "open_pause_menu"
+  );
 }

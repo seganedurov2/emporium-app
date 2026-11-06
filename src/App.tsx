@@ -13,7 +13,7 @@ import {
   Menu, ChevronLeft, ChevronRight, Target, Trophy, Crown, Gavel, Settings, Bell, Lock, Key
 } from 'lucide-react';
 import type { Character, Caravan, LoanApplication, WeeklyFinanceReport } from './gameEngine';
-import { createGoodsLot, getAuctionHouseStaff, sellAuctionLot as sellAuctionLotEngine, createCharacterLot, buildValuationAnnouncements, valuationMismatch, requestCharacterSaleConsent, cancelCharacterSaleConsent, hasPendingSaleConsent, AUCTION_HOUSE_ADMINISTRATOR } from './auctionHouseEngine';
+import { getAuctionHouseStaff, sellAuctionLot as sellAuctionLotEngine, createCharacterLot, buildValuationAnnouncements, valuationMismatch, requestCharacterSaleConsent, cancelCharacterSaleConsent, hasPendingSaleConsent, AUCTION_HOUSE_ADMINISTRATOR, inspectAuctionLot as inspectAuctionLotEngine, sellCounterfeitsBulk as sellCounterfeitsBulkEngine, createGoodsLot, AUCTION_INSPECTION_BALANCE } from './auctionHouseEngine';
 import type { AuctionLot } from './auctionHouseEngine';
 import { advancePregnancyWeek } from './pregnancyEngine';
 import { DependentsPanel } from './components/roster/DependentsPanel';
@@ -1120,15 +1120,18 @@ const refreshCandidates = () => {
         const charId = lot.characterId;
         newRoster = prev.roster.filter(c => c.id !== charId);
       }
+      if (saleResult.scandal) showNotify(saleResult.scandal);
       return {
         ...prev,
-        funds: prev.funds + saleResult.sale.saleProceeds,
+        funds: Math.max(0, prev.funds + saleResult.sale.saleProceeds + (saleResult.fundsDelta ?? 0)),
+        reputation: Math.max(0, Math.min(100, prev.reputation + (saleResult.reputationDelta ?? 0))),
         roster: newRoster,
         auctionHouse: saleResult.state,
         metaProgress: registerAuctionSale(prev.metaProgress, saleResult.sale.saleProceeds),
         log: [isCharacterLot
           ? `Продан персонал «${lot.productName}» на аукционе за ${formatMoney(saleResult.sale.saleProceeds)}${saleResult.sale.winningNpcBidder ? ` (покупатель ${saleResult.sale.winningNpcBidder} поднял цену до ${formatMoney(saleResult.sale.npcWinningBid!)})` : ''}${saleResult.sale.auctioneerBonusPercent ? ` (аукционист +${saleResult.sale.auctioneerBonusPercent}%).` : '.'}`
           : `Продан товарный лот «${lot.productName}» из каравана «${lot.caravanName}» за ${formatMoney(saleResult.sale.saleProceeds)}${saleResult.sale.winningNpcBidder ? ` (покупатель ${saleResult.sale.winningNpcBidder} поднял цену до ${formatMoney(saleResult.sale.npcWinningBid!)})` : ''}${saleResult.sale.auctioneerBonusPercent ? ` (аукционист +${saleResult.sale.auctioneerBonusPercent}%).` : '.'}`,
+          ...(saleResult.scandal ? [saleResult.scandal] : []),
           ...announcements.map(announcement => announcement.text),
           ...prev.log].slice(0, 50)
       };
@@ -1139,6 +1142,36 @@ const refreshCandidates = () => {
         ? `Оценщик и аукционист назвали свои цены. Лот «${pendingLot.productName}» продан — средства зачислены в казну.`
         : winningNpc ? `Лот продан за ${formatMoney(gameState.auctionHouse.recentSales[0]?.saleProceeds)}! Покупатель ${winningNpc} поднял цену.` : 'Лот продан. Средства зачислены в казну.');
     }
+  };
+
+  const inspectAuctionLotAction = (lotId: string) => {
+    let msg = '';
+    setGameState(prev => {
+      const staff = getAuctionHouseStaff(prev.auxiliaryBuildings, prev.employees);
+      const result = inspectAuctionLotEngine(prev.auctionHouse, lotId, prev.week, staff);
+      if (!result.inspection) { msg = result.reason ?? 'Осмотр недоступен.'; return prev; }
+      const verdictText = result.inspection.verdict === 'counterfeit'
+        ? `подделка подтверждена (${result.inspection.confidence}%)`
+        : result.inspection.verdict === 'suspicious'
+          ? `есть подозрение на подделку (${result.inspection.confidence}%)`
+          : result.inspection.verdict === 'genuine'
+            ? `признаков подделки не найдено (${result.inspection.confidence}%)`
+            : `недостаточно данных (${result.inspection.confidence}%)`;
+      msg = `${result.inspection.inspectorName}: ${verdictText}.`;
+      return { ...prev, auctionHouse: result.state, log: [`Осмотр лота: ${msg}`, ...prev.log].slice(0, 50) };
+    });
+    if (msg) showNotify(msg);
+  };
+
+  const sellJunkyardAction = () => {
+    let msg = '';
+    setGameState(prev => {
+      const result = sellCounterfeitsBulkEngine(prev.auctionHouse, prev.week);
+      if (result.count === 0) { msg = `Свалка принимает опт только от ${AUCTION_INSPECTION_BALANCE.junkyardUnlockCount} поддельных лотов.`; return prev; }
+      msg = `Свалка: продано ${result.count} поддельных лотов оптом за ${formatMoney(result.proceeds)}.`;
+      return { ...prev, funds: prev.funds + result.proceeds, auctionHouse: result.state, log: [msg, ...prev.log].slice(0, 50) };
+    });
+    if (msg) showNotify(msg);
   };
 
   /** Подтверждает запрос администратора и завершает продажу лота персонала. */
@@ -5665,15 +5698,20 @@ contracts={gameState.tradeSupplyContracts || []}
             funds={gameState.funds}
             pendingLots={gameState.auctionHouse.pendingLots}
             recentSales={gameState.auctionHouse.recentSales}
+            inspections={gameState.auctionHouse.inspections}
             auctioneer={auctionHouseStaff.auctioneer}
             appraiser={auctionHouseStaff.appraiser}
             auctioneerSaleBonus={auctionHouseEffects.auctioneerSaleBonus}
             administratorRequest={gameState.venueRequests?.auction_house ?? null}
+            inspectWeek={gameState.auctionHouse.inspectWeek}
+            inspectChargesUsed={gameState.auctionHouse.inspectChargesUsed}
             onAcceptRequest={acceptVenueRequest}
             onSellLot={sellAuctionLot}
             saleConsents={gameState.auctionHouse.pendingSaleConsents}
             onConfirmSale={confirmAuctionSale}
             onCancelSaleConsent={cancelAuctionSaleConsent}
+            onInspectLot={inspectAuctionLotAction}
+            onSellJunkyard={sellJunkyardAction}
             onOpenCaravans={() => setActiveTab('caravans')}
             pleasureHouseCharacters={gameState.roster.filter(c => c.assignedVenue !== 'pleasure_house')}
             onPreviewImage={setFullscreenImage}

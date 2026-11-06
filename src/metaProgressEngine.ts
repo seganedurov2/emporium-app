@@ -236,8 +236,8 @@ export function applyWeeklyStats(
   delta: WeeklyStatsDelta = {}
 ): MetaProgressState {
   const stats = { ...meta.stats };
-  stats.totalRevenue += Math.max(0, Math.floor(report.revenue.venue + report.revenue.caravans + report.revenue.captureOps + report.revenue.contracts + report.revenue.salon + (report.revenue.city ?? 0)));
-  stats.totalExpenses += Math.max(0, Math.floor(report.expenses.wages + report.expenses.hospital + report.expenses.restZone + report.expenses.staffSlots + report.expenses.loanPayment + report.expenses.warehouse + (report.expenses.city ?? 0)));
+  stats.totalRevenue += Math.max(0, Math.floor(report.revenue.venue + report.revenue.caravans + report.revenue.captureOps + report.revenue.contracts + report.revenue.salon + (report.revenue.city ?? 0) + (report.revenue.boiler ?? 0)));
+  stats.totalExpenses += Math.max(0, Math.floor(report.expenses.wages + report.expenses.hospital + report.expenses.restZone + report.expenses.staffSlots + report.expenses.loanPayment + report.expenses.warehouse + (report.expenses.city ?? 0) + (report.expenses.boiler ?? 0)));
   stats.totalNetIncome += Math.floor(report.netIncome);
   if (report.treasuryAfter > stats.peakFunds) {
     stats.peakFunds = Math.floor(report.treasuryAfter);

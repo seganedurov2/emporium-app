@@ -1,4 +1,4 @@
-import { X, ChevronDown, ShieldAlert, Bell, Smartphone, Monitor, Lock, Cpu, Activity, Sun, Moon, Download } from 'lucide-react';
+import { X, ChevronDown, ShieldAlert, Bell, Smartphone, Monitor, Lock, Cpu, Activity, Sun, Moon, Download, Heart } from 'lucide-react';
 import { useState } from 'react';
 import type { AppSettings } from '../../settings';
 import type { OrientationLock } from '../../telegram';
@@ -53,7 +53,8 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
     experimental: false,
     protection: false,
     threats: false,
-    audit: false
+    audit: false,
+    supporters: false
   });
   const [auditTrail, setAuditTrail] = useState<Array<{ ts: number; event: string; detail?: string }>>([]);
   const [exportPassphrase, setExportPassphrase] = useState('');
@@ -378,6 +379,29 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
                 className={`block w-4 h-4 rounded-full bg-white shadow ring-0 transition-transform ${settings.theme === 'light' ? 'translate-x-5' : 'translate-x-1'}`}
               />
             </button>
+          </div>
+        </Section>
+
+        <Section
+          title="Подписчики и поддержка"
+          Icon={Heart}
+          hint="Благодарности проекту и вдохновителям"
+          open={sections.supporters}
+          onToggle={() => toggle('supporters')}
+        >
+          <div className="space-y-2">
+            <a
+              href="https://github.com/adikt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 transition hover:border-amber-400/40"
+            >
+              <span>
+                <span className="block text-sm font-semibold text-slate-100">adikt</span>
+                <span className="block text-xs text-slate-400">GitHub · вдохновение механиками аукционного дома (Pawn Pleasure)</span>
+              </span>
+              <span className="text-[10px] font-mono text-amber-300">github.com/adikt</span>
+            </a>
           </div>
         </Section>
 
