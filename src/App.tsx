@@ -171,6 +171,8 @@ import { AuthScreen } from './components/auth/AuthScreen';
 import { FileUpload } from './components/ui/FileUpload';
 import { PhoneWidget } from './components/ui/PhoneWidget';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { QuestsPanel } from './components/QuestsPanel';
+import { checkQuests, applyQuestRewards } from './quests';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { setPortrait3dEnabled } from './portrait3dFlag';
 import { setOrientationLock, getTelegramStartParam } from './telegram';
@@ -458,6 +460,7 @@ const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
   const [tickerItems, setTickerItems] = useState<string[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>(() => loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showQuests, setShowQuests] = useState(false);
   const [sessionLockOpen, setSessionLockOpen] = useState(false);
   const [encryptionEnabled, setEncryptionEnabled] = useState(false);
 const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null>(null);
@@ -2573,6 +2576,10 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
       nextMarketDemand[regionId] = Math.max(1, nextMarketDemand[regionId] - 0.02);
     }
 
+    // Квесты: проверяем прогресс каждую неделю и выдаём награды за завершённые.
+    const questResult = checkQuests(gameState, gameState.quests ?? []);
+    const questState = applyQuestRewards(gameState, questResult.completed);
+    const questLogs = questResult.logs.length > 0 ? questResult.logs : [];
 
     setGameState(prev => ({
       ...prev,
@@ -2648,12 +2655,13 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
       captiveLots: updatedLots,
       reservedCaptiveLotIds: [],
        beautySalon: {
-         ...prev.beautySalon,
-         supplies: Math.max(0, prev.beautySalon.supplies - suppliesUsedThisWeek + prev.beautySalon.level * 20),
-         scheduledTreatments: updatedTreatments,
-         totalRevenue: prev.beautySalon.totalRevenue + salonTreatmentRevenue
-       },
-        log: [...newLogs, ...prev.log].slice(0, 50),
+          ...prev.beautySalon,
+          supplies: Math.max(0, prev.beautySalon.supplies - suppliesUsedThisWeek + prev.beautySalon.level * 20),
+          scheduledTreatments: updatedTreatments,
+          totalRevenue: prev.beautySalon.totalRevenue + salonTreatmentRevenue
+        },
+      quests: questState.quests,
+      log: [...newLogs, ...questLogs, ...prev.log].slice(0, 50),
         // Campaign script follows the week: crossing week 30/60/85 moves the
         // run into the next act, and the log records the transition.
         campaignScript: advanceCampaignScript(prev.campaignScript ?? createCampaignScript(prev.week), nextWeekNumber),
@@ -4480,6 +4488,14 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
         onClose={() => setIsSettingsOpen(false)}
       />
 
+      {/* Quests panel */}
+      {showQuests && (
+        <QuestsPanel
+          quests={gameState.quests ?? []}
+          onClose={() => setShowQuests(false)}
+        />
+      )}
+
       {/* Top Notification Toast */}
       {notification && (
         <div className="fixed top-5 right-5 z-[70] bg-amber-500 text-slate-950 font-bold px-4 py-3 rounded-lg shadow-xl flex items-center gap-2 border border-amber-300 animate-bounce">
@@ -4620,15 +4636,24 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
 
         {/* Action Controls */}
            <div className="flex items-center gap-3" data-platform={currentPlatform}>
-             <button
-               type="button"
-               onClick={() => setIsSettingsOpen(true)}
-               aria-label="Настройки приложения"
-               title="Настройки"
-               className="rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-slate-200 transition hover:bg-slate-700"
-             >
-               <Settings className="w-4 h-4" />
-             </button>
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                aria-label="Настройки приложения"
+                title="Настройки"
+                className="rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-slate-200 transition hover:bg-slate-700"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowQuests(true)}
+                aria-label="Задания кампании"
+                title="Задания"
+                className="rounded-lg border border-amber-600/50 bg-amber-900/20 p-2.5 text-amber-300 transition hover:bg-amber-900/40"
+              >
+                <Target className="w-4 h-4" />
+              </button>
                <NotificationCenter feed={activityFeed} onNavigate={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
 
               <MultiplayerPanel gameState={gameState} setGameState={setGameState} initialRoom={multiplayerRoom} />

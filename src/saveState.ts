@@ -38,6 +38,11 @@ import {
   normalizeCityHubOpenedAt,
   type CityEconomyState
 } from './cityEconomyState';
+import {
+  createInitialQuestStates,
+  normalizeQuests,
+  type QuestState
+} from './quests';
 
 export interface ManagedCampaignState extends CampaignState {
   beautySalon: BeautySalonState;
@@ -97,6 +102,8 @@ export interface ManagedCampaignState extends CampaignState {
   boilerHouse: BoilerHouseState;
   /** Which act of the campaign script the run is in. */
   campaignScript: CampaignScriptState;
+  /** Active quest states (progress and completion per quest). */
+  quests: QuestState[];
 }
 
 export interface InitialCampaignOptions {
@@ -233,7 +240,9 @@ export function createInitialCampaign(options: InitialCampaignOptions = {}): Man
     marketRefreshDone: false,
     marketDemand: {},
     regionalStanding: {},
-    purchasedUpgrades: []
+    purchasedUpgrades: [],
+    cityTerritoriesOwned: 1,
+    quests: createInitialQuestStates(week)
   } as ManagedCampaignState;
 }
 
@@ -788,6 +797,8 @@ export function migrateCampaignState(raw: unknown): ManagedCampaignState {
     warehouse: normalizeWarehouseState(parsed.warehouse),
     boilerHouse: normalizeBoilerHouseState(parsed.boilerHouse),
     campaignScript: normalizeCampaignScript(parsed.campaignScript, savedWeek),
+    cityTerritoriesOwned: Math.max(1, Math.floor(Number(parsed.cityTerritoriesOwned) || 1)),
+    quests: normalizeQuests(parsed.quests, savedWeek),
     log: Array.isArray(parsed.log) ? parsed.log.filter((entry): entry is string => typeof entry === 'string') : []
   } as ManagedCampaignState;
 }

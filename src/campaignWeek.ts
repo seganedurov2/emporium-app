@@ -46,6 +46,7 @@ import { advanceCityEconomy } from './cityEconomyEngine';
 import { withCityEconomyReport } from './cityEconomyState';
 import { advanceCampaignScript, createCampaignScript, getCampaignActMilestones, type ScriptSnapshot } from './campaignScript';
 import { applyWeeklyMetaProgress, recordFinishedWeek } from './campaignGoalAdvance';
+import { checkQuests, applyQuestRewards } from './quests';
 import { generateVenueRequests } from './administratorEngine';
 import { generateMarketImprovementRequest, marketImprovementEffects } from './marketImprovementsEngine';
 import { triggerWeeklyMarketRefresh } from './marketRefreshLogic';
@@ -143,6 +144,8 @@ export interface WeeklyAdvance {
   pendingRaids: ActiveRaid[];
   netIncome: number;
   loanPayment: number;
+  /** Titles of quests completed this week, for the caller's toast. */
+  questCompleted: string[];
 }
 
 /**
@@ -1032,6 +1035,12 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
   const ending: WeeklyAdvance['ending'] = weeklyRecords.ended
     ? { type: goalStatus === 'victory' ? 'victory' : 'defeat', week: nextWeekNumber }
     : null;
+
+  // Квесты: проверяем прогресс каждую неделю и выдаём награды за завершённые.
+  const questResult = checkQuests(gameState, gameState.quests ?? []);
+  const questState = applyQuestRewards(gameState, questResult.completed);
+  const questLogs = questResult.logs.length > 0 ? questResult.logs : [];
+
   return {
     nextState: {
       ...gameState,
@@ -1143,9 +1152,11 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
           funds: currentFunds,
           marketImprovements: gameState.marketImprovements,
           lastWeeklyReport: weeklyReport
-        })
+        }),
+        quests: questState.quests
     },
-    logs: newLogs,
+    logs: [...newLogs, ...questLogs],
+    questCompleted: questResult.completed.map(q => q.title),
     notify: `Наступила неделя ${nextWeekNumber}. Чистый доход: ${formatMoney(netIncome)}${loanPayment > 0 ? ` — Кредит: -${formatMoney(loanPayment)}` : ''}`,
     achievementNotify,
     ending,

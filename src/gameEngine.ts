@@ -241,6 +241,8 @@ export interface CampaignState {
   schoolTeacherId?: string | null;
   /** Assigned medic running the Correction Centre's on-site care. */
   correctionMedicId?: string | null;
+  /** Number of city territories owned (starts at 1, grows with purchases). */
+  cityTerritoriesOwned: number;
 }
 
 export const REGIONS = [
