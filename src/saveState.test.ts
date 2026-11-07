@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { migrateCampaignState, createInitialCampaign } from './saveState';
+import { isTabUnlocked } from './tabGates';
+import { createInitialQuestStates } from './quests';
 
 describe('migrateCampaignState (backward compatibility)', () => {
   it('throws on non-object input', () => {
@@ -81,3 +83,23 @@ describe('migrateCampaignState (backward compatibility)', () => {
     expect(migrated.roster.length).toBeGreaterThan(0);
   });
 });
+  it('tab gating: new campaign keeps core tabs open and gates others by quests', () => {
+    const state = createInitialCampaign({ fresh: true, week: 1 });
+    const qs = createInitialQuestStates(1);
+    expect(isTabUnlocked('dashboard', qs, state)).toBe(true);
+    expect(isTabUnlocked('finances', qs, state)).toBe(true);
+    expect(isTabUnlocked('school', qs, state)).toBe(false);
+    // build path tabs needed to complete first quest stay open
+    expect(isTabUnlocked('facilities_staff', qs, state)).toBe(true);
+  });
+
+  it('tab gating: completed quest unlocks mapped tabs', () => {
+    const state = createInitialCampaign({ fresh: true, week: 1 });
+    const qs = createInitialQuestStates(1).map(q => q.id === 'build_school' ? { ...q, status: 'completed' as const } : q);
+    expect(isTabUnlocked('school', qs, state)).toBe(true);
+  });
+
+  it('tab gating: legacy progress does not lock tabs', () => {
+    const state = createInitialCampaign({ fresh: true, week: 30 });
+    expect(isTabUnlocked('school', [], state)).toBe(true);
+  });

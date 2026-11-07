@@ -165,6 +165,7 @@ import {
 import { triggerWeeklyMarketRefresh } from './marketRefreshLogic';
 import type { AppTab } from './appNavigation';
 import { APP_NAVIGATION } from './appNavigation';
+import { isTabUnlocked, getTabLockReason } from './tabGates';
 import { buildActivityFeed } from './components/header/notificationFeed';
 import { NotificationCenter } from './components/header/NotificationCenter';
 import { AuthScreen } from './components/auth/AuthScreen';
@@ -598,6 +599,14 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
     setPortrait3dEnabled(appSettings.emporium_3d);
   }, [appSettings.emporium_3d]);
 
+  // Guard: if current tab becomes locked (migration/edge case), return to dashboard.
+  useEffect(() => {
+    if (!isTabUnlocked(activeTab, gameState.quests, gameState)) {
+      setActiveTab('dashboard');
+      setMezzanineView('dashboard');
+    }
+  }, [activeTab, gameState.quests, gameState.week, gameState.reputation]);
+
   // Closes the in-game menu and mobile navigation on Escape.
   // The hub's own overlays (keymap, city plan, 3D, pause menu) are above the
   // shell in `escapeStack`; when one of them owns the press this listener
@@ -621,25 +630,48 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
     return () => document.removeEventListener('keydown', handleEscape, true);
   }, [showInGameMenu, isMobileMenuOpen, activeTab]);
 
+  const tryNavigateToTab = (tab: AppTab, mobile = false) => {
+    if (!isTabUnlocked(tab, gameState.quests, gameState)) {
+      const reason = getTabLockReason(tab, gameState.quests);
+      showNotify(reason ?? 'Раздел заблокирован');
+      setShowQuests(true);
+      return;
+    }
+    setActiveTab(tab);
+    setMezzanineView(tab);
+    if (mobile) setIsMobileMenuOpen(false);
+  };
+
   const renderNavigationItems = (collapsed = false, mobile = false) => APP_NAVIGATION.map(tab => {
     const Icon = tab.icon;
     const isActive = activeTab === tab.id;
+    const unlocked = isTabUnlocked(tab.id, gameState.quests, gameState);
+    const lockReason = unlocked ? null : getTabLockReason(tab.id, gameState.quests);
     return (
       <button
         key={tab.id}
         type="button"
-        onClick={() => {
-          setActiveTab(tab.id);
-          setMezzanineView(tab.id);
-          if (mobile) setIsMobileMenuOpen(false);
-        }}
+        onClick={() => tryNavigateToTab(tab.id, mobile)}
+        disabled={!unlocked}
         aria-current={isActive ? 'page' : undefined}
-        aria-label={collapsed ? tab.label : undefined}
-        title={collapsed ? tab.label : undefined}
-        className={`group flex min-h-11 w-full items-center gap-3 border-l-2 px-3 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-amber-400 ${collapsed ? 'justify-center px-2' : ''} ${isActive ? 'border-amber-400 bg-amber-400/10 text-amber-300' : 'border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-100'}`}
+        aria-disabled={!unlocked || undefined}
+        aria-label={collapsed ? `${tab.label}${lockReason ? ` — ${lockReason}` : ''}` : undefined}
+        title={lockReason ?? (collapsed ? tab.label : undefined)}
+        className={`group flex min-h-11 w-full items-center gap-3 border-l-2 px-3 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-amber-400 ${collapsed ? 'justify-center px-2' : ''} ${
+          !unlocked
+            ? 'border-transparent text-slate-600 opacity-60 cursor-not-allowed'
+            : isActive
+              ? 'border-amber-400 bg-amber-400/10 text-amber-300'
+              : 'border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-100'
+        }`}
       >
-        <Icon aria-hidden="true" className={`h-4 w-4 shrink-0 ${isActive ? 'text-amber-300' : 'text-slate-500 group-hover:text-slate-200'}`} />
+        {unlocked ? (
+          <Icon aria-hidden="true" className={`h-4 w-4 shrink-0 ${isActive ? 'text-amber-300' : 'text-slate-500 group-hover:text-slate-200'}`} />
+        ) : (
+          <Lock aria-hidden="true" className="h-4 w-4 shrink-0 text-slate-600" />
+        )}
         {!collapsed && <span className="truncate">{tab.label}</span>}
+        {!collapsed && !unlocked && <Lock aria-hidden="true" className="ml-auto h-3 w-3 shrink-0 text-slate-600" />}
       </button>
     );
   });
@@ -1576,7 +1608,7 @@ const refreshCandidates = () => {
     setGameState(prev => ({
       ...prev,
       funds: prev.funds - definition.buildCost,
-      boilerHouse: result.state,
+      boilerHouse: result,
       log: [`Котельная: «${definition.name}» построен.`, ...prev.log].slice(0, 50)
     }));
   };
@@ -4654,7 +4686,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
               >
                 <Target className="w-4 h-4" />
               </button>
-               <NotificationCenter feed={activityFeed} onNavigate={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
+               <NotificationCenter feed={activityFeed} onNavigate={tab => tryNavigateToTab(tab)} />
 
               <MultiplayerPanel gameState={gameState} setGameState={setGameState} initialRoom={multiplayerRoom} />
 
@@ -6307,7 +6339,7 @@ contracts={gameState.tradeSupplyContracts || []}
         {/* MEZZANINE JOURNAL TAB — журнал «Информатика» */}
         {activeTab === 'mezzanine_journal' && (
           <ErrorBoundary>
-            <MezzanineJournalTab onOpenTab={(tab) => { setActiveTab(tab as AppTab); setIsMobileMenuOpen(false); }} />
+            <MezzanineJournalTab onOpenTab={(tab) => tryNavigateToTab(tab as AppTab)} />
           </ErrorBoundary>
         )}
 
@@ -6362,7 +6394,7 @@ contracts={gameState.tradeSupplyContracts || []}
               activeTab={activeTab}
               onViewChange={handleMezzanineViewChange}
               onCityPlanChange={handleCityPlanChange}
-              onOpenTab={tab => { setActiveTab(tab); setMezzanineView(tab); setIsMobileMenuOpen(false); }}
+              onOpenTab={tab => tryNavigateToTab(tab)}
             />
           </ErrorBoundary>
         )}
