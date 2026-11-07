@@ -3636,7 +3636,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
           </div>
 
           <h1 className="text-3xl font-black tracking-tight text-white mb-2">EMPORIUM</h1>
-          <p className="text-xs text-slate-400 font-mono mb-8 uppercase tracking-widest">Глобальная стратегия и торговая симуляция v0.4.8</p>
+          <p className="text-xs text-slate-400 font-mono mb-8 uppercase tracking-widest">Глобальная стратегия и торговая симуляция v0.4.9</p>
 
           <div className="space-y-3">
             <button
@@ -4577,7 +4577,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
             <Sparkles className="w-6 h-6 font-bold" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white m-0 p-0">EMPORIUM <span className="text-xs px-2 py-0.5 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full font-mono">v0.4.8 Web</span></h1>
+            <h1 className="text-xl font-bold tracking-tight text-white m-0 p-0">EMPORIUM <span className="text-xs px-2 py-0.5 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full font-mono">v0.4.9 Web</span></h1>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
               <span className="truncate">{gameState.campaignName} (Слот #{gameState.slot})</span>
               <span className="nasa-readout inline-flex shrink-0 items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] tracking-widest text-amber-200">
@@ -6371,7 +6371,7 @@ contracts={gameState.tradeSupplyContracts || []}
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 px-6 py-4 text-center text-xs text-slate-500">
-        Emporium Web Edition v0.4.8 • Симулятор стратегии и управления • Все права защищены.
+        Emporium Web Edition v0.4.9 • Симулятор стратегии и управления • Все права защищены.
       </footer>
 
       <PhoneWidget />
