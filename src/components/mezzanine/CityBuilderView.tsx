@@ -37,7 +37,7 @@ const SPEEDS = [
   { value: 0, label: 'Пауза' },
 ];
 
-const KINDS: BuildingKind[] = ['house', 'shop', 'office', 'factory', 'park'];
+const KINDS: BuildingKind[] = ['house', 'shop', 'office', 'factory', 'park', 'auction_house'];
 
 export function CityBuilderView({
   citySeed = 1101,
@@ -59,6 +59,10 @@ export function CityBuilderView({
   const [toast, setToast] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1.15);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  /** Какая территория открыта сейчас (0..territoriesOwned-1). */
+  const [territoryIndex, setTerritoryIndex] = useState(0);
+  /** Сколько территорий куплено. Начинаем с одной — стартовый город. */
+  const [territoriesOwned, setTerritoriesOwned] = useState(1);
   // "3D" swaps the flat iso canvas for the three.js town; both drive the
   // same city state, so a build started in one view finishes in the other.
   const [mode, setMode] = useState<'2d' | '3d'>('3d');
@@ -229,8 +233,15 @@ export function CityBuilderView({
     savePlan(true, nextCity, seed);
   };
 
+  const prevTerritory = () => setTerritoryIndex(i => (i > 0 ? i - 1 : territoriesOwned - 1));
+  const nextTerritory = () => setTerritoryIndex(i => (i < territoriesOwned - 1 ? i + 1 : 0));
+  const buyTerritory = () => {
+    setTerritoriesOwned(n => n + 1);
+    setTerritoryIndex(territoriesOwned);
+    notify(`Территория ${territoriesOwned + 1} куплена`);
+  };
+
   const fillDistrict = () => {
-    // "Autoplay" a few plots around the selection so the town does not stay empty.
     const kinds: BuildingKind[] = ['house', 'house', 'shop', 'park', 'office'];
     let placed = 0;
     for (const block of city.blocks) {
@@ -308,6 +319,21 @@ export function CityBuilderView({
         ) : (
           <canvas ref={canvasRef} className="block w-full h-full touch-none select-none" />
         )}
+        {/* Стрелки навигации по территориям */}
+        <button
+          onClick={prevTerritory}
+          aria-label="Предыдущая территория"
+          className="absolute top-1/2 left-2 z-30 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-amber-500/50 text-amber-300 px-3 py-2 rounded text-2xl font-bold transition"
+        >
+          ‹
+        </button>
+        <button
+          onClick={nextTerritory}
+          aria-label="Следующая территория"
+          className="absolute top-1/2 right-2 z-30 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-amber-500/50 text-amber-300 px-3 py-2 rounded text-2xl font-bold transition"
+        >
+          ›
+        </button>
       </div>
 
       {/* Top-left: city stats */}
@@ -324,6 +350,10 @@ export function CityBuilderView({
           <span className="font-mono text-right text-emerald-400">{stats.building}</span>
           <span className="text-slate-400">Улиц</span>
           <span className="font-mono text-right">{streets.length}</span>
+          <span className="text-slate-400">Территория</span>
+          <span className="font-mono text-right text-amber-300">
+            {territoryIndex + 1} / {territoriesOwned}
+          </span>
         </div>
         {cityReport && (
           <div className="mt-2 border-t border-amber-500/20 pt-2 space-y-0.5">
@@ -412,6 +442,12 @@ export function CityBuilderView({
         <div className="flex gap-1">
           <button onClick={fillDistrict} className="flex-1 rounded bg-blue-600/80 hover:bg-blue-600 px-2 py-1">Застройка</button>
           <button onClick={newCity} className="flex-1 rounded bg-amber-600/80 hover:bg-amber-600 px-2 py-1">Новый город</button>
+          <button
+            onClick={buyTerritory}
+            className="flex-1 rounded bg-purple-600/80 hover:bg-purple-600 px-2 py-1 text-[11px]"
+          >
+            Купить территорию
+          </button>
         </div>
         <div className="text-[10px] text-slate-400 leading-snug">
           {mode === '3d'

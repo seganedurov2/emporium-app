@@ -58,6 +58,7 @@ export const GROWTH_DEPOSIT: Record<BuildingKind, number> = {
   office: 260,
   factory: 400,
   park: 90,
+  auction_house: 300,
 };
 
 /** Kinds the town builds on its own; the factory is left to the player. */
@@ -115,6 +116,7 @@ export const KIND_LABELS: Record<BuildingKind, string> = {
   office: BLOCK_STYLES.office.label,
   factory: BLOCK_STYLES.factory.label,
   park: BLOCK_STYLES.park.label,
+  auction_house: BLOCK_STYLES.auction_house.label,
 };
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
@@ -140,7 +142,7 @@ function emptyReport(week: number): CityEconomyReport {
 
 /** Finished buildings grouped by kind, counted once per building. */
 function countFinished(city: CityState): Record<BuildingKind, number> {
-  const counts: Record<BuildingKind, number> = { house: 0, shop: 0, office: 0, factory: 0, park: 0 };
+  const counts: Record<BuildingKind, number> = { house: 0, shop: 0, office: 0, factory: 0, park: 0, auction_house: 0 };
   const seen = new Set<number>();
   for (let y = 0; y < city.size; y++) {
     for (let x = 0; x < city.size; x++) {

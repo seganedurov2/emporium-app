@@ -4,7 +4,7 @@
 
 export const CITY_SIZE = 40;
 
-export type BuildingKind = 'house' | 'shop' | 'office' | 'factory' | 'park';
+export type BuildingKind = 'house' | 'shop' | 'office' | 'factory' | 'park' | 'auction_house';
 
 export type CellType = 'empty' | 'road' | 'lot';
 
@@ -74,6 +74,7 @@ export const BLOCK_STYLES: Record<BuildingKind, BlockStyle> = {
   office: { kind: 'office', residents: 0, jobs: 24, buildSeconds: 22, label: 'Офис' },
   factory: { kind: 'factory', residents: 0, jobs: 60, buildSeconds: 32, label: 'Завод' },
   park: { kind: 'park', residents: 0, jobs: 1, buildSeconds: 6, label: 'Парк' },
+  auction_house: { kind: 'auction_house', residents: 0, jobs: 4, buildSeconds: 20, label: 'Аукционный дом' },
 };
 
 const STREET_NAMES = [

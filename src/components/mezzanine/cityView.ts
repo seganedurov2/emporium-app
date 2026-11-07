@@ -37,6 +37,7 @@ const PALETTE: Record<BuildingKind, { roof: string; wall: string; side: string; 
   office: { roof: '#5b6f86', wall: '#c9d4de', side: '#a3b0bb', floors: 6, w: 0.9, d: 0.9 },
   factory: { roof: '#8a6f3c', wall: '#9a8d78', side: '#7a6f5c', floors: 4, w: 1.0, d: 0.9 },
   park: { roof: '#3f8f44', wall: '#57a85a', side: '#427f45', floors: 1, w: 1.0, d: 1.0 },
+  auction_house: { roof: '#7c3aed', wall: '#e9d5ff', side: '#c084fc', floors: 2, w: 1.0, d: 0.9 },
 };
 
 const rnd = (n: number) => {
