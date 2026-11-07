@@ -2612,6 +2612,9 @@ if (employeeWeek.wagesPaid > 0) newLogs.push(`Выплачена зарплат�
     const questResult = checkQuests(gameState, gameState.quests ?? []);
     const questState = applyQuestRewards(gameState, questResult.completed);
     const questLogs = questResult.logs.length > 0 ? questResult.logs : [];
+    if (questResult.completed.length > 0) {
+      showNotify(`Квест завершён: ${questResult.completed.map(q => q.title).join(', ')}`);
+    }
 
     setGameState(prev => ({
       ...prev,
@@ -4524,6 +4527,7 @@ log: [`Кандидат на рынке ${candidate.name} ${wasReserved ? 'сн�
       {showQuests && (
         <QuestsPanel
           quests={gameState.quests ?? []}
+          state={gameState}
           onClose={() => setShowQuests(false)}
         />
       )}

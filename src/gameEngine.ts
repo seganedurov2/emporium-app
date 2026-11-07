@@ -47,6 +47,20 @@ export interface Character {
   country?: string; // birthplace, drawn from the region of origin
   city?: string; // major city of origin, drawn from the region
   age: number; // 18-60
+  /** Body weight in kg, generated at creation. */
+  bodyWeight?: number;
+  /** Height in cm, generated at creation. */
+  height?: number;
+  /** Breast size (cup index 0-6), generated for women/trans. */
+  breastSize?: number;
+  /** Waist in cm, generated at creation. */
+  waist?: number;
+  /** Hips in cm, generated at creation. */
+  hips?: number;
+  /** Hair color. */
+  hairColor?: string;
+  /** Eye color. */
+  eyeColor?: string;
   role: string;
   price: number;
   skill: number; // 1-100
@@ -557,6 +571,13 @@ export function generateCharacter(regionId?: string, genderOverride?: 'women' | 
     country: pickCountry(reg.id),
     city: pickCity(reg.id),
     age: Math.floor(Math.random() * 43) + 18,
+    bodyWeight: Math.floor(Math.random() * 40) + 45,
+    height: Math.floor(Math.random() * 25) + 155,
+    breastSize: Math.floor(Math.random() * 7),
+    waist: Math.floor(Math.random() * 15) + 55,
+    hips: Math.floor(Math.random() * 20) + 80,
+    hairColor: ['Blonde','Brown','Black','Red','Auburn'][Math.floor(Math.random()*5)],
+    eyeColor: ['Blue','Brown','Green','Gray','Hazel'][Math.floor(Math.random()*5)],
     role,
     price,
     skill,
@@ -681,6 +702,13 @@ export function generateSlaveCharacter(params: {
     country: pickCountry(reg.id),
     city: pickCity(reg.id),
     age: Math.floor(Math.random() * 20) + 18,
+    bodyWeight: Math.floor(Math.random() * 40) + 45,
+    height: Math.floor(Math.random() * 25) + 155,
+    breastSize: Math.floor(Math.random() * 7),
+    waist: Math.floor(Math.random() * 15) + 55,
+    hips: Math.floor(Math.random() * 20) + 80,
+    hairColor: ['Blonde','Brown','Black','Red','Auburn'][Math.floor(Math.random()*5)],
+    eyeColor: ['Blue','Brown','Green','Gray','Hazel'][Math.floor(Math.random()*5)],
     role,
     price,
     skill,

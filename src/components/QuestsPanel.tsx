@@ -3,14 +3,16 @@
  * Показывает активные и завершённые квесты с прогрессом и наградами.
  */
 
-import { type Quest, type QuestState } from '../quests';
+import { QUESTS, getQuestProgress, type Quest, type QuestState } from '../quests';
+import type { ManagedCampaignState } from '../saveState';
 
 interface QuestsPanelProps {
   quests: QuestState[];
+  state: ManagedCampaignState;
   onClose: () => void;
 }
 
-export function QuestsPanel({ quests, onClose }: QuestsPanelProps) {
+export function QuestsPanel({ quests, state, onClose }: QuestsPanelProps) {
   const active = quests.filter((q) => q.status === 'active');
   const completed = quests.filter((q) => q.status === 'completed');
 
@@ -38,6 +40,8 @@ export function QuestsPanel({ quests, onClose }: QuestsPanelProps) {
               {active.map((qs) => {
                 const quest = QUEST_BY_ID[qs.id];
                 if (!quest) return null;
+                const progress = getQuestProgress(state, quest);
+                const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
                 return (
                   <div
                     key={quest.id}
@@ -50,11 +54,20 @@ export function QuestsPanel({ quests, onClose }: QuestsPanelProps) {
                       </span>
                     </div>
                     <p className="text-slate-400 text-sm mb-3">{quest.description}</p>
+                    <div className="mb-3">
+                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                        <span>Прогресс</span>
+                        <span>{progress.done}/{progress.total} ({pct}%)</span>
+                      </div>
+                      <div className="h-1.5 rounded bg-slate-700 overflow-hidden">
+                        <div className="h-full bg-amber-500 transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
                     <div className="space-y-1">
-                      {quest.objectives.map((obj, i) => (
+                      {progress.items.map((obj, i) => (
                         <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                          <span className="text-amber-500">▸</span>
-                          <span>{obj.text}</span>
+                          <span className={obj.done ? 'text-emerald-400' : 'text-amber-500'}>{obj.done ? '✓' : '▸'}</span>
+                          <span className={obj.done ? 'text-emerald-200/90' : ''}>{obj.text}</span>
                         </div>
                       ))}
                     </div>
@@ -106,84 +119,6 @@ export function QuestsPanel({ quests, onClose }: QuestsPanelProps) {
     </div>
   );
 }
-
-/** Квесты, доступные в кампании (дублирует QUESTS из quests.ts для UI). */
-const QUESTS: Quest[] = [
-  {
-    id: 'build_school',
-    title: 'Построить Школу',
-    description: 'Постройте Школу любого уровня, чтобы начать обучение сотрудников.',
-    availableFromWeek: 1,
-    objectives: [{ text: 'Школа построена (уровень ≥ 1)', check: () => false }],
-    reward: { funds: 15000, reputation: 5 },
-  },
-  {
-    id: 'hire_teacher',
-    title: 'Нанять учителя',
-    description: 'Наймите сотрудника со специальностью «Преподаватель» и назначьте его в Школу.',
-    availableFromWeek: 1,
-    dependsOn: 'build_school',
-    objectives: [{ text: 'Учитель работает в Школе', check: () => false }],
-    reward: { funds: 10000, reputation: 3 },
-  },
-  {
-    id: 'upgrade_clinic',
-    title: 'Улучшить Клинику',
-    description: 'Поднимите Клинику до уровня 2 или выше.',
-    availableFromWeek: 2,
-    objectives: [{ text: 'Клиника уровня ≥ 2', check: () => false }],
-    reward: { funds: 20000, reputation: 5 },
-  },
-  {
-    id: 'build_auction_house',
-    title: 'Построить Аукционный дом',
-    description: 'Постройте Аукционный дом.',
-    availableFromWeek: 3,
-    objectives: [{ text: 'Аукционный дом построен (уровень ≥ 1)', check: () => false }],
-    reward: { funds: 25000, reputation: 8 },
-  },
-  {
-    id: 'buy_second_territory',
-    title: 'Купить вторую территорию',
-    description: 'Приобретите дополнительную территорию для города.',
-    availableFromWeek: 4,
-    objectives: [{ text: 'Территорий куплено ≥ 2', check: () => false }],
-    reward: { funds: 30000, reputation: 8 },
-  },
-  {
-    id: 'hire_auctioneer',
-    title: 'Нанять аукциониста',
-    description: 'Наймите аукциониста и назначьте его в Аукционный дом.',
-    availableFromWeek: 4,
-    dependsOn: 'build_auction_house',
-    objectives: [{ text: 'Аукционист работает в Аукционном доме', check: () => false }],
-    reward: { funds: 15000, reputation: 5 },
-  },
-  {
-    id: 'build_bdsm_room',
-    title: 'Построить БДСМ-комнату',
-    description: 'Постройте БДСМ-комнату для дрессировки пленниц.',
-    availableFromWeek: 5,
-    objectives: [{ text: 'БДСМ-комната построена (уровень ≥ 1)', check: () => false }],
-    reward: { funds: 20000, reputation: 6 },
-  },
-  {
-    id: 'reach_reputation_50',
-    title: 'Репутация 50',
-    description: 'Добейтесь репутации 50 или выше.',
-    availableFromWeek: 6,
-    objectives: [{ text: 'Репутация ≥ 50', check: () => false }],
-    reward: { funds: 50000, reputation: 15 },
-  },
-  {
-    id: 'reach_funds_100000',
-    title: 'Капитал 100 000',
-    description: 'Накопите на счетах 100 000 или более.',
-    availableFromWeek: 8,
-    objectives: [{ text: 'Средства ≥ 100 000', check: () => false }],
-    reward: { funds: 0, reputation: 20 },
-  },
-];
 
 const QUEST_BY_ID: Record<string, Quest> = Object.fromEntries(
   QUESTS.map((q) => [q.id, q])

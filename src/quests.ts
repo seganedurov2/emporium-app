@@ -188,6 +188,90 @@ export const QUESTS: Quest[] = [
     ],
     reward: { funds: 0, reputation: 20 },
   },
+  {
+    id: 'build_self_development',
+    title: 'Центр саморазвития',
+    description: 'Постройте Центр саморазвития для повышения навыков сотрудников.',
+    availableFromWeek: 7,
+    objectives: [
+      {
+        text: 'Центр саморазвития построен (уровень ≥ 1)',
+        check: (state) =>
+          state.auxiliaryBuildings.some(
+            (b) => b.id === 'self_development_center' && b.level >= 1
+          ),
+      },
+    ],
+    reward: { funds: 20000, reputation: 6 },
+  },
+  {
+    id: 'build_hospital',
+    title: 'Построить Госпиталь',
+    description: 'Постройте Госпиталь для лечения раненых.',
+    availableFromWeek: 9,
+    objectives: [
+      {
+        text: 'Госпиталь построен (уровень ≥ 1)',
+        check: (state) =>
+          state.auxiliaryBuildings.some((b) => b.id === 'hospital' && b.level >= 1),
+      },
+    ],
+    reward: { funds: 30000, reputation: 8 },
+  },
+  {
+    id: 'build_legal_dept',
+    title: 'Юридический отдел',
+    description: 'Создайте Юридический отдел для снижения рисков.',
+    availableFromWeek: 10,
+    objectives: [
+      {
+        text: 'Юридический отдел построен (уровень ≥ 1)',
+        check: (state) =>
+          state.auxiliaryBuildings.some((b) => b.id === 'legal_dept' && b.level >= 1),
+      },
+    ],
+    reward: { funds: 25000, reputation: 7 },
+  },
+  {
+    id: 'build_guard_post',
+    title: 'Пост охраны',
+    description: 'Укрепите безопасность — постройте Пост охраны.',
+    availableFromWeek: 6,
+    objectives: [
+      {
+        text: 'Пост охраны построен (уровень ≥ 1)',
+        check: (state) =>
+          state.auxiliaryBuildings.some((b) => b.id === 'guard_post' && b.level >= 1),
+      },
+    ],
+    reward: { funds: 18000, reputation: 5 },
+  },
+  {
+    id: 'reach_reputation_100',
+    title: 'Репутация 100',
+    description: 'Добейтесь репутации 100 или выше.',
+    availableFromWeek: 12,
+    objectives: [
+      {
+        text: 'Репутация ≥ 100',
+        check: (state) => state.reputation >= 100,
+      },
+    ],
+    reward: { funds: 75000, reputation: 25 },
+  },
+  {
+    id: 'reach_funds_250000',
+    title: 'Капитал 250 000',
+    description: 'Накопите на счетах 250 000 или более.',
+    availableFromWeek: 14,
+    objectives: [
+      {
+        text: 'Средства ≥ 250 000',
+        check: (state) => state.funds >= 250000,
+      },
+    ],
+    reward: { funds: 0, reputation: 30 },
+  },
 ];
 
 /** Создать начальные состояния квестов для новой кампании. */
@@ -265,6 +349,23 @@ export function applyQuestRewards(
     };
   }
   return next;
+}
+
+/** Прогресс выполнения целей квеста (для UI). */
+export function getQuestProgress(
+  state: ManagedCampaignState,
+  quest: Quest
+): { done: number; total: number; items: { text: string; done: boolean }[] } {
+  const items = quest.objectives.map((obj) => {
+    let done = false;
+    try {
+      done = !!obj.check(state);
+    } catch {
+      done = false;
+    }
+    return { text: obj.text, done };
+  });
+  return { done: items.filter((i) => i.done).length, total: items.length, items };
 }
 
 /** Нормализоватьquests при загрузке старого сохранения (обратная совместимость). */

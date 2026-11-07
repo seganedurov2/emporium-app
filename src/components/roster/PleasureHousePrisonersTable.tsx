@@ -463,7 +463,12 @@ export function PleasureHousePrisonersTable({
               { label: 'Покор.', value: `${char.submission || 50}%`, valueClassName: 'text-purple-300' },
               { label: 'Здоровье', value: isCEO ? `${char.exactHealth}%` : HEALTH_LABELS[char.healthLevel], valueClassName: 'text-emerald-300' },
               { label: 'Усталость', value: isCEO ? `${char.exactExhaustion}%` : EXHAUSTION_LABELS[char.exhaustionLevel], valueClassName: 'text-amber-300' },
-              { label: 'Возраст', value: char.age }
+              { label: 'Возраст', value: char.age },
+              ...(char.height ? [{ label: 'Рост', value: `${char.height} см` }] : []),
+              ...(char.bodyWeight ? [{ label: 'Вес', value: `${char.bodyWeight} кг` }] : []),
+              ...(char.breastSize != null && char.gender !== 'men' ? [{ label: 'Грудь', value: ['AA','A','B','C','D','DD','E'][char.breastSize] ?? char.breastSize }] : []),
+              ...(char.hairColor ? [{ label: 'Волосы', value: char.hairColor }] : []),
+              ...(char.eyeColor ? [{ label: 'Глаза', value: char.eyeColor }] : []),
             ];
             return (
                <PersonnelCard

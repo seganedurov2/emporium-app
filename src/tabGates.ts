@@ -27,8 +27,14 @@ export const QUEST_UNLOCKS: Record<string, AppTab[]> = {
   buy_second_territory: ['mezzanine', 'regions', 'warehouse_mezzanine', 'mezzanine_journal', 'boiler_house'],
   hire_auctioneer: ['caravans', 'capture_ops', 'security_service'],
   build_bdsm_room: ['bdsm_room', 'pleasure_house_prisoners', 'trait_chats'],
+  build_self_development: ['self_development'],
+  build_guard_post: ['security_service'],
+  build_hospital: ['hospital'],
+  build_legal_dept: ['board'],
   reach_reputation_50: ['strip_club', 'wasteland'],
   reach_funds_100000: [],
+  reach_reputation_100: [],
+  reach_funds_250000: [],
 };
 
 /** Tabs required to pursue a quest's objectives (must be open while quest is active/available). */
@@ -40,8 +46,14 @@ export const QUEST_REQUIRED_TABS: Record<string, AppTab[]> = {
   buy_second_territory: ['mezzanine', 'regions'],
   hire_auctioneer: ['hiring', 'staff', 'auction_house'],
   build_bdsm_room: ['board', 'bdsm_room'],
+  build_self_development: ['board', 'facilities_staff'],
+  build_guard_post: ['board', 'facilities_staff'],
+  build_hospital: ['board', 'facilities_staff'],
+  build_legal_dept: ['board', 'facilities_staff'],
   reach_reputation_50: [],
   reach_funds_100000: ['finances', 'market'],
+  reach_reputation_100: [],
+  reach_funds_250000: ['finances', 'market'],
 };
 
 export function isTabUnlocked(tab: AppTab, quests: QuestState[] | undefined, state?: ManagedCampaignState): boolean {

@@ -243,7 +243,7 @@ export function ThreeDMenu({
                               {char.role}
                             </p>
                             <p className="text-[10px] text-slate-500">
-                              {char.age} лет · {char.skill} навык
+                              {char.age} лет · {char.skill} навык{char.height ? ` · ${char.height} см` : ''}{char.hairColor ? ` · ${char.hairColor}` : ''}
                             </p>
                           </div>
                           

@@ -263,7 +263,12 @@ export function PleasureHouseTab({
               { label: 'Покор.', value: `${character.submission || 50}%`, valueClassName: 'text-purple-300' },
               { label: 'Здоровье', value: isCEO ? `${character.exactHealth}%` : HEALTH_LABELS[character.healthLevel], valueClassName: 'text-emerald-300' },
               { label: 'Усталость', value: isCEO ? `${character.exactExhaustion}%` : EXHAUSTION_LABELS[character.exhaustionLevel], valueClassName: 'text-amber-300' },
-              { label: 'Возраст', value: character.age }
+              { label: 'Возраст', value: character.age },
+              ...(character.height ? [{ label: 'Рост', value: `${character.height} см` }] : []),
+              ...(character.bodyWeight ? [{ label: 'Вес', value: `${character.bodyWeight} кг` }] : []),
+              ...(character.breastSize != null && character.gender !== 'men' ? [{ label: 'Грудь', value: ['AA','A','B','C','D','DD','E'][character.breastSize] ?? character.breastSize }] : []),
+              ...(character.hairColor ? [{ label: 'Волосы', value: character.hairColor }] : []),
+              ...(character.eyeColor ? [{ label: 'Глаза', value: character.eyeColor }] : []),
             ];
             return (
                <PersonnelCard
