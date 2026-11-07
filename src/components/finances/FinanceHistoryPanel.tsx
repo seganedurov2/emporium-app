@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import type { WeeklyFinanceReport } from '../../gameEngine';
 import { BarChart3 } from 'lucide-react';
 import { formatMoney } from '../../currency';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 interface FinanceHistoryPanelProps {
   reports: WeeklyFinanceReport[];
@@ -11,6 +13,12 @@ const CHART_WIDTH = 720;
 
 /** Tiny dependency-free SVG charts over the weekly report history. */
 export function FinanceHistoryPanel({ reports }: FinanceHistoryPanelProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(t);
+  }, []);
+
   if (reports.length === 0) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl text-left">
@@ -61,6 +69,8 @@ export function FinanceHistoryPanel({ reports }: FinanceHistoryPanelProps) {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl text-left">
+      {isLoading ? <Skeleton count={6} className="space-y-6" /> : (
+        <>
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
           <h3 className="font-bold text-white text-base mb-1 flex items-center gap-2">
@@ -73,7 +83,7 @@ export function FinanceHistoryPanel({ reports }: FinanceHistoryPanelProps) {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <h4 className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-2">Доходы vs расходы</h4>
           <svg viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} className="w-full bg-slate-950 border border-slate-800 rounded-lg" role="img" aria-label="График доходов и расходов по неделям">
@@ -128,6 +138,8 @@ export function FinanceHistoryPanel({ reports }: FinanceHistoryPanelProps) {
           </tbody>
         </table>
       </div>
+        </>
+      )}
     </div>
   );
 }

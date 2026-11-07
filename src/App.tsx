@@ -67,6 +67,7 @@ import {
   type RequestVenueId,
   type VenueAdministratorRequest
 } from './administratorEngine';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { FacilitiesStaffTab } from './components/facilitiesStaff/FacilitiesStaffTab';
 import { StaffTable } from './components/facilitiesStaff/StaffTable';
 import { HiringTab } from './components/hiring/HiringTab';
@@ -5770,7 +5771,8 @@ contracts={gameState.tradeSupplyContracts || []}
 
         {/* GOODS AUCTION HOUSE TAB */}
         {activeTab === 'auction_house' && (
-          <AuctionHouseTab
+          <ErrorBoundary>
+            <AuctionHouseTab
             week={gameState.week}
             funds={gameState.funds}
             pendingLots={gameState.auctionHouse.pendingLots}
@@ -5808,6 +5810,7 @@ contracts={gameState.tradeSupplyContracts || []}
               }));
             }}
           />
+          </ErrorBoundary>
         )}
 
         {/* BOARD OF DIRECTORS TAB */}
@@ -6201,7 +6204,9 @@ contracts={gameState.tradeSupplyContracts || []}
             </div>
 
             {/* FINANCE HISTORY — charts and table */}
-            <FinanceHistoryPanel reports={gameState.weeklyReports || []} />
+            <ErrorBoundary>
+              <FinanceHistoryPanel reports={gameState.weeklyReports || []} />
+            </ErrorBoundary>
           </div>
         )}
 
@@ -6262,67 +6267,79 @@ contracts={gameState.tradeSupplyContracts || []}
 
         {/* WAREHOUSE MEZZANINE TAB — складской автоматический мезонин */}
         {activeTab === 'warehouse_mezzanine' && (
-          <MezzanineWarehouseTab
-            week={gameState.week}
-            funds={gameState.funds}
-            warehouse={gameState.warehouse}
-            onUpgrade={upgradeWarehouseMezzanine}
-            onStore={storeWarehouseGoods}
-            onRetrieve={retrieveWarehouseGoods}
-          />
+          <ErrorBoundary>
+            <MezzanineWarehouseTab
+              week={gameState.week}
+              funds={gameState.funds}
+              warehouse={gameState.warehouse}
+              onUpgrade={upgradeWarehouseMezzanine}
+              onStore={storeWarehouseGoods}
+              onRetrieve={retrieveWarehouseGoods}
+            />
+          </ErrorBoundary>
         )}
 
         {/* MEZZANINE JOURNAL TAB — журнал «Информатика» */}
         {activeTab === 'mezzanine_journal' && (
-          <MezzanineJournalTab onOpenTab={(tab) => { setActiveTab(tab as AppTab); setIsMobileMenuOpen(false); }} />
+          <ErrorBoundary>
+            <MezzanineJournalTab onOpenTab={(tab) => { setActiveTab(tab as AppTab); setIsMobileMenuOpen(false); }} />
+          </ErrorBoundary>
         )}
 
         {/* BOILER HOUSE TAB — тепловой контур синдиката */}
         {activeTab === 'boiler_house' && (
-          <BoilerHouseTab
-            week={gameState.week}
-            funds={gameState.funds}
-            state={gameState.boilerHouse}
-            activeVenues={HEATED_VENUES.filter(venue => gameState.roster.some(c => c.assignedVenue === venue)).length}
-            onBuyFuel={buyBoilerFuel}
-            onSetBoiler={changeBoilerMode}
-            onBuildBoiler={buildBoilerHouseUnit}
-            onRepairBoiler={repairBoilerHouseUnit}
-            onSetAutomation={changeBoilerAutomation}
-          />
+          <ErrorBoundary>
+            <BoilerHouseTab
+              week={gameState.week}
+              funds={gameState.funds}
+              state={gameState.boilerHouse}
+              activeVenues={HEATED_VENUES.filter(venue => gameState.roster.some(c => c.assignedVenue === venue)).length}
+              onBuyFuel={buyBoilerFuel}
+              onSetBoiler={changeBoilerMode}
+              onBuildBoiler={buildBoilerHouseUnit}
+              onRepairBoiler={repairBoilerHouseUnit}
+              onSetAutomation={changeBoilerAutomation}
+            />
+          </ErrorBoundary>
         )}
 
         {/* WASTELAND TAB — вылазки в заражённые зоны пустоши */}
         {activeTab === 'wasteland' && (
-          <WastelandTab gameState={gameState} />
+          <ErrorBoundary>
+            <WastelandTab gameState={gameState} />
+          </ErrorBoundary>
         )}
 
         {/* GAME CONTROL TAB — админ-панель форм города, склада и сохранений */}
         {activeTab === 'game_control' && (
-          <GameControlPanel
-            city={controlCity}
-            save={gameState.cityPlan ?? null}
-            warehouse={gameState.warehouse ?? null}
-            onImportSave={() => true}
-            onSaveChange={(save) => setGameState(prev => ({ ...prev, cityPlan: save }))}
-            onWarehouseChange={patch => setGameState(prev => {
-              const next: WarehouseState = { ...prev.warehouse };
-              if (patch.level !== undefined) next.level = patch.level;
-              if (patch.automation !== undefined) next.automation = patch.automation;
-              return { ...prev, warehouse: next };
-            })}
-          />
+          <ErrorBoundary>
+            <GameControlPanel
+              city={controlCity}
+              save={gameState.cityPlan ?? null}
+              warehouse={gameState.warehouse ?? null}
+              onImportSave={() => true}
+              onSaveChange={(save) => setGameState(prev => ({ ...prev, cityPlan: save }))}
+              onWarehouseChange={patch => setGameState(prev => {
+                const next: WarehouseState = { ...prev.warehouse };
+                if (patch.level !== undefined) next.level = patch.level;
+                if (patch.automation !== undefined) next.automation = patch.automation;
+                return { ...prev, warehouse: next };
+              })}
+            />
+          </ErrorBoundary>
         )}
 
         {/* MEZZANINE — the hub map; the campaign tabs above live on top of it. */}
         {mezzanineView === 'mezzanine' && (
-          <MezzanineTab
-            gameState={gameState}
-            activeTab={activeTab}
-            onViewChange={handleMezzanineViewChange}
-            onCityPlanChange={handleCityPlanChange}
-            onOpenTab={tab => { setActiveTab(tab); setMezzanineView(tab); setIsMobileMenuOpen(false); }}
-          />
+          <ErrorBoundary>
+            <MezzanineTab
+              gameState={gameState}
+              activeTab={activeTab}
+              onViewChange={handleMezzanineViewChange}
+              onCityPlanChange={handleCityPlanChange}
+              onOpenTab={tab => { setActiveTab(tab); setMezzanineView(tab); setIsMobileMenuOpen(false); }}
+            />
+          </ErrorBoundary>
         )}
         </main>
       </div>

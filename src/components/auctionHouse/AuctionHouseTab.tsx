@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { formatMoney } from '../../currency';
 import { ArrowRight, ArrowUpDown, Package, PackageCheck, SearchCheck, Trash2, Truck, User, Users } from 'lucide-react';
 import type { AuctionLot, AuctionSale, AuctionCharacterLot, LotInspection, SaleConsentRequest } from '../../auctionHouseEngine';
@@ -13,6 +13,7 @@ import { PersonnelCard } from '../roster/PersonnelCard';
 import { Portrait3D } from '../Portrait3D';
 import { VenueAdministratorPanel } from '../venue/VenueAdministratorPanel';
 import { VenueBanner, VenueToolbar, VENUE_APPEARANCES } from '../venue';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 const inspectionBadge = (inspection?: LotInspection) => {
   if (!inspection) return null;
@@ -276,9 +277,17 @@ export function AuctionHouseTab({
   const staffFiltersActive = staffQuery.trim() !== '';
   const resetStaffFilters = () => setStaffQuery('');
 
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="space-y-3">
-      <VenueBanner
+      {isLoading ? <Skeleton count={6} className="space-y-3" /> : (
+        <>
+        <VenueBanner
         title="Аукционный дом"
         description={`Торговая площадка синдиката. Ведущая: ${persona.name}, ${persona.tagline} Осмотр: ${String(freeInspectLeft)} ${appraiser ? '' : `бесплатн. (лимит ${AUCTION_INSPECTION_BALANCE.freeChargesPerWeek}/нед.)`}`}
         imageSrc={VENUE_APPEARANCES.auctionHouse.imageSrc}
@@ -668,6 +677,8 @@ export function AuctionHouseTab({
       <p className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-[10px] leading-relaxed text-slate-500">
         Оценка лота фиксируется при поступлении и не меняется до продажи. NPC-покупатели могут перебить цену выше оценки — победитель определяется на торгах. Персонал (рабы и сотрудники) не продаётся автоматически: администратор аукционного дома выставляет запрос, который игрок должен подтвердить или отклонить.
       </p>
+        </>
+      )}
     </div>
   );
 }

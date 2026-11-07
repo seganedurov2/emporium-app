@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { FileText } from 'lucide-react';
 import { TerrainGenerator, t, type Lang, type Heightmap } from '../../terrain';
+import { Skeleton } from '../../components/ui/Skeleton';
 import type { MapCenter } from '../world/KalinkovichiGame';
 import { KalinkovichiMap } from './KalinkovichiMap';
 
@@ -142,6 +143,11 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
   // per 123-ФЗ art. 78 / МЧС М-АМ-136): load capacity, fire resistance,
   // materials, ceiling height, fire suppression and СТУ requirement.
   const [mezzLoad, setMezzLoad] = useState(5);
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(t);
+  }, []);
   const [mezzFireClass, setMezzFireClass] = useState<'R15' | 'R30' | 'R60' | 'R90' | 'R120' | 'R150' | 'R180' | 'R240'>('R15');
   const [mezzHeight, setMezzHeight] = useState(6);
   const [mezzTiers, setMezzTiers] = useState(2);
@@ -676,15 +682,14 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
     <div
       data-map-controls
       className="relative w-full overflow-hidden"
-      // touch-action: touch must not scroll or zoom the page while the map is
-      // being panned or pinched.
       style={{ height: 'calc(100vh - 5rem)', touchAction: 'none' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
     >
-      {grid && (
+      {isLoading ? <Skeleton count={8} className="space-y-6" /> : (
+        <>
+        {grid && (
         <div className="absolute inset-0 flex items-center justify-center">
           <canvas ref={canvasRef} className="block cursor-grab active:cursor-grabbing" />
           {/* Compass sits under the right-hand controls, not on top of them. */}
@@ -1072,6 +1077,8 @@ export function MezzanineTab({ onOpenTab, gameState, onViewChange, onCityPlanCha
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

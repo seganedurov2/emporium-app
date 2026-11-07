@@ -20,6 +20,7 @@ import {
   Trash2
 } from 'lucide-react';
 import type { Character } from '../../gameEngine';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 interface WastelandZone {
   id: string;
@@ -163,6 +164,12 @@ export function WastelandTab({
   const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info');
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(t);
+  }, []);
 
   const availableCharacters = useMemo(
     () => roster.filter(c => !expeditions.some(e => e.status === 'active' && e.characters.some(x => x.id === c.id))),
@@ -334,7 +341,10 @@ export function WastelandTab({
 
   return (
     <div className="space-y-6">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl text-left">
+      <>
+        {isLoading ? <Skeleton count={6} className="space-y-6" /> : (
+          <>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl text-left">
         <div className="flex items-center gap-3 mb-2">
           <AlertTriangle className="w-6 h-6 text-amber-500" />
           <h2 className="text-lg font-bold text-white">Пустошь — вылазки в заражённые зоны</h2>
@@ -622,7 +632,10 @@ export function WastelandTab({
             ))}
           </div>
         </div>
-      )}
-    </div>
+          )}
+          </>
+        )}
+      </>
+      </div>
   );
 }
