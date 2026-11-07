@@ -175,6 +175,8 @@ export interface WeeklyFinanceReport {
     salon: number;
     /** Municipal income of the city plan (absent in pre-0.4.1 saves). */
     city?: number;
+    /** Heat bonus of the boiler house (absent in saves before the boiler house). */
+    boiler?: number;
   };
   expenses: {
     wages: number;
@@ -185,6 +187,8 @@ export interface WeeklyFinanceReport {
     warehouse: number;
     /** City upkeep, unemployment benefits and new construction (pre-0.4.1 saves have none). */
     city?: number;
+    /** Boiler house fuel, upkeep and repairs (absent in older saves). */
+    boiler?: number;
   };
   netIncome: number;
   treasuryAfter: number;

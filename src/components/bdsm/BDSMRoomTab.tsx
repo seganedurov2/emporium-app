@@ -278,6 +278,7 @@ export const BDSMRoomTab: React.FC<BDSMRoomTabProps> = ({ state, platform, onAcc
              </div>
           )}
         </div>
+      </div>
       {/* Video archive — BDSM room footage */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 shadow-xl">
         <div className="flex items-center gap-2 mb-4">

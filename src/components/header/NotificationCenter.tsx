@@ -19,6 +19,12 @@ type FeedFilter = FeedCategory | 'all';
 interface NotificationCenterProps {
   feed: ActivityFeed;
   onNavigate: (tab: AppTab) => void;
+  /**
+   * Reports the dropdown state to the app shell. The shell owns Escape
+   * (src/escapeStack.ts), so the dropdown must not close itself on a key press
+   * that the shell may already be using for another overlay.
+   */
+  onOpenChange?: (open: boolean) => void;
 }
 
 const FEED_ICONS: Record<FeedIcon, typeof Bell> = {
@@ -61,29 +67,27 @@ const TONE_TEXT: Record<FeedTone, string> = {
   danger: 'text-red-200'
 };
 
-export function NotificationCenter({ feed, onNavigate }: NotificationCenterProps) {
+export function NotificationCenter({ feed, onNavigate, onOpenChange }: NotificationCenterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [acknowledged, setAcknowledged] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    onOpenChange?.(isOpen);
+  }, [isOpen, onOpenChange]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
     };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false);
-    };
     document.addEventListener('mousedown', closeOnOutsideClick);
-    document.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutsideClick);
-      document.removeEventListener('keydown', closeOnEscape);
-    };
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
   }, [isOpen]);
 
   const unreadCount = feed.actionableIds.filter(id => !acknowledged.includes(id)).length;
+  const close = () => setIsOpen(false);
   const acknowledgeAll = () => setAcknowledged(previous => [...new Set([...previous, ...feed.actionableIds])]);
 
   const openItem = (item: FeedItem) => {
@@ -178,7 +182,7 @@ export function NotificationCenter({ feed, onNavigate }: NotificationCenterProps
               </button>
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={close}
                 aria-label="Закрыть центр событий"
                 className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
               >

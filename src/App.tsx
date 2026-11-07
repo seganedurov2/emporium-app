@@ -35,10 +35,26 @@ import {
   warehouseUpgradeCost,
   warehouseWeeklyUpkeep,
   upgradeWarehouse,
-  canStore
+  canStore,
+  type WarehouseState
 } from './warehouseEngine';
+import {
+  addFuel,
+  buildBoiler,
+  boilerRepairCost,
+  BOILER_DEFINITION_BY_ID,
+  fuelPurchaseCost,
+  HEATED_VENUES,
+  repairBoiler,
+  setBoilerAutomation,
+  setBoilerMode,
+  type BoilerAutomation,
+  type BoilerFuelId,
+  type BoilerId
+} from './boilerHouseEngine';
 import type { MezzanineViewState } from './mezzanineViewState';
 import type { CityPlanSave } from './cityPlanState';
+import { restoreCityPlan } from './cityPlanState';
 import { resolveEscape } from './escapeStack';
 import { advanceCityEconomy } from './cityEconomyEngine';
 import { withCityEconomyReport } from './cityEconomyState';
@@ -54,6 +70,8 @@ import {
 import { FacilitiesStaffTab } from './components/facilitiesStaff/FacilitiesStaffTab';
 import { StaffTable } from './components/facilitiesStaff/StaffTable';
 import { HiringTab } from './components/hiring/HiringTab';
+import { GameControlPanel } from './components/admin/GameControlPanel';
+import { BoilerHouseTab } from './components/boilerHouse/BoilerHouseTab';
 import { AuctionHouseTab } from './components/auctionHouse/AuctionHouseTab';
 import { CaptiveLotsMarketPanel } from './components/slaveMarket/CaptiveLotsMarketPanel';
 import { SupplyContractsPanel } from './components/slaveMarket/SupplyContractsPanel';
@@ -448,6 +466,9 @@ const [activeEvent, setActiveEvent] = useState<GameEvent | ExpansionEvent | null
   const activeRaid = raidQueue[0] ?? null;
   const [auction, setAuction] = useState<{ currentBid: number; round: number; lotQuality: 'high' | 'elite'; lotName: string } | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+
+  // Город для панели управления: восстанавливается из сохранённого плана города.
+  const controlCity = useMemo(() => restoreCityPlan(gameState.cityPlan, gameState.cityPlan?.seed ?? 1101).city, [gameState.cityPlan]);
 
   // Hospital purchase quantities (per line item) and the admission toast queue.
   const [hospitalWardQty, setHospitalWardQty] = useState<Record<string, number>>({});
@@ -1520,6 +1541,62 @@ const refreshCandidates = () => {
       log: [`Складской мезонин: выдано ${amount} ед. груза (осталось ${prev.warehouse.occupancy - amount}/${prev.warehouse.capacity}).`, ...prev.log].slice(0, 50)
     }));
     showNotify(`Выдано со склада: ${amount} ед.`);
+  };
+
+  /** Котельная: закупает топливо, списывая стоимость из казны. */
+  const buyBoilerFuel = (fuelId: BoilerFuelId, units: number) => {
+    const cost = fuelPurchaseCost(fuelId, units);
+    if (units <= 0 || gameState.funds < cost) return;
+    setGameState(prev => ({
+      ...prev,
+      funds: prev.funds - cost,
+      boilerHouse: addFuel(prev.boilerHouse, fuelId, units),
+      log: [`Котельная: закуплено ${units} ед. топлива за ${formatMoney(cost)}.`, ...prev.log].slice(0, 50)
+    }));
+  };
+
+  /** Котельная: меняет режим котла (запуск/остановка, топливо, часы в неделю). */
+  const changeBoilerMode = (id: BoilerId, patch: { status?: 'running' | 'idle'; fuel?: BoilerFuelId; hoursPerWeek?: number }) => {
+    setGameState(prev => ({
+      ...prev,
+      boilerHouse: setBoilerMode(prev.boilerHouse, id, patch)
+    }));
+  };
+
+  /** Котельная: строит новый котёл, если казна позволяет. */
+  const buildBoilerHouseUnit = (id: BoilerId) => {
+    const definition = BOILER_DEFINITION_BY_ID[id];
+    if (gameState.funds < definition.buildCost) return;
+    const result = buildBoiler(gameState.boilerHouse, id);
+    if (!result) return;
+    setGameState(prev => ({
+      ...prev,
+      funds: prev.funds - definition.buildCost,
+      boilerHouse: result.state,
+      log: [`Котельная: «${definition.name}» построен.`, ...prev.log].slice(0, 50)
+    }));
+  };
+
+  /** Котельная: ремонтирует аварийный или изношенный котёл. */
+  const repairBoilerHouseUnit = (id: BoilerId) => {
+    const boiler = gameState.boilerHouse.boilers.find(item => item.id === id);
+    if (!boiler) return;
+    const cost = Math.max(BOILER_DEFINITION_BY_ID[id].upkeep, boilerRepairCost(boiler));
+    if (gameState.funds < cost) return;
+    setGameState(prev => ({
+      ...prev,
+      funds: prev.funds - cost,
+      boilerHouse: repairBoiler(prev.boilerHouse, id),
+      log: [`Котельная: «${BOILER_DEFINITION_BY_ID[id].name}» отремонтирован за ${formatMoney(cost)}.`, ...prev.log].slice(0, 50)
+    }));
+  };
+
+  /** Котельная: включает/выключает автоматику и меняет её настройки. */
+  const changeBoilerAutomation = (patch: Partial<BoilerAutomation>) => {
+    setGameState(prev => ({
+      ...prev,
+      boilerHouse: setBoilerAutomation(prev.boilerHouse, patch)
+    }));
   };
 
   /** Posts or unposts a hired attendant at the rest zone. */
@@ -6200,9 +6277,41 @@ contracts={gameState.tradeSupplyContracts || []}
           <MezzanineJournalTab onOpenTab={(tab) => { setActiveTab(tab as AppTab); setIsMobileMenuOpen(false); }} />
         )}
 
+        {/* BOILER HOUSE TAB — тепловой контур синдиката */}
+        {activeTab === 'boiler_house' && (
+          <BoilerHouseTab
+            week={gameState.week}
+            funds={gameState.funds}
+            state={gameState.boilerHouse}
+            activeVenues={HEATED_VENUES.filter(venue => gameState.roster.some(c => c.assignedVenue === venue)).length}
+            onBuyFuel={buyBoilerFuel}
+            onSetBoiler={changeBoilerMode}
+            onBuildBoiler={buildBoilerHouseUnit}
+            onRepairBoiler={repairBoilerHouseUnit}
+            onSetAutomation={changeBoilerAutomation}
+          />
+        )}
+
         {/* WASTELAND TAB — вылазки в заражённые зоны пустоши */}
         {activeTab === 'wasteland' && (
           <WastelandTab gameState={gameState} />
+        )}
+
+        {/* GAME CONTROL TAB — админ-панель форм города, склада и сохранений */}
+        {activeTab === 'game_control' && (
+          <GameControlPanel
+            city={controlCity}
+            save={gameState.cityPlan ?? null}
+            warehouse={gameState.warehouse ?? null}
+            onImportSave={() => true}
+            onSaveChange={(save) => setGameState(prev => ({ ...prev, cityPlan: save }))}
+            onWarehouseChange={patch => setGameState(prev => {
+              const next: WarehouseState = { ...prev.warehouse };
+              if (patch.level !== undefined) next.level = patch.level;
+              if (patch.automation !== undefined) next.automation = patch.automation;
+              return { ...prev, warehouse: next };
+            })}
+          />
         )}
 
         {/* MEZZANINE — the hub map; the campaign tabs above live on top of it. */}

@@ -1,6 +1,17 @@
 @echo off
+setlocal
 cd /d "%~dp0"
-echo Запуск Emporium на http://localhost:5174
-npm run dev -- --port 5174 --host
-npm run dev https://seganedurov2.github.io/emporium-app/
+
+set "PORT=5174"
+set "URL=http://localhost:%PORT%"
+
+echo Запуск Emporium на %URL%
+echo (Ctrl+C — остановить сервер)
+echo.
+
+start "" "%URL%"
+call npm run dev -- --port %PORT% --host
+
+echo.
+echo Сервер остановлен.
 pause

@@ -115,10 +115,11 @@ function emptyCity(size: number): CityState {
 }
 
 /** Generate a city: a grid of roads every `pitch` cells, numbered blocks between. */
-export function generateCity(seed: number, size: number = CITY_SIZE): CityState {
+export function generateCity(seed: number, size: number = CITY_SIZE, pitch: number = 8): CityState {
   const city = emptyCity(size);
   const rnd = mulberry32(seed);
-  const pitch = 8;
+  // A pitch below 3 leaves no room for a block between two roads.
+  pitch = Math.max(3, Math.floor(pitch));
   const roadXs: number[] = [];
   const roadYs: number[] = [];
   for (let x = 2; x < size; x += pitch) roadXs.push(x);
