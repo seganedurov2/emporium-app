@@ -1,11 +1,17 @@
 CHANGELOG.txt
 ================================================================================
 PROJECT: Pawn Pleasure
-VERSION: 0.6.4
+VERSION: 0.6.5
 LAST UPDATED: 2026-11-07
-==============================================================================
+================================================================================
 
-[VERSION 0.6.4 - CURRENT RELEASE] "Экономика недели"
+[VERSION 0.6.5 - CURRENT RELEASE] "Рынок и спрос"
+
+  ДЕПЛОЙ
+  * Версия 0.6.5 опубликована на GitHub Pages (https://seganedurov2.github.io/emporium-app/).
+  * Добавлен .github/workflows/deploy-pages.yml (триггер на ветку 0.6.5).
+
+[VERSION 0.6.4 - PREVIOUS RELEASE] "Экономика недели"
 
   ЭКОНОМИКА И НАДЁЖНОСТЬ РАСЧЁТОВ
   * Добавлен `src/weeklyEconomy.ts`: safeNumber/safeAmount/computeWeeklyTotals —

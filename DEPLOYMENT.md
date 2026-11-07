@@ -11,14 +11,14 @@ The build is served from a project subpath (`vite.config.ts` sets `base: './'`),
 
 ## 1. GitHub Pages
 
-The workflow `.github/workflows/deploy-pages.yml` builds on every push to `FZ-LLC`
+The workflow `.github/workflows/deploy-pages.yml` builds on every push to `0.6.5`
 and publishes `dist/` with `actions/deploy-pages`.
 
 **One-time setup (repository owner):**
 
-1. **Settings → Pages → Build and deployment → Source: “GitHub Actions”.**
-   Without this the `deploy` job fails with _“Get Pages site failed”_.
-2. First push to `FZ-LLC` (or **Actions → Deploy to GitHub Pages → Run workflow**).
+1. **Settings → Pages → Build and deployment → Source: "GitHub Actions".**
+   Without this the `deploy` job fails with _"Get Pages site failed"_.
+2. First push to `0.6.5` (or **Actions → Deploy to GitHub Pages → Run workflow**).
 3. The job summary shows the URL; it is
    `https://seganedurov2.github.io/emporium-app/`
    (the bare `https://seganedurov2.github.io/` is the user site and serves a different
@@ -27,8 +27,7 @@ and publishes `dist/` with `actions/deploy-pages`.
 **Checks after the first deploy:**
 
 - `https://seganedurov2.github.io/emporium-app/` loads the title screen.
-- Open a deep link, e.g. `…/emporium-app/some/path` — the SPA still boots (404.html
-  fallback).
+- Open a deep link, e.g. `…/emporium-app/some/path` — the SPA still boots (404.html fallback).
 - DevTools → Application → Service Workers: the PWA worker (`public/sw.js`) installs.
 
 > GitHub Pages always serves over **https**. That matters for the optional multiplayer
@@ -40,7 +39,7 @@ and publishes `dist/` with `actions/deploy-pages`.
 
 1. Create a bot with [@BotFather](https://t.me/BotFather) and set the app URL:
    - **Menu button:** `/setmenubutton` → choose the bot → URL
-     `https://seganedurov2.github.io/emporium-app/` → button title “Эмпориум”.
+     `https://seganedurov2.github.io/emporium-app/` → button title "Эмпориум".
    - **Web App link:** `/newapp` (or `/addwebapp`) → same URL.
 2. Telegram requires **https** — GitHub Pages provides it.
 3. Open the bot → menu button. The app runs in Telegram's WebView; the code detects it
